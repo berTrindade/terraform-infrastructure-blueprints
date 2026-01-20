@@ -56,3 +56,69 @@ GitHub Rulesets are available on GitHub Free and provide similar functionality:
 3. Configure similar protections
 
 Note: Rulesets have slightly different options but achieve the same goals.
+
+---
+
+# GitHub Environments
+
+Three deployment environments have been configured:
+
+| Environment | Protection | Description |
+|-------------|------------|-------------|
+| `dev` | None | Development deployments |
+| `staging` | Branch policy | Only from protected branches |
+| `production` | Branch policy | Only from protected branches |
+
+## Environment Protection Rules (GitHub Pro Required)
+
+Additional protection rules require GitHub Pro for private repositories:
+
+| Feature | dev | staging | production |
+|---------|-----|---------|------------|
+| Required reviewers | - | 1 reviewer | 2 reviewers |
+| Wait timer | - | - | 10 minutes |
+| Branch restrictions | - | ✅ | ✅ |
+
+### Applying Protection Rules (When Available)
+
+```bash
+# Add required reviewers and wait timer to production
+gh api repos/berTrindade/terraform-infrastructure-blueprints/environments/production \
+  --method PUT \
+  --input - << 'EOF'
+{
+  "wait_timer": 10,
+  "reviewers": [
+    {"type": "User", "id": YOUR_USER_ID}
+  ],
+  "deployment_branch_policy": {
+    "protected_branches": true,
+    "custom_branch_policies": false
+  }
+}
+EOF
+```
+
+## Using Environments in Workflows
+
+Workflows reference environments like this:
+
+```yaml
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production  # Triggers protection rules
+    steps:
+      - name: Deploy
+        run: terraform apply -auto-approve
+```
+
+## Environment Secrets
+
+Add environment-specific secrets via:
+**Settings → Environments → [env] → Environment secrets**
+
+Recommended secrets per environment:
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- Or use AWS OIDC (recommended for production)
