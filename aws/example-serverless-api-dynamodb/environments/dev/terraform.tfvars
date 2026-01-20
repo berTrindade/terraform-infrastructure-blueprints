@@ -2,7 +2,7 @@
 
 project     = "items-api"
 environment = "dev"
-aws_region  = "us-east-1"
+aws_region  = "eu-west-2"
 
 # DynamoDB
 dynamodb_billing_mode = "PAY_PER_REQUEST"

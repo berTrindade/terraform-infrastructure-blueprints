@@ -2,7 +2,7 @@
 
 project     = "fargate-rds"
 environment = "dev"
-aws_region  = "us-east-1"
+aws_region  = "eu-west-2"
 
 # VPC
 vpc_cidr           = "10.0.0.0/16"

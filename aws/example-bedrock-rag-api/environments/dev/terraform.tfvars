@@ -2,7 +2,7 @@
 
 project     = "rag-api"
 environment = "dev"
-aws_region  = "us-east-1"
+aws_region  = "eu-west-2"
 
 # S3
 s3_version_retention_days = 30

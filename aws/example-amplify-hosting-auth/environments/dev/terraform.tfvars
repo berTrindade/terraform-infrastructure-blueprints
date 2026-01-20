@@ -2,7 +2,7 @@
 
 project     = "amplify-auth"
 environment = "dev"
-aws_region  = "us-east-1"
+aws_region  = "eu-west-2"
 
 # Cognito - CHANGE THIS to a unique value
 cognito_domain           = "my-app-auth-unique-12345"

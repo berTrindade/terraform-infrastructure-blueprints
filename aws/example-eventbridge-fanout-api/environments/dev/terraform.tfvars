@@ -3,7 +3,7 @@
 
 project     = "eb-fanout"
 environment = "dev"
-aws_region  = "us-east-1"
+aws_region  = "eu-west-2"
 
 # EventBridge
 event_source           = "reports.api"

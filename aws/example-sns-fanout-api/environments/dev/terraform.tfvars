@@ -3,7 +3,7 @@
 
 project     = "sns-fanout"
 environment = "dev"
-aws_region  = "us-east-1"
+aws_region  = "eu-west-2"
 
 # API Gateway
 cors_allow_origins = ["*"]

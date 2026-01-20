@@ -2,7 +2,7 @@
 
 project     = "secure-api"
 environment = "dev"
-aws_region  = "us-east-1"
+aws_region  = "eu-west-2"
 
 # Cognito
 password_minimum_length  = 8
