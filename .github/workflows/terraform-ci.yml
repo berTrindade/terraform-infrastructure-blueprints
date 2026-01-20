@@ -162,11 +162,11 @@ jobs:
           terraform_version: ${{ inputs.terraform_version }}
 
       - name: Configure AWS Credentials (OIDC)
-        if: secrets.AWS_ROLE_ARN != ''
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+        continue-on-error: true
 
       - name: Terraform Init
         run: terraform init
