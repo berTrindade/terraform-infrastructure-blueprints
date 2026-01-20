@@ -41,7 +41,7 @@ jobs:
   # ============================================
   validate:
     name: Validate
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: Checkout
@@ -90,7 +90,7 @@ jobs:
   # ============================================
   security:
     name: Security Scan
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: validate
 
     steps:
@@ -122,7 +122,7 @@ jobs:
   # ============================================
   test:
     name: Test
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: security
 
     steps:
@@ -148,7 +148,7 @@ jobs:
   # ============================================
   plan:
     name: Plan
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: test
     if: github.event_name == 'pull_request' && inputs.run_apply == false
 
@@ -211,7 +211,7 @@ jobs:
   # ============================================
   apply:
     name: Apply
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: test
     if: inputs.run_apply == true
     environment: production

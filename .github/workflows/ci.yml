@@ -25,7 +25,7 @@ jobs:
   # Detect which blueprints changed
   detect-changes:
     name: Detect Changes
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       blueprints: ${{ steps.changes.outputs.blueprints }}
       has_changes: ${{ steps.changes.outputs.has_changes }}
@@ -87,7 +87,7 @@ jobs:
   # Summary job for branch protection
   ci-summary:
     name: CI Summary
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: [detect-changes, ci]
     if: always()
 
