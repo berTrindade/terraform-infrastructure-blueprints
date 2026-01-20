@@ -1,0 +1,234 @@
+# .github/workflows/deploy.yml
+# Multi-environment deployment workflow with approval gates
+# Supports promoting deployments from dev → staging → prod
+
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      blueprint:
+        description: 'Blueprint path (e.g., aws/example-sqs-worker-api)'
+        required: true
+        type: string
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      action:
+        description: 'Terraform action'
+        required: true
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+        default: plan
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+env:
+  AWS_REGION: eu-west-2
+
+jobs:
+  # ============================================
+  # VALIDATE: Ensure environment exists
+  # ============================================
+  validate:
+    name: Validate
+    runs-on: self-hosted
+    outputs:
+      env_path: ${{ steps.check.outputs.env_path }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check environment exists
+        id: check
+        run: |
+          ENV_PATH="${{ inputs.blueprint }}/environments/${{ inputs.environment }}"
+          if [ ! -d "$ENV_PATH" ]; then
+            echo "❌ Environment not found: $ENV_PATH"
+            echo ""
+            echo "Available environments:"
+            ls -la "${{ inputs.blueprint }}/environments/" || echo "Blueprint not found"
+            echo ""
+            echo "To create this environment, run:"
+            echo "  ./scripts/create-environment.sh ${{ inputs.blueprint }} ${{ inputs.environment }}"
+            exit 1
+          fi
+          echo "✅ Environment found: $ENV_PATH"
+          echo "env_path=$ENV_PATH" >> $GITHUB_OUTPUT
+
+  # ============================================
+  # DEPLOY: Run Terraform with environment gate
+  # ============================================
+  deploy-dev:
+    name: Deploy to Dev
+    needs: validate
+    if: inputs.environment == 'dev'
+    runs-on: self-hosted
+    environment: dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.9.0'
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+        continue-on-error: true
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ${{ needs.validate.outputs.env_path }}
+
+      - name: Terraform ${{ inputs.action }}
+        run: |
+          case "${{ inputs.action }}" in
+            plan)
+              terraform plan -out=tfplan
+              ;;
+            apply)
+              terraform apply -auto-approve
+              ;;
+            destroy)
+              terraform destroy -auto-approve
+              ;;
+          esac
+        working-directory: ${{ needs.validate.outputs.env_path }}
+
+      - name: Show Outputs
+        if: inputs.action == 'apply'
+        run: terraform output
+        working-directory: ${{ needs.validate.outputs.env_path }}
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: validate
+    if: inputs.environment == 'staging'
+    runs-on: self-hosted
+    environment: staging
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.9.0'
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+        continue-on-error: true
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ${{ needs.validate.outputs.env_path }}
+
+      - name: Terraform ${{ inputs.action }}
+        run: |
+          case "${{ inputs.action }}" in
+            plan)
+              terraform plan -out=tfplan
+              ;;
+            apply)
+              terraform apply -auto-approve
+              ;;
+            destroy)
+              terraform destroy -auto-approve
+              ;;
+          esac
+        working-directory: ${{ needs.validate.outputs.env_path }}
+
+      - name: Show Outputs
+        if: inputs.action == 'apply'
+        run: terraform output
+        working-directory: ${{ needs.validate.outputs.env_path }}
+
+  deploy-prod:
+    name: Deploy to Production
+    needs: validate
+    if: inputs.environment == 'prod'
+    runs-on: self-hosted
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.9.0'
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+        continue-on-error: true
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ${{ needs.validate.outputs.env_path }}
+
+      - name: Terraform ${{ inputs.action }}
+        run: |
+          case "${{ inputs.action }}" in
+            plan)
+              terraform plan -out=tfplan
+              ;;
+            apply)
+              terraform apply -auto-approve
+              ;;
+            destroy)
+              terraform destroy -auto-approve
+              ;;
+          esac
+        working-directory: ${{ needs.validate.outputs.env_path }}
+
+      - name: Show Outputs
+        if: inputs.action == 'apply'
+        run: terraform output
+        working-directory: ${{ needs.validate.outputs.env_path }}
+
+  # ============================================
+  # SUMMARY: Deployment summary
+  # ============================================
+  summary:
+    name: Summary
+    needs: [validate, deploy-dev, deploy-staging, deploy-prod]
+    if: always()
+    runs-on: self-hosted
+
+    steps:
+      - name: Deployment Summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Setting | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Blueprint | \`${{ inputs.blueprint }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | \`${{ inputs.environment }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Action | \`${{ inputs.action }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Region | \`${{ env.AWS_REGION }}\` |" >> $GITHUB_STEP_SUMMARY
