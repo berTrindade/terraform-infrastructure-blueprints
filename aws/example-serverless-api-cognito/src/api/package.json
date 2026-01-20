@@ -1,0 +1,10 @@
+{
+  "name": "serverless-api-cognito",
+  "version": "1.0.0",
+  "description": "REST API with Cognito JWT authentication",
+  "main": "index.js",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/lib-dynamodb": "^3.0.0"
+  }
+}

@@ -1,0 +1,111 @@
+# .github/workflows/cleanup.yml
+# Automated cleanup of orphaned test resources
+# Based on terraform-skill ci-cd-workflows patterns
+
+name: Cleanup Test Resources
+
+on:
+  schedule:
+    # Run every 2 hours
+    - cron: '0 */2 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (show what would be deleted)'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  cleanup:
+    name: Cleanup Orphaned Resources
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Find and cleanup test Amplify apps
+        run: |
+          DRY_RUN="${{ github.event.inputs.dry_run || 'true' }}"
+          echo "Dry run: $DRY_RUN"
+
+          # Find Amplify apps with test in name
+          APPS=$(aws amplify list-apps \
+            --query 'apps[?contains(name, `test`)].appId' \
+            --output text)
+
+          for APP in $APPS; do
+            TAGS=$(aws amplify get-app --app-id $APP --query 'app.tags' 2>/dev/null || echo "{}")
+
+            if echo "$TAGS" | grep -q '"Environment": "test"'; then
+              echo "Found test Amplify app: $APP"
+              if [ "$DRY_RUN" = "false" ]; then
+                echo "Deleting: $APP"
+                aws amplify delete-app --app-id $APP || true
+              else
+                echo "Would delete: $APP (dry run)"
+              fi
+            fi
+          done
+
+      - name: Find and cleanup test Cognito User Pools
+        run: |
+          DRY_RUN="${{ github.event.inputs.dry_run || 'true' }}"
+
+          # Find Cognito User Pools with test in name
+          POOLS=$(aws cognito-idp list-user-pools --max-results 60 \
+            --query 'UserPools[?contains(Name, `test`)].Id' \
+            --output text)
+
+          for POOL in $POOLS; do
+            echo "Found test User Pool: $POOL"
+            if [ "$DRY_RUN" = "false" ]; then
+              echo "Deleting: $POOL"
+              # Delete domain first if exists
+              DOMAIN=$(aws cognito-idp describe-user-pool --user-pool-id $POOL --query 'UserPool.Domain' --output text 2>/dev/null || echo "")
+              if [ -n "$DOMAIN" ] && [ "$DOMAIN" != "None" ]; then
+                aws cognito-idp delete-user-pool-domain --user-pool-id $POOL --domain $DOMAIN || true
+              fi
+              aws cognito-idp delete-user-pool --user-pool-id $POOL || true
+            else
+              echo "Would delete: $POOL (dry run)"
+            fi
+          done
+
+      - name: Find and cleanup test Lambda functions
+        run: |
+          DRY_RUN="${{ github.event.inputs.dry_run || 'true' }}"
+
+          FUNCTIONS=$(aws lambda list-functions \
+            --query 'Functions[?contains(FunctionName, `test`)].FunctionName' \
+            --output text)
+
+          for FUNC in $FUNCTIONS; do
+            TAGS=$(aws lambda list-tags --resource $(aws lambda get-function --function-name $FUNC --query 'Configuration.FunctionArn' --output text) 2>/dev/null || echo "")
+
+            if echo "$TAGS" | grep -q '"Environment": "test"'; then
+              echo "Found test function: $FUNC"
+              if [ "$DRY_RUN" = "false" ]; then
+                echo "Deleting: $FUNC"
+                aws lambda delete-function --function-name $FUNC || true
+              else
+                echo "Would delete: $FUNC (dry run)"
+              fi
+            fi
+          done
+
+      - name: Summary
+        run: |
+          echo "Cleanup completed."
+          echo "Set dry_run to 'false' in workflow dispatch to actually delete resources."

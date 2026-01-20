@@ -1,0 +1,30 @@
+# environments/dev/backend.tf.example
+# S3 backend configuration template
+# Copy to backend.tf and update with your values
+#
+# Prerequisites:
+# 1. Create S3 bucket for state (with versioning and encryption)
+# 2. Create DynamoDB table for locking (pk: LockID)
+# 3. Update bucket, region, and dynamodb_table below
+
+terraform {
+  backend "s3" {
+    # S3 bucket for state storage
+    bucket = "my-terraform-state-bucket"
+
+    # State file path (unique per environment)
+    key = "command-worker/dev/terraform.tfstate"
+
+    # Region where bucket is located
+    region = "us-east-1"
+
+    # DynamoDB table for state locking
+    dynamodb_table = "terraform-locks"
+
+    # Enable encryption at rest
+    encrypt = true
+
+    # Optional: Use workspace prefix for multiple environments
+    # workspace_key_prefix = "command-worker"
+  }
+}

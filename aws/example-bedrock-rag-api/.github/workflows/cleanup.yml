@@ -1,0 +1,130 @@
+# .github/workflows/cleanup.yml
+# Automated cleanup of orphaned test resources
+# Based on terraform-skill ci-cd-workflows patterns
+
+name: Cleanup Test Resources
+
+on:
+  schedule:
+    # Run every 2 hours
+    - cron: '0 */2 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (show what would be deleted)'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  cleanup:
+    name: Cleanup Orphaned Resources
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Find and cleanup test Bedrock Knowledge Bases
+        run: |
+          DRY_RUN="${{ github.event.inputs.dry_run || 'true' }}"
+          echo "Dry run: $DRY_RUN"
+
+          # Find Bedrock Knowledge Bases with test in name
+          KBS=$(aws bedrock-agent list-knowledge-bases \
+            --query 'knowledgeBaseSummaries[?contains(name, `test`)].knowledgeBaseId' \
+            --output text 2>/dev/null || echo "")
+
+          for KB in $KBS; do
+            echo "Found test Knowledge Base: $KB"
+            if [ "$DRY_RUN" = "false" ]; then
+              echo "Deleting: $KB"
+              # Delete data sources first
+              DS=$(aws bedrock-agent list-data-sources --knowledge-base-id $KB --query 'dataSourceSummaries[].dataSourceId' --output text 2>/dev/null || echo "")
+              for D in $DS; do
+                aws bedrock-agent delete-data-source --knowledge-base-id $KB --data-source-id $D || true
+              done
+              aws bedrock-agent delete-knowledge-base --knowledge-base-id $KB || true
+            else
+              echo "Would delete: $KB (dry run)"
+            fi
+          done
+
+      - name: Find and cleanup test OpenSearch Serverless collections
+        run: |
+          DRY_RUN="${{ github.event.inputs.dry_run || 'true' }}"
+
+          # Find OpenSearch Serverless collections with test in name
+          COLLECTIONS=$(aws opensearchserverless list-collections \
+            --query 'collectionSummaries[?contains(name, `test`)].id' \
+            --output text 2>/dev/null || echo "")
+
+          for COLL in $COLLECTIONS; do
+            echo "Found test OpenSearch collection: $COLL"
+            if [ "$DRY_RUN" = "false" ]; then
+              echo "Deleting: $COLL"
+              aws opensearchserverless delete-collection --id $COLL || true
+            else
+              echo "Would delete: $COLL (dry run)"
+            fi
+          done
+
+      - name: Find and cleanup test S3 buckets
+        run: |
+          DRY_RUN="${{ github.event.inputs.dry_run || 'true' }}"
+
+          # Find S3 buckets with test in name
+          BUCKETS=$(aws s3api list-buckets \
+            --query 'Buckets[?contains(Name, `test`)].Name' \
+            --output text)
+
+          for BUCKET in $BUCKETS; do
+            TAGS=$(aws s3api get-bucket-tagging --bucket $BUCKET 2>/dev/null || echo "")
+
+            if echo "$TAGS" | grep -q '"Key": "Environment"' && echo "$TAGS" | grep -q '"Value": "test"'; then
+              echo "Found test bucket: $BUCKET"
+              if [ "$DRY_RUN" = "false" ]; then
+                echo "Deleting: $BUCKET"
+                aws s3 rb s3://$BUCKET --force || true
+              else
+                echo "Would delete: $BUCKET (dry run)"
+              fi
+            fi
+          done
+
+      - name: Find and cleanup test Lambda functions
+        run: |
+          DRY_RUN="${{ github.event.inputs.dry_run || 'true' }}"
+
+          FUNCTIONS=$(aws lambda list-functions \
+            --query 'Functions[?contains(FunctionName, `test`)].FunctionName' \
+            --output text)
+
+          for FUNC in $FUNCTIONS; do
+            TAGS=$(aws lambda list-tags --resource $(aws lambda get-function --function-name $FUNC --query 'Configuration.FunctionArn' --output text) 2>/dev/null || echo "")
+
+            if echo "$TAGS" | grep -q '"Environment": "test"'; then
+              echo "Found test function: $FUNC"
+              if [ "$DRY_RUN" = "false" ]; then
+                echo "Deleting: $FUNC"
+                aws lambda delete-function --function-name $FUNC || true
+              else
+                echo "Would delete: $FUNC (dry run)"
+              fi
+            fi
+          done
+
+      - name: Summary
+        run: |
+          echo "Cleanup completed."
+          echo "Set dry_run to 'false' in workflow dispatch to actually delete resources."

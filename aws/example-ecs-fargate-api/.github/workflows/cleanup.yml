@@ -1,0 +1,111 @@
+# .github/workflows/cleanup.yml
+# Automated cleanup of orphaned test resources
+# Based on terraform-skill ci-cd-workflows patterns
+
+name: Cleanup Test Resources
+
+on:
+  schedule:
+    # Run every 2 hours
+    - cron: '0 */2 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (show what would be deleted)'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  cleanup:
+    name: Cleanup Orphaned Resources
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Find and cleanup test ECS services
+        run: |
+          DRY_RUN="${{ github.event.inputs.dry_run || 'true' }}"
+          echo "Dry run: $DRY_RUN"
+
+          # Find ECS clusters with test in name
+          CLUSTERS=$(aws ecs list-clusters \
+            --query 'clusterArns[?contains(@, `test`)]' \
+            --output text)
+
+          for CLUSTER in $CLUSTERS; do
+            echo "Found test cluster: $CLUSTER"
+            if [ "$DRY_RUN" = "false" ]; then
+              # Stop all services first
+              SERVICES=$(aws ecs list-services --cluster $CLUSTER --query 'serviceArns[]' --output text)
+              for SERVICE in $SERVICES; do
+                aws ecs update-service --cluster $CLUSTER --service $SERVICE --desired-count 0 || true
+                aws ecs delete-service --cluster $CLUSTER --service $SERVICE --force || true
+              done
+              # Delete cluster
+              aws ecs delete-cluster --cluster $CLUSTER || true
+            else
+              echo "Would delete: $CLUSTER (dry run)"
+            fi
+          done
+
+      - name: Find and cleanup test Lambda functions
+        run: |
+          DRY_RUN="${{ github.event.inputs.dry_run || 'true' }}"
+
+          FUNCTIONS=$(aws lambda list-functions \
+            --query 'Functions[?contains(FunctionName, `test`)].FunctionName' \
+            --output text)
+
+          for FUNC in $FUNCTIONS; do
+            TAGS=$(aws lambda list-tags --resource $(aws lambda get-function --function-name $FUNC --query 'Configuration.FunctionArn' --output text) 2>/dev/null || echo "")
+
+            if echo "$TAGS" | grep -q '"Environment": "test"'; then
+              echo "Found test function: $FUNC"
+              if [ "$DRY_RUN" = "false" ]; then
+                echo "Deleting: $FUNC"
+                aws lambda delete-function --function-name $FUNC || true
+              else
+                echo "Would delete: $FUNC (dry run)"
+              fi
+            fi
+          done
+
+      - name: Find and cleanup test ALBs
+        run: |
+          DRY_RUN="${{ github.event.inputs.dry_run || 'true' }}"
+
+          ALBS=$(aws elbv2 describe-load-balancers \
+            --query 'LoadBalancers[?contains(LoadBalancerName, `test`)].LoadBalancerArn' \
+            --output text)
+
+          for ALB in $ALBS; do
+            TAGS=$(aws elbv2 describe-tags --resource-arns $ALB 2>/dev/null || echo "")
+
+            if echo "$TAGS" | grep -q '"Key": "Environment"' && echo "$TAGS" | grep -q '"Value": "test"'; then
+              echo "Found test ALB: $ALB"
+              if [ "$DRY_RUN" = "false" ]; then
+                echo "Deleting: $ALB"
+                aws elbv2 delete-load-balancer --load-balancer-arn $ALB || true
+              else
+                echo "Would delete: $ALB (dry run)"
+              fi
+            fi
+          done
+
+      - name: Summary
+        run: |
+          echo "Cleanup completed."
+          echo "Set dry_run to 'false' in workflow dispatch to actually delete resources."

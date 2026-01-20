@@ -1,0 +1,25 @@
+# .trivyignore
+# Trivy ignore rules for Terraform security scanning
+# Based on terraform-skill security-compliance patterns
+#
+# Format: <vulnerability-id> [# comment]
+#
+# Only add ignores with justification. Prefer fixing over ignoring.
+
+# Example ignores (uncomment if needed with justification):
+
+# AVD-AWS-0086: S3 bucket logging not enabled
+# Justification: This is a dev environment, logging adds cost
+# AVD-AWS-0086
+
+# AVD-AWS-0089: S3 bucket versioning not enabled
+# Justification: Short-lived data, versioning not required
+# AVD-AWS-0089
+
+# AVD-AWS-0132: SQS queue not using customer-managed KMS key
+# Justification: Using SQS-managed encryption (SSE-SQS) is sufficient
+# AVD-AWS-0132
+
+# AVD-AWS-0052: EventBridge bus not using customer-managed KMS key
+# Justification: EventBridge uses AWS-managed encryption by default
+# AVD-AWS-0052

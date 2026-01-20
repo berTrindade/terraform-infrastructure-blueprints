@@ -1,0 +1,13 @@
+# backend.tf.example
+# Remote state configuration template
+# Copy to backend.tf and customize for your environment
+
+terraform {
+  backend "s3" {
+    bucket         = "your-terraform-state-bucket"
+    key            = "eventbridge-fanout/dev/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "terraform-locks"
+    encrypt        = true
+  }
+}

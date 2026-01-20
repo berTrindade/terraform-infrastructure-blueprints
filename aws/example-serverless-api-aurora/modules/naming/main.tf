@@ -1,0 +1,39 @@
+# modules/naming/main.tf
+# Naming convention module for Serverless REST API with Aurora Serverless v2
+# Based on terraform-skill module-patterns
+
+# Naming convention: {project}-{environment}-{component}
+# Example: rest-api-dev-function
+
+locals {
+  # Base prefix for all resources
+  prefix = "${var.project}-${var.environment}"
+
+  # Component-specific names
+  names = {
+    # API resources
+    api_gateway = "${local.prefix}-api"
+    api_lambda  = "${local.prefix}-api-handler"
+
+    # VPC resources
+    vpc             = "${local.prefix}-vpc"
+    private_subnet  = "${local.prefix}-private"
+    security_group  = "${local.prefix}-sg"
+    db_subnet_group = "${local.prefix}-db-subnet"
+
+    # Data resources
+    aurora_cluster    = "${local.prefix}-aurora"
+    aurora_identifier = "${local.prefix}-aurora-cluster"
+
+    # Secrets (naming: /{env}/{app}/{purpose})
+    secret_prefix = "/${var.environment}/${var.project}"
+    db_secret     = "/${var.environment}/${var.project}/db-credentials"
+
+    # IAM resources
+    api_role    = "${local.prefix}-api-role"
+    lambda_role = "${local.prefix}-lambda-role"
+
+    # CloudWatch resources
+    log_group_api = "/aws/lambda/${local.prefix}-api-handler"
+  }
+}

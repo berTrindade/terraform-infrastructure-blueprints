@@ -1,0 +1,13 @@
+{
+  "name": "serverless-api-aurora",
+  "version": "1.0.0",
+  "description": "REST API CRUD handler for Serverless API with Aurora Serverless v2",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.0.0",
+    "pg": "^8.11.0"
+  }
+}

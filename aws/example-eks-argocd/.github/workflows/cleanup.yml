@@ -1,0 +1,123 @@
+# .github/workflows/cleanup.yml
+# Automated cleanup of orphaned test resources
+# Based on terraform-skill ci-cd-workflows patterns
+
+name: Cleanup Test Resources
+
+on:
+  schedule:
+    # Run every 2 hours
+    - cron: '0 */2 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (show what would be deleted)'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  cleanup:
+    name: Cleanup Orphaned Resources
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Find and cleanup test EKS clusters
+        run: |
+          DRY_RUN="${{ github.event.inputs.dry_run || 'true' }}"
+          echo "Dry run: $DRY_RUN"
+
+          # Find EKS clusters with test in name
+          CLUSTERS=$(aws eks list-clusters \
+            --query 'clusters[?contains(@, `test`)]' \
+            --output text)
+
+          for CLUSTER in $CLUSTERS; do
+            TAGS=$(aws eks describe-cluster --name $CLUSTER --query 'cluster.tags' 2>/dev/null || echo "{}")
+
+            if echo "$TAGS" | grep -q '"Environment": "test"'; then
+              echo "Found test EKS cluster: $CLUSTER"
+              if [ "$DRY_RUN" = "false" ]; then
+                echo "Deleting: $CLUSTER"
+                # Delete Fargate profiles first
+                PROFILES=$(aws eks list-fargate-profiles --cluster-name $CLUSTER --query 'fargateProfileNames[]' --output text 2>/dev/null || echo "")
+                for PROFILE in $PROFILES; do
+                  echo "Deleting Fargate profile: $PROFILE"
+                  aws eks delete-fargate-profile --cluster-name $CLUSTER --fargate-profile-name $PROFILE || true
+                done
+                # Delete node groups
+                NODEGROUPS=$(aws eks list-nodegroups --cluster-name $CLUSTER --query 'nodegroups[]' --output text 2>/dev/null || echo "")
+                for NG in $NODEGROUPS; do
+                  echo "Deleting nodegroup: $NG"
+                  aws eks delete-nodegroup --cluster-name $CLUSTER --nodegroup-name $NG || true
+                done
+                # Wait for resources to be deleted
+                sleep 120
+                # Delete the cluster
+                aws eks delete-cluster --name $CLUSTER || true
+              else
+                echo "Would delete: $CLUSTER (dry run)"
+              fi
+            fi
+          done
+
+      - name: Find and cleanup test VPCs
+        run: |
+          DRY_RUN="${{ github.event.inputs.dry_run || 'true' }}"
+
+          # Find VPCs with test in name tag
+          VPCS=$(aws ec2 describe-vpcs \
+            --filters "Name=tag:Name,Values=*test*" \
+            --query 'Vpcs[].VpcId' \
+            --output text)
+
+          for VPC in $VPCS; do
+            TAGS=$(aws ec2 describe-tags --filters "Name=resource-id,Values=$VPC" 2>/dev/null || echo "")
+
+            if echo "$TAGS" | grep -q '"Key": "Environment"' && echo "$TAGS" | grep -q '"Value": "test"'; then
+              echo "Found test VPC: $VPC"
+              if [ "$DRY_RUN" = "false" ]; then
+                echo "Would delete VPC: $VPC - Manual cleanup recommended for VPCs"
+              else
+                echo "Would delete: $VPC (dry run)"
+              fi
+            fi
+          done
+
+      - name: Find and cleanup test EC2 instances
+        run: |
+          DRY_RUN="${{ github.event.inputs.dry_run || 'true' }}"
+
+          # Find EC2 instances with test tag
+          INSTANCES=$(aws ec2 describe-instances \
+            --filters "Name=tag:Environment,Values=test" "Name=instance-state-name,Values=running,stopped" \
+            --query 'Reservations[].Instances[].InstanceId' \
+            --output text)
+
+          for INSTANCE in $INSTANCES; do
+            echo "Found test EC2 instance: $INSTANCE"
+            if [ "$DRY_RUN" = "false" ]; then
+              echo "Terminating: $INSTANCE"
+              aws ec2 terminate-instances --instance-ids $INSTANCE || true
+            else
+              echo "Would terminate: $INSTANCE (dry run)"
+            fi
+          done
+
+      - name: Summary
+        run: |
+          echo "Cleanup completed."
+          echo "Set dry_run to 'false' in workflow dispatch to actually delete resources."

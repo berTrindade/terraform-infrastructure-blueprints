@@ -1,0 +1,18 @@
+# environments/dev/backend.tf.example
+# S3 backend configuration template
+#
+# To use remote state:
+# 1. Copy this file to backend.tf
+# 2. Update the bucket name with your S3 bucket
+# 3. Ensure the S3 bucket and DynamoDB table exist
+# 4. Run: terraform init
+
+terraform {
+  backend "s3" {
+    bucket         = "your-terraform-state-bucket"
+    key            = "serverless-api-aurora/dev/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "terraform-locks"
+    encrypt        = true
+  }
+}

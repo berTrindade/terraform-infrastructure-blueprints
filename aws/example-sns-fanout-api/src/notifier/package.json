@@ -1,0 +1,18 @@
+{
+  "name": "notifier",
+  "version": "1.0.0",
+  "description": "Notifier Lambda - EDA subscriber for notifications",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"No tests yet\""
+  },
+  "keywords": [
+    "lambda",
+    "sns",
+    "eda",
+    "notification"
+  ],
+  "author": "",
+  "license": "MIT"
+}

@@ -1,0 +1,18 @@
+{
+  "name": "notifier-eventbridge",
+  "version": "1.0.0",
+  "description": "Notifier Lambda - EventBridge EDA consumer with content filtering",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"No tests yet\""
+  },
+  "keywords": [
+    "lambda",
+    "eventbridge",
+    "eda",
+    "notification"
+  ],
+  "author": "",
+  "license": "MIT"
+}

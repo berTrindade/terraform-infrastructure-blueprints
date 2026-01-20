@@ -1,0 +1,39 @@
+# .checkov.yaml
+# Checkov configuration for Terraform security scanning
+# Based on terraform-skill security-compliance patterns
+
+# Framework to scan
+framework:
+  - terraform
+
+# Output format
+output:
+  - cli
+  - json
+
+# Compact output
+compact: true
+
+# Soft fail (don't block CI, just warn)
+soft-fail: false
+
+# Skip specific checks if needed (uncomment as necessary)
+# skip-check:
+#   - CKV_AWS_144  # S3 bucket cross-region replication
+#   - CKV_AWS_145  # S3 bucket KMS encryption
+#   - CKV2_AWS_62  # S3 bucket event notifications
+
+# Check specific directories
+directory:
+  - environments/
+  - modules/
+
+# External checks (custom policies)
+# external-checks-dir:
+#   - ./compliance/
+
+# Download external modules for scanning
+download-external-modules: false
+
+# Evaluation of Terraform plan files
+# evaluate-variables: true
