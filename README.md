@@ -4,10 +4,12 @@
 - [What it is not](#what-it-is-not)
 - [Repository layout](#repository-layout)
 - [Key principles](#key-principles)
+- [Quick Start](#quick-start)
 - [How to use](#how-to-use)
 - [Ways to Use](#ways-to-use)
 - [AI accessibility](#ai-accessibility)
 - [CI/CD Pipeline](#cicd-pipeline)
+- [Available Blueprints](#available-blueprints)
 - [Maintainer](#maintainer)
 
 ## Terraform Infrastructure Blueprints
@@ -94,6 +96,161 @@ Everything is local, isolated, and modifiable.
 - Each example includes its own modules and utilities.
 
 Users copy one example folder and get everything they need.
+
+## Quick Start
+
+Deploy any blueprint in 5 steps:
+
+```bash
+# 1. Navigate to the blueprint's dev environment
+cd aws/example-sqs-worker-api/environments/dev
+
+# 2. Configure AWS credentials
+export AWS_PROFILE=your-profile  # or set AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY
+
+# 3. Initialize Terraform
+terraform init
+
+# 4. Review and apply
+terraform plan
+terraform apply
+
+# 5. Test (most blueprints output a quick_start guide)
+terraform output quick_start
+```
+
+### Deployment Flow
+
+```mermaid
+flowchart LR
+    subgraph setup [Setup]
+        A[Choose Blueprint] --> B[Configure AWS]
+    end
+    
+    subgraph deploy [Deploy]
+        B --> C[terraform init]
+        C --> D[terraform plan]
+        D --> E[terraform apply]
+    end
+    
+    subgraph use [Use]
+        E --> F[Test endpoints]
+        F --> G[View outputs]
+    end
+    
+    subgraph cleanup [Cleanup]
+        G --> H[terraform destroy]
+    end
+```
+
+### Step-by-Step Guide
+
+#### 1. Choose a Blueprint
+
+```bash
+# List available blueprints
+ls aws/
+
+# Example output:
+# example-sqs-worker-api/
+# example-serverless-api-dynamodb/
+# example-ecs-fargate-api/
+# example-eks-cluster/
+# ...
+```
+
+#### 2. Configure AWS Credentials
+
+```bash
+# Option A: AWS SSO (recommended)
+aws sso login --profile your-profile
+export AWS_PROFILE=your-profile
+
+# Option B: Environment variables
+export AWS_ACCESS_KEY_ID="your-key"
+export AWS_SECRET_ACCESS_KEY="your-secret"
+export AWS_REGION="us-east-1"
+
+# Verify credentials
+aws sts get-caller-identity
+```
+
+#### 3. (Optional) Configure Remote State
+
+For team collaboration, set up S3 backend:
+
+```bash
+cd aws/example-sqs-worker-api/environments/dev
+cp backend.tf.example backend.tf
+# Edit backend.tf with your S3 bucket details
+```
+
+#### 4. Review Configuration
+
+```bash
+# Check default values
+cat terraform.tfvars
+
+# Common settings to customize:
+# - project     = "your-project-name"
+# - environment = "dev"
+# - aws_region  = "us-east-1"
+```
+
+#### 5. Deploy
+
+```bash
+# Initialize providers and modules
+terraform init
+
+# Preview what will be created
+terraform plan
+
+# Create resources (type 'yes' to confirm)
+terraform apply
+```
+
+#### 6. Use the Outputs
+
+```bash
+# View all outputs
+terraform output
+
+# Get specific endpoint
+terraform output -raw api_endpoint
+
+# Most blueprints include helpful test commands
+terraform output quick_start
+```
+
+#### 7. Cleanup
+
+```bash
+# Destroy all resources when done
+terraform destroy
+```
+
+### Blueprint Structure
+
+Every blueprint follows this pattern:
+
+```
+aws/example-{name}/
+├── environments/
+│   └── dev/
+│       ├── main.tf           # Module composition
+│       ├── variables.tf      # Input variables  
+│       ├── outputs.tf        # Outputs
+│       ├── versions.tf       # Provider versions
+│       ├── terraform.tfvars  # Default values
+│       └── backend.tf.example
+├── modules/                  # Self-contained modules
+├── src/                      # Application code (if any)
+├── tests/
+│   ├── unit/                 # Validation tests
+│   └── integration/          # Full deployment tests
+└── README.md                 # Blueprint-specific docs
+```
 
 ## How to use
 
@@ -249,6 +406,55 @@ This manual update flow ensures you stay secure and benefit from improvements, w
   Patterns enforce strong defaults but allow easy modification.
 - AI-friendly structure
   Example-driven, isolated, predictable folder layouts ideal for automated code generation.
+
+## Available Blueprints
+
+### AWS Blueprints
+
+| Blueprint | Description | Key Services |
+|-----------|-------------|--------------|
+| `example-sqs-worker-api` | Async API with SQS worker pattern | API Gateway, SQS, Lambda, DynamoDB |
+| `example-serverless-api-dynamodb` | Serverless REST API | API Gateway, Lambda, DynamoDB |
+| `example-serverless-api-rds` | Serverless API with RDS | API Gateway, Lambda, RDS PostgreSQL |
+| `example-serverless-api-aurora` | Serverless API with Aurora | API Gateway, Lambda, Aurora Serverless |
+| `example-serverless-api-cognito` | API with authentication | API Gateway, Lambda, Cognito |
+| `example-serverless-api-rds-proxy` | API with RDS Proxy | API Gateway, Lambda, RDS Proxy |
+| `example-ecs-fargate-api` | Container API on Fargate | ECS Fargate, ALB, ECR |
+| `example-ecs-fargate-rds` | Container API with RDS | ECS Fargate, ALB, RDS |
+| `example-eks-cluster` | Kubernetes cluster | EKS, VPC, IAM |
+| `example-eks-argocd` | EKS with GitOps | EKS, ArgoCD, Helm |
+| `example-eventbridge-fanout-api` | Event-driven fanout | API Gateway, EventBridge, Lambda |
+| `example-sns-fanout-api` | SNS fanout pattern | API Gateway, SNS, Lambda |
+| `example-bedrock-rag-api` | RAG API with Bedrock | API Gateway, Bedrock, OpenSearch |
+| `example-amplify-hosting-auth` | Static hosting with auth | Amplify, Cognito |
+
+### Choosing the Right Blueprint
+
+```mermaid
+flowchart TD
+    Start([What do you need?]) --> Q1{API type?}
+    
+    Q1 -->|Synchronous| Q2{Database?}
+    Q1 -->|Asynchronous| Q3{Pattern?}
+    Q1 -->|Containers| Q4{Orchestration?}
+    
+    Q2 -->|NoSQL| B1[example-serverless-api-dynamodb]
+    Q2 -->|SQL| Q5{Connection pooling?}
+    Q2 -->|None| B2[example-serverless-api-cognito]
+    
+    Q5 -->|Yes| B3[example-serverless-api-rds-proxy]
+    Q5 -->|No| B4[example-serverless-api-rds]
+    
+    Q3 -->|Queue worker| B5[example-sqs-worker-api]
+    Q3 -->|Fan-out events| B6[example-eventbridge-fanout-api]
+    Q3 -->|Pub/sub| B7[example-sns-fanout-api]
+    
+    Q4 -->|ECS Fargate| B8[example-ecs-fargate-api]
+    Q4 -->|Kubernetes| Q6{GitOps?}
+    
+    Q6 -->|Yes| B9[example-eks-argocd]
+    Q6 -->|No| B10[example-eks-cluster]
+```
 
 ## Maintainer
 
