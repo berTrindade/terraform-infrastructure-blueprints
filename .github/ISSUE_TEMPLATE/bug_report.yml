@@ -1,0 +1,129 @@
+name: Bug Report
+description: Report a bug or issue with a blueprint
+title: "[Bug]: "
+labels: ["type:bug"]
+assignees:
+  - berTrindade
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the form below.
+
+  - type: dropdown
+    id: blueprint
+    attributes:
+      label: Blueprint
+      description: Which blueprint is affected?
+      options:
+        - example-sqs-worker-api
+        - example-serverless-api-dynamodb
+        - example-serverless-api-rds
+        - example-serverless-api-aurora
+        - example-serverless-api-cognito
+        - example-serverless-api-rds-proxy
+        - example-ecs-fargate-api
+        - example-ecs-fargate-rds
+        - example-eks-cluster
+        - example-eks-argocd
+        - example-eventbridge-fanout-api
+        - example-sns-fanout-api
+        - example-bedrock-rag-api
+        - example-amplify-hosting-auth
+        - Other (specify in description)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: cloud
+    attributes:
+      label: Cloud Provider
+      description: Which cloud provider?
+      options:
+        - AWS
+        - GCP
+        - Azure
+    validations:
+      required: true
+
+  - type: input
+    id: terraform-version
+    attributes:
+      label: Terraform Version
+      description: Output of `terraform version`
+      placeholder: "1.9.0"
+    validations:
+      required: true
+
+  - type: input
+    id: provider-version
+    attributes:
+      label: Provider Version
+      description: AWS/GCP/Azure provider version
+      placeholder: "~> 5.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear description of the bug
+      placeholder: Describe what happened...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Run `terraform init`
+        2. Run `terraform plan`
+        3. See error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs
+      description: Relevant error messages or logs
+      render: shell
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Configuration
+      description: Relevant terraform.tfvars or variable values (redact secrets!)
+      render: hcl
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched existing issues for duplicates
+          required: true
+        - label: I have redacted any sensitive information
+          required: true
+        - label: I am using the latest version of the blueprint
+          required: false

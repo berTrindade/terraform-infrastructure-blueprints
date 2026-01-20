@@ -1,0 +1,112 @@
+name: New Blueprint Request
+description: Request a new infrastructure blueprint
+title: "[Blueprint]: "
+labels: ["type:feature", "new-blueprint"]
+assignees:
+  - berTrindade
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new blueprint! Please describe the architecture you need.
+
+  - type: dropdown
+    id: cloud
+    attributes:
+      label: Cloud Provider
+      description: Which cloud provider?
+      options:
+        - AWS
+        - GCP
+        - Azure
+        - Multi-cloud
+    validations:
+      required: true
+
+  - type: input
+    id: name
+    attributes:
+      label: Suggested Name
+      description: Proposed name for the blueprint
+      placeholder: "example-lambda-stepfunctions"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Use Case Description
+      description: Describe the use case this blueprint would address
+      placeholder: "This blueprint would enable teams to quickly deploy..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: architecture
+    attributes:
+      label: Architecture Overview
+      description: Describe the high-level architecture (or include a diagram)
+      placeholder: |
+        Client → API Gateway → Step Functions → Lambda → DynamoDB
+        
+        Components:
+        - API Gateway for ingress
+        - Step Functions for orchestration
+        - Lambda functions for processing
+        - DynamoDB for storage
+    validations:
+      required: true
+
+  - type: textarea
+    id: services
+    attributes:
+      label: AWS/Cloud Services Required
+      description: List the cloud services needed
+      placeholder: |
+        - API Gateway (HTTP API)
+        - Step Functions (Standard)
+        - Lambda
+        - DynamoDB
+        - CloudWatch Logs
+        - IAM
+    validations:
+      required: true
+
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Estimated Complexity
+      description: How complex is this blueprint?
+      options:
+        - Simple (< 10 resources)
+        - Medium (10-25 resources)
+        - Complex (25+ resources)
+    validations:
+      required: true
+
+  - type: textarea
+    id: similar
+    attributes:
+      label: Similar Existing Blueprints
+      description: Are there existing blueprints this is similar to?
+      placeholder: "Similar to example-sqs-worker-api but with Step Functions instead of SQS"
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Links to AWS docs, blog posts, or similar implementations
+      placeholder: |
+        - https://aws.amazon.com/step-functions/
+        - https://docs.aws.amazon.com/...
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I am willing to help develop this blueprint
+          required: false
+        - label: I have a working prototype I can share
+          required: false

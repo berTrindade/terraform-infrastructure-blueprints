@@ -1,0 +1,112 @@
+# .github/workflows/ci.yml
+# Main CI workflow that triggers reusable workflow for changed blueprints
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'aws/**'
+      - '.github/workflows/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'aws/**'
+      - '.github/workflows/**'
+  workflow_dispatch:
+    inputs:
+      blueprint:
+        description: 'Blueprint to validate (e.g., aws/example-sqs-worker-api)'
+        required: true
+        type: string
+
+jobs:
+  # Detect which blueprints changed
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      blueprints: ${{ steps.changes.outputs.blueprints }}
+      has_changes: ${{ steps.changes.outputs.has_changes }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed blueprints
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            # Manual trigger - use input
+            echo "blueprints=[\"${{ inputs.blueprint }}\"]" >> $GITHUB_OUTPUT
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            # Get changed files
+            if [ "${{ github.event_name }}" == "pull_request" ]; then
+              CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }})
+            else
+              CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+            fi
+            
+            # Extract unique blueprint directories
+            BLUEPRINTS=$(echo "$CHANGED_FILES" | grep -E '^aws/example-' | cut -d'/' -f1-2 | sort -u | jq -R -s -c 'split("\n") | map(select(length > 0))')
+            
+            if [ "$BLUEPRINTS" == "[]" ] || [ -z "$BLUEPRINTS" ]; then
+              echo "blueprints=[]" >> $GITHUB_OUTPUT
+              echo "has_changes=false" >> $GITHUB_OUTPUT
+            else
+              echo "blueprints=$BLUEPRINTS" >> $GITHUB_OUTPUT
+              echo "has_changes=true" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Show detected blueprints
+        run: |
+          echo "Changed blueprints: ${{ steps.changes.outputs.blueprints }}"
+          echo "Has changes: ${{ steps.changes.outputs.has_changes }}"
+
+  # Run CI for each changed blueprint
+  ci:
+    name: CI
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has_changes == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        blueprint: ${{ fromJson(needs.detect-changes.outputs.blueprints) }}
+    uses: ./.github/workflows/terraform-ci.yml
+    with:
+      working_directory: ${{ matrix.blueprint }}
+      run_apply: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  # Summary job for branch protection
+  ci-summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: [detect-changes, ci]
+    if: always()
+
+    steps:
+      - name: Check CI results
+        run: |
+          if [ "${{ needs.detect-changes.outputs.has_changes }}" == "false" ]; then
+            echo "No blueprint changes detected - CI passed"
+            exit 0
+          fi
+          
+          if [ "${{ needs.ci.result }}" == "success" ]; then
+            echo "All CI checks passed!"
+            exit 0
+          elif [ "${{ needs.ci.result }}" == "skipped" ]; then
+            echo "CI was skipped"
+            exit 0
+          else
+            echo "CI failed"
+            exit 1
+          fi

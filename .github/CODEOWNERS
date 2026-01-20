@@ -1,1 +1,19 @@
-@berTrindade
+# CODEOWNERS - Define code ownership for automatic review requests
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything in the repo
+* @berTrindade
+
+# AWS blueprints
+/aws/ @berTrindade
+
+# High-impact infrastructure patterns
+/aws/example-eks-*/ @berTrindade
+/aws/example-ecs-*/ @berTrindade
+/aws/example-serverless-*/ @berTrindade
+
+# CI/CD and repository configuration
+/.github/ @berTrindade
+
+# Documentation
+/*.md @berTrindade
