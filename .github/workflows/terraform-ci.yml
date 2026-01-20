@@ -22,10 +22,14 @@ on:
         type: boolean
         default: false
     secrets:
-      AWS_ACCESS_KEY_ID:
+      AWS_ROLE_ARN:
         required: false
-      AWS_SECRET_ACCESS_KEY:
-        required: false
+
+# Required for OIDC authentication
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
 
 env:
   TF_ROOT: ${{ inputs.working_directory }}/environments/dev
@@ -157,12 +161,11 @@ jobs:
         with:
           terraform_version: ${{ inputs.terraform_version }}
 
-      - name: Configure AWS Credentials
-        if: secrets.AWS_ACCESS_KEY_ID != ''
+      - name: Configure AWS Credentials (OIDC)
+        if: secrets.AWS_ROLE_ARN != ''
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Terraform Init
@@ -222,11 +225,10 @@ jobs:
         with:
           terraform_version: ${{ inputs.terraform_version }}
 
-      - name: Configure AWS Credentials
+      - name: Configure AWS Credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Terraform Init
