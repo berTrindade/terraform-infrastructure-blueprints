@@ -164,7 +164,7 @@ ls aws/
 Edit `terraform.tfvars` to set your target region:
 
 ```hcl
-aws_region = "eu-west-1"  # Change to your preferred region
+aws_region = "eu-west-2"  # London - change to your preferred region
 ```
 
 **How to choose a region:**
@@ -198,7 +198,7 @@ export AWS_PROFILE=your-profile
 # Option B: Environment variables
 export AWS_ACCESS_KEY_ID="your-key"
 export AWS_SECRET_ACCESS_KEY="your-secret"
-export AWS_REGION="eu-west-1"  # Match your terraform.tfvars
+export AWS_REGION="eu-west-2"  # Match your terraform.tfvars
 
 # Verify credentials
 aws sts get-caller-identity
@@ -319,19 +319,19 @@ You can use AI agents (GitHub Copilot, Cursor, ChatGPT, Claude, etc.) to help yo
 
 - Paste the folder structure or link to the example in your AI chat.
 
-2. **Describe your requirements**
+1. **Describe your requirements**
 
 - E.g., "Adapt this ECS Node.js example for a client with two environments (dev, prod), custom tags, and private networking."
 
-3. **Request code generation and refactoring**
+1. **Request code generation and refactoring**
 
 - Ask the AI to update variables, add modules, or restructure files as needed.
 
-4. **Generate documentation and CI/CD workflows**
+1. **Generate documentation and CI/CD workflows**
 
 - Request README updates, pipeline configs, or cost/security reviews.
 
-5. **Copy the AI-generated code into your client repo**
+1. **Copy the AI-generated code into your client repo**
 
 This approach works with:
 
