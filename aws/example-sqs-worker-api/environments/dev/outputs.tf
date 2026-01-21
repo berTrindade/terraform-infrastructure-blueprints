@@ -78,7 +78,7 @@ output "secret_names" {
 
 output "quick_start" {
   description = "Quick start commands"
-  value = <<-EOT
+  value       = <<-EOT
 
     # Test the API (returns SQS message ID)
     curl -X POST ${module.api.api_endpoint}/commands \
