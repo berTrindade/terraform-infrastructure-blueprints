@@ -829,6 +829,98 @@ Pre-commit and CI run:
 | `worker_function_name` | Worker Lambda |
 | `secret_arns` | Map of secret ARNs |
 
+## Deployment
+
+This blueprint includes a GitHub Actions workflow for progressive CD. Start with dev, add staging and prod when ready.
+
+### Phase 1: Dev Only (Default)
+
+```bash
+# 1. Copy the blueprint to your project
+cp -r aws/example-sqs-worker-api ~/my-project
+cd ~/my-project
+
+# 2. Initialize git and push to GitHub
+git init && git add . && git commit -m "Initial commit"
+gh repo create my-project --private --push
+
+# 3. Add AWS credentials as repository secrets
+# Go to: Settings → Secrets and variables → Actions
+# Add: AWS_ROLE_ARN (recommended) or AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY
+
+# 4. Deploy dev environment
+# Go to: Actions → Deploy → Run workflow
+# Select: environment = "dev", action = "apply"
+```
+
+### Phase 2: Add Staging (When Ready)
+
+```bash
+# Create staging environment with scaled config
+./scripts/create-environment.sh staging
+
+# Commit and push
+git add . && git commit -m "feat: add staging environment"
+git push
+
+# (Optional) Configure GitHub Environment for approvals
+# Go to: Settings → Environments → New environment → "staging"
+# Add required reviewers for deployment approval
+
+# Deploy staging
+# Go to: Actions → Deploy → Run workflow
+# Select: environment = "staging", action = "apply"
+```
+
+### Phase 3: Add Production (When Ready)
+
+```bash
+# Create production environment with production config
+./scripts/create-environment.sh prod
+
+# Commit and push
+git add . && git commit -m "feat: add production environment"
+git push
+
+# Configure GitHub Environment for approvals (recommended)
+# Go to: Settings → Environments → New environment → "production"
+# Add required reviewers + wait timer (10 minutes recommended)
+
+# Deploy production
+# Go to: Actions → Deploy → Run workflow
+# Select: environment = "prod", action = "apply"
+```
+
+### Deployment Flow
+
+```mermaid
+flowchart LR
+    subgraph phase1 [Phase 1]
+        Dev[Dev Only]
+    end
+    
+    subgraph phase2 [Phase 2]
+        Dev2[Dev] --> Staging[Staging]
+    end
+    
+    subgraph phase3 [Phase 3]
+        Dev3[Dev] --> Staging2[Staging] --> Prod[Production]
+    end
+    
+    phase1 -->|When ready| phase2
+    phase2 -->|When ready| phase3
+```
+
+### Environment Scaling
+
+| Setting | Dev | Staging | Prod |
+|---------|-----|---------|------|
+| Memory | 256 MB | 512 MB | 1024 MB |
+| Log retention | 7 days | 30 days | 90 days |
+| Message retention | 1 day | 7 days | 14 days |
+
+The `create-environment.sh` script automatically applies these scaled values.
+
 ## Cleanup
 
 ```bash

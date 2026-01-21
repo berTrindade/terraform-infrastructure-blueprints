@@ -242,6 +242,40 @@ spec:
 5. **SSO**: Configure Dex for OIDC/SAML authentication
 6. **RBAC**: Configure ArgoCD RBAC policies
 
+## Deployment
+
+This blueprint includes a GitHub Actions workflow for progressive CD.
+
+### Phase 1: Dev Only (Default)
+
+```bash
+# Copy, init, push to GitHub
+cp -r aws/example-eks-argocd ~/my-project && cd ~/my-project
+git init && git add . && git commit -m "Initial commit"
+gh repo create my-project --private --push
+
+# Add AWS credentials: Settings → Secrets → AWS_ROLE_ARN
+# Deploy: Actions → Deploy → dev → apply
+# Access ArgoCD UI (see Quick Start)
+```
+
+### Phase 2: Add Staging
+
+```bash
+./scripts/create-environment.sh staging
+git add . && git commit -m "feat: add staging" && git push
+# Deploy: Actions → Deploy → staging → apply
+```
+
+### Phase 3: Add Production
+
+```bash
+./scripts/create-environment.sh prod
+git add . && git commit -m "feat: add production" && git push
+# Configure: Settings → Environments → production (add reviewers)
+# Deploy: Actions → Deploy → prod → apply
+```
+
 ## Cleanup
 
 ```bash

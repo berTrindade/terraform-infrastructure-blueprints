@@ -279,6 +279,39 @@ Then check CloudWatch Logs for the proxy.
 | `serverless-api-rds` | Simpler, no proxy (dev/learning) |
 | `serverless-api-aurora` | Aurora Serverless v2 (auto-scaling) |
 
+## Deployment
+
+This blueprint includes a GitHub Actions workflow for progressive CD.
+
+### Phase 1: Dev Only (Default)
+
+```bash
+# Copy, init, push to GitHub
+cp -r aws/example-serverless-api-rds-proxy ~/my-project && cd ~/my-project
+git init && git add . && git commit -m "Initial commit"
+gh repo create my-project --private --push
+
+# Add AWS credentials: Settings → Secrets → AWS_ROLE_ARN
+# Deploy: Actions → Deploy → dev → apply
+```
+
+### Phase 2: Add Staging
+
+```bash
+./scripts/create-environment.sh staging
+git add . && git commit -m "feat: add staging" && git push
+# Deploy: Actions → Deploy → staging → apply
+```
+
+### Phase 3: Add Production
+
+```bash
+./scripts/create-environment.sh prod
+git add . && git commit -m "feat: add production" && git push
+# Configure: Settings → Environments → production (add reviewers)
+# Deploy: Actions → Deploy → prod → apply
+```
+
 ## Cleanup
 
 ```bash

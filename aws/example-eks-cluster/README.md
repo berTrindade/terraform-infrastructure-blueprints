@@ -232,6 +232,40 @@ module "app_irsa" {
 4. **Node diversity**: Add multiple instance types
 5. **Cluster Autoscaler**: Add for dynamic scaling
 
+## Deployment
+
+This blueprint includes a GitHub Actions workflow for progressive CD.
+
+### Phase 1: Dev Only (Default)
+
+```bash
+# Copy, init, push to GitHub
+cp -r aws/example-eks-cluster ~/my-project && cd ~/my-project
+git init && git add . && git commit -m "Initial commit"
+gh repo create my-project --private --push
+
+# Add AWS credentials: Settings → Secrets → AWS_ROLE_ARN
+# Deploy: Actions → Deploy → dev → apply
+# Configure kubectl (see Quick Start)
+```
+
+### Phase 2: Add Staging
+
+```bash
+./scripts/create-environment.sh staging
+git add . && git commit -m "feat: add staging" && git push
+# Deploy: Actions → Deploy → staging → apply
+```
+
+### Phase 3: Add Production
+
+```bash
+./scripts/create-environment.sh prod
+git add . && git commit -m "feat: add production" && git push
+# Configure: Settings → Environments → production (add reviewers)
+# Deploy: Actions → Deploy → prod → apply
+```
+
 ## Cleanup
 
 ```bash
