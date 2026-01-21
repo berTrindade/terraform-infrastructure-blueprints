@@ -1,6 +1,6 @@
 # environments/dev/main.tf
 # Development environment composition (API Gateway → SQS → Worker)
-# Based on terraform-skill module-patterns (composition layer)
+# Uses official terraform-aws-modules for battle-tested infrastructure
 
 # ============================================
 # Naming and Tagging
@@ -38,34 +38,79 @@ module "secrets" {
 }
 
 # ============================================
-# Data Layer: DynamoDB
+# Data Layer: DynamoDB (Official Module)
 # ============================================
 
-module "data" {
-  source = "../../modules/data"
+module "dynamodb" {
+  source  = "terraform-aws-modules/dynamodb-table/aws"
+  version = "~> 4.0"
 
-  table_name                    = module.naming.dynamodb_table
-  enable_point_in_time_recovery = var.enable_dynamodb_pitr
-  ttl_attribute_name            = var.dynamodb_ttl_attribute
+  name         = module.naming.dynamodb_table
+  hash_key     = "id"
+  billing_mode = "PAY_PER_REQUEST"
+
+  attributes = [
+    {
+      name = "id"
+      type = "S"
+    }
+  ]
+
+  server_side_encryption_enabled = true
+  point_in_time_recovery_enabled = var.enable_dynamodb_pitr
+
+  ttl_enabled        = var.dynamodb_ttl_attribute != null
+  ttl_attribute_name = var.dynamodb_ttl_attribute
 
   tags = module.tagging.tags
 }
 
 # ============================================
-# Queue Layer: SQS + DLQ
+# Queue Layer: SQS + DLQ (Official Module)
 # ============================================
 
-module "queue" {
-  source = "../../modules/queue"
+# Dead Letter Queue
+module "dlq" {
+  source  = "terraform-aws-modules/sqs/aws"
+  version = "~> 4.0"
 
-  queue_name                 = module.naming.sqs_queue
-  dlq_name                   = module.naming.sqs_dlq
+  name = module.naming.sqs_dlq
+
+  message_retention_seconds   = var.dlq_retention_seconds
+  sqs_managed_sse_enabled     = true
+  
+  tags = module.tagging.tags
+}
+
+# Main Queue
+module "sqs" {
+  source  = "terraform-aws-modules/sqs/aws"
+  version = "~> 4.0"
+
+  name = module.naming.sqs_queue
+
   message_retention_seconds  = var.sqs_retention_seconds
-  dlq_retention_seconds      = var.dlq_retention_seconds
   visibility_timeout_seconds = var.sqs_visibility_timeout_seconds
-  max_receive_count          = var.sqs_max_receive_count
+  sqs_managed_sse_enabled    = true
+
+  # Redrive to DLQ
+  create_dlq = false # We create it separately above
+  redrive_policy = {
+    deadLetterTargetArn = module.dlq.queue_arn
+    maxReceiveCount     = var.sqs_max_receive_count
+  }
 
   tags = module.tagging.tags
+}
+
+# Allow DLQ to receive from main queue
+resource "aws_sqs_queue_redrive_allow_policy" "dlq" {
+  queue_url = module.dlq.queue_url
+
+  redrive_allow_policy = jsonencode({
+    redrivePermission = "byQueue"
+    sourceQueueArns   = [module.sqs.queue_arn]
+  })
 }
 
 # ============================================
@@ -81,8 +126,8 @@ module "api" {
   cors_allow_origins = var.cors_allow_origins
 
   # Integration: SQS (direct)
-  sqs_queue_url = module.queue.queue_url
-  sqs_queue_arn = module.queue.queue_arn
+  sqs_queue_url = module.sqs.queue_url
+  sqs_queue_arn = module.sqs.queue_arn
 
   # Observability
   log_retention_days = var.log_retention_days
@@ -91,40 +136,82 @@ module "api" {
 }
 
 # ============================================
-# Worker Layer: Worker Lambda + SQS Trigger
+# Worker Layer: Lambda + SQS Trigger (Official Module)
 # ============================================
 
-module "worker" {
-  source = "../../modules/worker"
+module "worker_lambda" {
+  source  = "terraform-aws-modules/lambda/aws"
+  version = "~> 7.0"
 
-  # Lambda
-  function_name  = module.naming.worker_lambda
-  role_name      = module.naming.worker_role
-  log_group_name = module.naming.log_group_worker
-  source_dir     = "${path.module}/../../src/worker"
-  memory_size    = var.worker_memory_size
-  timeout        = var.worker_timeout
+  function_name = module.naming.worker_lambda
+  description   = "Worker - processes commands from SQS and updates DynamoDB"
+  handler       = "index.handler"
+  runtime       = "nodejs20.x"
 
-  # SQS Event Source
-  sqs_queue_arn           = module.queue.queue_arn
-  batch_size              = var.worker_batch_size
-  batching_window_seconds = var.worker_batching_window_seconds
-  max_concurrency         = var.worker_max_concurrency
+  source_path = "${path.module}/../../src/worker"
 
-  # Integration: DynamoDB
-  dynamodb_table_name = module.data.table_name
-  dynamodb_table_arn  = module.data.table_arn
+  memory_size = var.worker_memory_size
+  timeout     = var.worker_timeout
 
-  # Integration: Secrets (optional)
-  secret_arns = module.secrets.all_secret_arns
-  external_api_secret_arn = lookup(
-    module.secrets.secret_arns,
-    "external-api-key",
-    null
+  reserved_concurrent_executions = var.worker_reserved_concurrency
+
+  environment_variables = merge(
+    {
+      DYNAMODB_TABLE = module.dynamodb.dynamodb_table_id
+    },
+    lookup(module.secrets.secret_arns, "external-api-key", null) != null ? {
+      EXTERNAL_API_SECRET_ARN = module.secrets.secret_arns["external-api-key"]
+    } : {}
   )
 
-  # Observability
-  log_retention_days = var.log_retention_days
+  # CloudWatch Logs
+  cloudwatch_logs_retention_in_days = var.log_retention_days
+
+  # IAM permissions
+  attach_policy_statements = true
+  policy_statements = {
+    dynamodb = {
+      effect = "Allow"
+      actions = [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:Query"
+      ]
+      resources = [
+        module.dynamodb.dynamodb_table_arn,
+        "${module.dynamodb.dynamodb_table_arn}/index/*"
+      ]
+    }
+    sqs = {
+      effect = "Allow"
+      actions = [
+        "sqs:ReceiveMessage",
+        "sqs:DeleteMessage",
+        "sqs:GetQueueAttributes"
+      ]
+      resources = [module.sqs.queue_arn]
+    }
+    secrets = {
+      effect    = "Allow"
+      actions   = ["secretsmanager:GetSecretValue"]
+      resources = module.secrets.all_secret_arns
+    }
+  }
+
+  # SQS Event Source Mapping
+  event_source_mapping = {
+    sqs = {
+      event_source_arn        = module.sqs.queue_arn
+      batch_size              = var.worker_batch_size
+      maximum_batching_window_in_seconds = var.worker_batching_window_seconds
+      function_response_types = ["ReportBatchItemFailures"]
+      scaling_config = {
+        maximum_concurrency = var.worker_max_concurrency
+      }
+    }
+  }
 
   tags = module.tagging.tags
 }

@@ -2,33 +2,33 @@
 
 output "cluster_name" {
   description = "EKS cluster name"
-  value       = module.cluster.cluster_name
+  value       = module.eks.cluster_name
 }
 
 output "cluster_endpoint" {
   description = "EKS cluster endpoint"
-  value       = module.cluster.cluster_endpoint
+  value       = module.eks.cluster_endpoint
 }
 
 output "cluster_certificate_authority_data" {
   description = "Base64 encoded CA certificate"
-  value       = module.cluster.cluster_certificate_authority_data
+  value       = module.eks.cluster_certificate_authority_data
   sensitive   = true
 }
 
 output "cluster_version" {
   description = "EKS cluster version"
-  value       = module.cluster.cluster_version
+  value       = module.eks.cluster_version
 }
 
 output "cluster_arn" {
   description = "EKS cluster ARN"
-  value       = module.cluster.cluster_arn
+  value       = module.eks.cluster_arn
 }
 
 output "oidc_provider_arn" {
   description = "OIDC provider ARN for IRSA"
-  value       = module.cluster.oidc_provider_arn
+  value       = module.eks.oidc_provider_arn
 }
 
 output "vpc_id" {
@@ -38,36 +38,46 @@ output "vpc_id" {
 
 output "private_subnet_ids" {
   description = "Private subnet IDs"
-  value       = module.vpc.private_subnet_ids
+  value       = module.vpc.private_subnets
 }
 
 output "public_subnet_ids" {
   description = "Public subnet IDs"
-  value       = module.vpc.public_subnet_ids
+  value       = module.vpc.public_subnets
 }
 
-output "node_group_arn" {
-  description = "Node group ARN"
-  value       = module.nodes.node_group_arn
+output "node_security_group_id" {
+  description = "Security group ID attached to the EKS nodes"
+  value       = module.eks.node_security_group_id
 }
 
 output "configure_kubectl" {
   description = "Command to configure kubectl"
-  value       = "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.cluster.cluster_name}"
+  value       = "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}"
 }
 
 # ArgoCD outputs
 output "argocd_namespace" {
   description = "ArgoCD namespace"
-  value       = module.argocd.namespace
-}
-
-output "argocd_url" {
-  description = "ArgoCD URL (if ingress enabled)"
-  value       = module.argocd.ingress_hostname != null ? "http://${module.argocd.ingress_hostname}" : null
+  value       = module.naming.argocd_namespace
 }
 
 output "argocd_get_admin_password" {
   description = "Command to get ArgoCD admin password"
-  value       = module.argocd.get_admin_password
+  value       = "kubectl -n ${module.naming.argocd_namespace} get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
+}
+
+output "argocd_port_forward" {
+  description = "Command to port-forward ArgoCD server"
+  value       = "kubectl port-forward svc/argocd-server -n ${module.naming.argocd_namespace} 8080:443"
+}
+
+# EKS Blueprints Addons
+output "eks_blueprints_addons" {
+  description = "EKS Blueprints Addons installed"
+  value = {
+    argocd                       = true
+    aws_load_balancer_controller = var.enable_lb_controller
+    aws_ebs_csi_driver           = true
+  }
 }

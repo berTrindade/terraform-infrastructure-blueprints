@@ -1,6 +1,6 @@
 # environments/dev/outputs.tf
 # Development environment outputs (API Gateway → SQS → Worker)
-# Based on terraform-skill module-patterns (output best practices)
+# Uses official terraform-aws-modules
 
 # ============================================
 # API Gateway
@@ -22,12 +22,12 @@ output "commands_endpoint" {
 
 output "dynamodb_table_name" {
   description = "Name of the DynamoDB table"
-  value       = module.data.table_name
+  value       = module.dynamodb.dynamodb_table_id
 }
 
 output "dynamodb_table_arn" {
   description = "ARN of the DynamoDB table"
-  value       = module.data.table_arn
+  value       = module.dynamodb.dynamodb_table_arn
 }
 
 # ============================================
@@ -36,17 +36,17 @@ output "dynamodb_table_arn" {
 
 output "sqs_queue_url" {
   description = "URL of the main SQS queue"
-  value       = module.queue.queue_url
+  value       = module.sqs.queue_url
 }
 
 output "sqs_queue_arn" {
   description = "ARN of the main SQS queue"
-  value       = module.queue.queue_arn
+  value       = module.sqs.queue_arn
 }
 
 output "sqs_dlq_url" {
   description = "URL of the dead-letter queue"
-  value       = module.queue.dlq_url
+  value       = module.dlq.queue_url
 }
 
 # ============================================
@@ -55,7 +55,12 @@ output "sqs_dlq_url" {
 
 output "worker_function_name" {
   description = "Name of the Worker Lambda"
-  value       = module.worker.lambda_function_name
+  value       = module.worker_lambda.lambda_function_name
+}
+
+output "worker_function_arn" {
+  description = "ARN of the Worker Lambda"
+  value       = module.worker_lambda.lambda_function_arn
 }
 
 # ============================================
@@ -92,10 +97,10 @@ output "quick_start" {
     cd ../../ && node scripts/secrets.js seed
 
     # View worker logs
-    aws logs tail ${module.worker.log_group_name} --follow
+    aws logs tail /aws/lambda/${module.worker_lambda.lambda_function_name} --follow
 
     # Check DynamoDB for processed commands
-    aws dynamodb scan --table-name ${module.data.table_name}
+    aws dynamodb scan --table-name ${module.dynamodb.dynamodb_table_id}
 
   EOT
 }

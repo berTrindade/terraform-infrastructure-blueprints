@@ -1,4 +1,13 @@
 # environments/dev/main.tf
+# Uses official terraform-aws-modules for battle-tested infrastructure
+
+locals {
+  azs = slice(data.aws_availability_zones.available.names, 0, var.az_count)
+}
+
+data "aws_availability_zones" "available" {
+  state = "available"
+}
 
 module "naming" {
   source      = "../../modules/naming"
@@ -14,61 +23,203 @@ module "tagging" {
   additional_tags = var.additional_tags
 }
 
+# ============================================
+# VPC (Official Module)
+# ============================================
+
 module "vpc" {
-  source              = "../../modules/vpc"
-  vpc_name            = module.naming.vpc
-  vpc_cidr            = var.vpc_cidr
-  az_count            = var.az_count
-  public_subnet_name  = module.naming.public_subnet
-  private_subnet_name = module.naming.private_subnet
-  cluster_name        = module.naming.cluster
-  single_nat_gateway  = var.single_nat_gateway
-  tags                = module.tagging.tags
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "~> 5.0"
+
+  name = module.naming.vpc
+  cidr = var.vpc_cidr
+
+  azs             = local.azs
+  private_subnets = [for i, az in local.azs : cidrsubnet(var.vpc_cidr, 4, i + var.az_count)]
+  public_subnets  = [for i, az in local.azs : cidrsubnet(var.vpc_cidr, 4, i)]
+
+  enable_nat_gateway = true
+  single_nat_gateway = var.single_nat_gateway
+
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+
+  # EKS-specific tags for AWS Load Balancer Controller
+  public_subnet_tags = {
+    "kubernetes.io/role/elb"                         = 1
+    "kubernetes.io/cluster/${module.naming.cluster}" = "shared"
+  }
+
+  private_subnet_tags = {
+    "kubernetes.io/role/internal-elb"                = 1
+    "kubernetes.io/cluster/${module.naming.cluster}" = "shared"
+  }
+
+  tags = module.tagging.tags
 }
 
-module "cluster" {
-  source                  = "../../modules/cluster"
-  cluster_name            = module.naming.cluster
-  cluster_version         = var.cluster_version
-  cluster_role_name       = module.naming.cluster_role
-  vpc_id                  = module.vpc.vpc_id
-  vpc_cidr                = module.vpc.vpc_cidr
-  subnet_ids              = module.vpc.private_subnet_ids
-  endpoint_private_access = var.endpoint_private_access
-  endpoint_public_access  = var.endpoint_public_access
-  public_access_cidrs     = var.public_access_cidrs
-  enabled_log_types       = var.enabled_log_types
-  tags                    = module.tagging.tags
+# ============================================
+# EKS Cluster (Official Module)
+# ============================================
+
+module "eks" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "~> 20.0"
+
+  cluster_name    = module.naming.cluster
+  cluster_version = var.cluster_version
+
+  vpc_id     = module.vpc.vpc_id
+  subnet_ids = module.vpc.private_subnets
+
+  # Cluster endpoint access
+  cluster_endpoint_private_access = var.endpoint_private_access
+  cluster_endpoint_public_access  = var.endpoint_public_access
+  cluster_endpoint_public_access_cidrs = var.public_access_cidrs
+
+  # Cluster logging
+  cluster_enabled_log_types = var.enabled_log_types
+
+  # EKS Addons
+  cluster_addons = {
+    coredns = {
+      most_recent = true
+    }
+    kube-proxy = {
+      most_recent = true
+    }
+    vpc-cni = {
+      most_recent = true
+    }
+    aws-ebs-csi-driver = {
+      most_recent              = true
+      service_account_role_arn = module.ebs_csi_irsa.iam_role_arn
+    }
+  }
+
+  # Managed Node Groups
+  eks_managed_node_groups = {
+    default = {
+      name           = module.naming.node_group
+      instance_types = var.node_instance_types
+      capacity_type  = var.node_capacity_type
+      disk_size      = var.node_disk_size
+
+      min_size     = var.node_min_size
+      max_size     = var.node_max_size
+      desired_size = var.node_desired_size
+
+      labels = var.node_labels
+      taints = [for t in var.node_taints : {
+        key    = t.key
+        value  = t.value
+        effect = t.effect
+      }]
+
+      # Enable SSM for node access
+      iam_role_additional_policies = {
+        AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+      }
+    }
+  }
+
+  # Allow access from the cluster to the node groups
+  node_security_group_additional_rules = {
+    ingress_allow_access_from_control_plane = {
+      type                          = "ingress"
+      protocol                      = "tcp"
+      from_port                     = 9443
+      to_port                       = 9443
+      source_cluster_security_group = true
+      description                   = "Allow access from control plane to webhook port of AWS LB controller"
+    }
+  }
+
+  tags = module.tagging.tags
 }
 
-module "nodes" {
-  source          = "../../modules/nodes"
-  cluster_name    = module.cluster.cluster_name
-  node_group_name = module.naming.node_group
-  node_role_name  = module.naming.node_role
-  subnet_ids      = module.vpc.private_subnet_ids
-  instance_types  = var.node_instance_types
-  capacity_type   = var.node_capacity_type
-  disk_size       = var.node_disk_size
-  desired_size    = var.node_desired_size
-  min_size        = var.node_min_size
-  max_size        = var.node_max_size
-  labels          = var.node_labels
-  taints          = var.node_taints
-  tags            = module.tagging.tags
+# ============================================
+# IRSA for EBS CSI Driver
+# ============================================
+
+module "ebs_csi_irsa" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.0"
+
+  role_name             = module.naming.ebs_csi_role
+  attach_ebs_csi_policy = true
+
+  oidc_providers = {
+    main = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
+    }
+  }
+
+  tags = module.tagging.tags
 }
 
-module "addons" {
-  source                      = "../../modules/addons"
-  cluster_name                = module.cluster.cluster_name
-  vpc_id                      = module.vpc.vpc_id
-  oidc_provider_arn           = module.cluster.oidc_provider_arn
-  oidc_issuer                 = module.cluster.oidc_issuer
-  ebs_csi_role_name           = module.naming.ebs_csi_role
-  lb_controller_role_name     = module.naming.lb_controller_role
-  enable_lb_controller        = var.enable_lb_controller
-  lb_controller_chart_version = var.lb_controller_chart_version
-  tags                        = module.tagging.tags
+# ============================================
+# AWS Load Balancer Controller (Optional)
+# ============================================
 
-  depends_on = [module.nodes]
+module "lb_controller_irsa" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.0"
+
+  count = var.enable_lb_controller ? 1 : 0
+
+  role_name                              = module.naming.lb_controller_role
+  attach_load_balancer_controller_policy = true
+
+  oidc_providers = {
+    main = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["kube-system:aws-load-balancer-controller"]
+    }
+  }
+
+  tags = module.tagging.tags
+}
+
+resource "helm_release" "aws_lb_controller" {
+  count = var.enable_lb_controller ? 1 : 0
+
+  name       = "aws-load-balancer-controller"
+  repository = "https://aws.github.io/eks-charts"
+  chart      = "aws-load-balancer-controller"
+  namespace  = "kube-system"
+  version    = var.lb_controller_chart_version
+
+  set {
+    name  = "clusterName"
+    value = module.eks.cluster_name
+  }
+
+  set {
+    name  = "serviceAccount.create"
+    value = "true"
+  }
+
+  set {
+    name  = "serviceAccount.name"
+    value = "aws-load-balancer-controller"
+  }
+
+  set {
+    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+    value = module.lb_controller_irsa[0].iam_role_arn
+  }
+
+  set {
+    name  = "region"
+    value = var.aws_region
+  }
+
+  set {
+    name  = "vpcId"
+    value = module.vpc.vpc_id
+  }
+
+  depends_on = [module.eks]
 }
