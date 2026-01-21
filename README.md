@@ -6,11 +6,14 @@
 - [Key principles](#key-principles)
 - [Quick Start](#quick-start)
 - [Creating Additional Environments](#creating-additional-environments)
+- [Development Setup](#development-setup)
+- [Testing](#testing)
 - [How to use](#how-to-use)
 - [Ways to Use](#ways-to-use)
 - [AI accessibility](#ai-accessibility)
 - [CI/CD Pipeline](#cicd-pipeline)
 - [Available Blueprints](#available-blueprints)
+- [Official Modules](#official-modules)
 - [Maintainer](#maintainer)
 
 ## Terraform Infrastructure Blueprints
@@ -572,6 +575,133 @@ flowchart TD
     Q6 -->|Yes| B9[example-eks-argocd]
     Q6 -->|No| B10[example-eks-cluster]
 ```
+
+## Development Setup
+
+### Pre-commit Hooks
+
+This repository uses [pre-commit](https://pre-commit.com/) with [pre-commit-terraform](https://github.com/antonbabenko/pre-commit-terraform) to enforce code quality standards before commits.
+
+#### Installation
+
+```bash
+# Install pre-commit (macOS)
+brew install pre-commit tflint terraform-docs
+
+# Install pre-commit (pip)
+pip install pre-commit
+
+# Install the git hooks
+pre-commit install
+```
+
+#### What it checks
+
+| Hook | Description |
+|------|-------------|
+| `terraform_fmt` | Formats Terraform files |
+| `terraform_validate` | Validates Terraform configuration |
+| `terraform_tflint` | Lints for common errors and best practices |
+| `terraform_docs` | Auto-generates documentation |
+
+#### Manual run
+
+```bash
+# Run on all files
+pre-commit run --all-files
+
+# Run on staged files only
+pre-commit run
+```
+
+## Testing
+
+Blueprints include native Terraform tests (`.tftest.hcl`) for validation.
+
+### Running Tests
+
+```bash
+# Navigate to the blueprint's environment
+cd aws/example-serverless-api-dynamodb/environments/dev
+
+# Initialize Terraform
+terraform init
+
+# Run all tests
+terraform test
+
+# Run tests with verbose output
+terraform test -verbose
+```
+
+### What Tests Validate
+
+| Category | Examples |
+|----------|----------|
+| **Input validation** | Project name format, environment constraints |
+| **Configuration** | API routes, memory limits, timeouts |
+| **Resource creation** | VPC, Lambda, DynamoDB modules planned |
+| **Defaults** | Billing mode, log retention, scaling |
+
+### Test Structure
+
+```
+aws/example-{name}/
+├── environments/
+│   └── dev/
+│       └── *.tf
+└── tests/
+    └── blueprint.tftest.hcl   # Native Terraform tests
+```
+
+### Example Test
+
+```hcl
+# tests/blueprint.tftest.hcl
+run "validate_project_name" {
+  command = plan
+
+  variables {
+    project     = "my-api"
+    environment = "dev"
+  }
+
+  assert {
+    condition     = true
+    error_message = "Project name validation failed"
+  }
+}
+```
+
+## Official Modules
+
+This repository uses official [terraform-aws-modules](https://registry.terraform.io/namespaces/terraform-aws-modules) for battle-tested, community-maintained infrastructure:
+
+| Component | Module | Version |
+|-----------|--------|---------|
+| **VPC** | `terraform-aws-modules/vpc/aws` | ~> 5.0 |
+| **ECS** | `terraform-aws-modules/ecs/aws` | ~> 5.0 |
+| **ALB** | `terraform-aws-modules/alb/aws` | ~> 9.0 |
+| **EKS** | `terraform-aws-modules/eks/aws` | ~> 20.0 |
+| **Lambda** | `terraform-aws-modules/lambda/aws` | ~> 7.0 |
+| **API Gateway** | `terraform-aws-modules/apigateway-v2/aws` | ~> 5.0 |
+| **DynamoDB** | `terraform-aws-modules/dynamodb-table/aws` | ~> 4.0 |
+| **SQS** | `terraform-aws-modules/sqs/aws` | ~> 4.0 |
+| **Security Groups** | `terraform-aws-modules/security-group/aws` | ~> 5.0 |
+
+### Why Official Modules?
+
+- **Community maintained** - Regular updates and security patches
+- **Well documented** - Comprehensive examples and inputs/outputs
+- **Battle tested** - Used in production by thousands of organizations
+- **Best practices** - Follow AWS and Terraform guidelines
+- **Consistent patterns** - Similar interface across modules
+
+### References
+
+- [terraform-aws-modules GitHub](https://github.com/terraform-aws-modules)
+- [Terraform Registry](https://registry.terraform.io/namespaces/terraform-aws-modules)
+- [AWS Prescriptive Guidance](https://docs.aws.amazon.com/prescriptive-guidance/)
 
 ## Maintainer
 
