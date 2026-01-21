@@ -13,26 +13,27 @@
 - [AI accessibility](#ai-accessibility)
 - [CI/CD Pipeline](#cicd-pipeline)
 - [Available Blueprints](#available-blueprints)
+- [Secrets Management](#secrets-management)
 - [Official Modules](#official-modules)
 - [Maintainer](#maintainer)
 
 ## Terraform Infrastructure Blueprints
 
 Opinionated, repeatable Infrastructure-as-Code blueprints for bootstrapping cloud foundations across GCP, AWS, and Azure.
-Each example is a fully self-contained IaC package that includes everything needed to deploy that pattern: modules, configurations, and conventions all in one place.
+Each blueprint is a fully self-contained IaC package that includes everything needed to deploy that pattern: modules, configurations, and conventions all in one place.
 
 Consultants copy the example they need, adapt it, and hand over clean, client-owned infrastructure code.
 No dependencies. No shared modules. No vendor lock-in.
 
 ## What is this?
 
-A library of complete, standalone IaC examples, organized by cloud provider:
+A library of complete, standalone IaC blueprints, organized by cloud provider:
 
-- GCP → multiple end-to-end examples (e.g., opinionated project setups, service deployments, network patterns)
-- AWS → multiple complete examples (e.g., ECS services, Lambda stacks, account foundations)
-- Azure → multiple complete examples (e.g., subscription scaffolding, app patterns, resource setups)
+- **AWS** → Serverless, container, event-driven, AI/ML, and full-stack patterns
+- **GCP** → Coming soon
+- **Azure** → Coming soon
 
-Every example folder contains:
+Every blueprint folder contains:
 
 - Its own Terraform modules
 - Its own naming/tagging logic
@@ -56,40 +57,25 @@ Everything is local, isolated, and modifiable.
 ## Repository layout
 
 ```text
-/gcp/
-  example-ecs-node/
-    main.tf
-    modules/
-      iam/
-      logging/
-      tagging/
-      naming/
-  example-networking/
-    main.tf
-    modules/
-      iam/
-      logging/
-      ...
-  example-custom/
-    ...
 /aws/
-  example-ecs-python/
-    main.tf
+  alb-ecs-fargate/
+    environments/
+      dev/
     modules/
-  example-account-foundation/
-    main.tf
-    modules/
-  example-custom/
+    src/
+    tests/
+    README.md
+  apigw-lambda-dynamodb/
     ...
+  apigw-lambda-rds/
+    ...
+  eks-cluster/
+    ...
+  # ... more blueprints
+/gcp/
+  # Coming soon
 /azure/
-  example-subscription-scaffold/
-    main.tf
-    modules/
-  example-app-pattern/
-    main.tf
-    modules/
-  example-custom/
-    ...
+  # Coming soon
 ```
 
 ### Key principles
@@ -107,7 +93,7 @@ Deploy any blueprint in 5 steps:
 
 ```bash
 # 1. Navigate to the blueprint's dev environment
-cd aws/example-sqs-worker-api/environments/dev
+cd aws/apigw-lambda-dynamodb/environments/dev
 
 # 2. Configure AWS credentials
 export AWS_PROFILE=your-profile  # or set AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY
@@ -156,10 +142,10 @@ flowchart LR
 ls aws/
 
 # Example output:
-# example-sqs-worker-api/
-# example-serverless-api-dynamodb/
-# example-ecs-fargate-api/
-# example-eks-cluster/
+# alb-ecs-fargate/
+# apigw-lambda-dynamodb/
+# apigw-lambda-rds/
+# eks-cluster/
 # ...
 ```
 
@@ -213,7 +199,7 @@ aws sts get-caller-identity
 For team collaboration, set up S3 backend:
 
 ```bash
-cd aws/example-sqs-worker-api/environments/dev
+cd aws/apigw-lambda-dynamodb/environments/dev
 cp backend.tf.example backend.tf
 # Edit backend.tf with your S3 bucket details
 ```
@@ -268,7 +254,7 @@ terraform destroy
 Every blueprint follows this pattern:
 
 ```
-aws/example-{name}/
+aws/{blueprint-name}/
 ├── environments/
 │   └── dev/
 │       ├── main.tf           # Module composition
@@ -293,10 +279,10 @@ Blueprints include only a `dev/` environment by default. Use the helper script t
 
 ```bash
 # Create staging environment
-./scripts/create-environment.sh aws/example-sqs-worker-api staging
+./scripts/create-environment.sh aws/apigw-sqs-lambda-dynamodb staging
 
 # Create production environment
-./scripts/create-environment.sh aws/example-sqs-worker-api prod
+./scripts/create-environment.sh aws/apigw-sqs-lambda-dynamodb prod
 ```
 
 ### What the Script Does
@@ -322,12 +308,12 @@ If you prefer to create environments manually:
 
 ```bash
 # 1. Copy dev environment
-cp -r aws/example-sqs-worker-api/environments/dev \
-      aws/example-sqs-worker-api/environments/staging
+cp -r aws/apigw-sqs-lambda-dynamodb/environments/dev \
+      aws/apigw-sqs-lambda-dynamodb/environments/staging
 
 # 2. Update environment name in terraform.tfvars
 sed -i '' 's/environment = "dev"/environment = "staging"/' \
-    aws/example-sqs-worker-api/environments/staging/terraform.tfvars
+    aws/apigw-sqs-lambda-dynamodb/environments/staging/terraform.tfvars
 
 # 3. Adjust resource sizing as needed
 # Edit terraform.tfvars with staging-appropriate values
@@ -378,8 +364,8 @@ Then use the deploy workflow to promote between environments with manual approva
 
 ### 1. Direct Copy
 
-- Browse the examples under `/gcp`, `/aws`, or `/azure` and choose the one that matches your needs.
-- Copy the example folder into your project—this can be a dedicated infrastructure folder (like `infra/` or `infrastructure/`) inside your main application repo, or a separate infrastructure repo alongside your app code.
+- Browse the blueprints under `/aws`, `/gcp`, or `/azure` and choose the one that matches your needs.
+- Copy the blueprint folder into your project—this can be a dedicated infrastructure folder (like `infra/` or `infrastructure/`) inside your main application repo, or a separate infrastructure repo alongside your app code.
 - For example:
   - Monorepo: `my-app/infra/` (application code in `src/`, infrastructure code in `infra/`)
   - Multi-repo: `my-app` (application repo), `my-app-infra` (infrastructure repo)
@@ -387,17 +373,21 @@ Then use the deploy workflow to promote between environments with manual approva
 
 ### 2. Use tiged (Recommended)
 
-Use [tiged](https://github.com/tiged/tiged) to download a specific blueprint (each child folder under `blueprints/` is a complete blueprint) without cloning the whole repo:
+Use [tiged](https://github.com/tiged/tiged) to download a specific blueprint without cloning the whole repo:
 
 ```bash
-# Download an AWS ECS Node.js blueprint
-npx tiged ustwo/terraform-infra-blueprints/blueprints/ecs-node my-ecs-node
+# Download an AWS serverless API blueprint
+npx tiged ustwo/terraform-infrastructure-blueprints/aws/apigw-lambda-dynamodb my-api
 
-# Download a GCP blueprint
-npx tiged ustwo/terraform-infra-blueprints/gcp/example-1 my-gcp-example
+# Download an AWS ECS Fargate blueprint
+npx tiged ustwo/terraform-infrastructure-blueprints/aws/alb-ecs-fargate my-ecs-app
 
-# Download an Azure blueprint
-npx tiged ustwo/terraform-infra-blueprints/azure/example-1 my-azure-example
+# Download an AWS EKS cluster blueprint
+npx tiged ustwo/terraform-infrastructure-blueprints/aws/eks-cluster my-eks-cluster
+
+# GCP and Azure blueprints coming soon
+# npx tiged ustwo/terraform-infrastructure-blueprints/gcp/{blueprint} my-gcp-project
+# npx tiged ustwo/terraform-infrastructure-blueprints/azure/{blueprint} my-azure-project
 ```
 
 ### 3. Use AI Tools
@@ -452,10 +442,10 @@ Before handover, ensure:
 
 This structure is AI-optimized:
 
-- Each example is a complete “unit” an AI can analyze without external context
-- Modules sit inside the example, so AI never has to resolve imports across folders
+- Each blueprint is a complete "unit" an AI can analyze without external context
+- Modules sit inside the blueprint, so AI never has to resolve imports across folders
 - Clear, predictable structure across clouds
-- Easy for AI to copy an example and generate a new client repo
+- Easy for AI to copy a blueprint and generate a new client repo
 - No shared modules → no dependency ambiguity
 - Works perfectly with tools like Cursor, ChatGPT agents, MCP, and IDE assistants
 
@@ -533,20 +523,20 @@ This manual update flow ensures you stay secure and benefit from improvements, w
 
 | Blueprint | Description | Key Services |
 |-----------|-------------|--------------|
-| `example-sqs-worker-api` | Async API with SQS worker pattern | API Gateway, SQS, Lambda, DynamoDB |
-| `example-serverless-api-dynamodb` | Serverless REST API | API Gateway, Lambda, DynamoDB |
-| `example-serverless-api-rds` | Serverless API with RDS | API Gateway, Lambda, RDS PostgreSQL |
-| `example-serverless-api-aurora` | Serverless API with Aurora | API Gateway, Lambda, Aurora Serverless |
-| `example-serverless-api-cognito` | API with authentication | API Gateway, Lambda, Cognito |
-| `example-serverless-api-rds-proxy` | API with RDS Proxy | API Gateway, Lambda, RDS Proxy |
-| `example-ecs-fargate-api` | Container API on Fargate | ECS Fargate, ALB, ECR |
-| `example-ecs-fargate-rds` | Container API with RDS | ECS Fargate, ALB, RDS |
-| `example-eks-cluster` | Kubernetes cluster | EKS, VPC, IAM |
-| `example-eks-argocd` | EKS with GitOps | EKS, ArgoCD, Helm |
-| `example-eventbridge-fanout-api` | Event-driven fanout | API Gateway, EventBridge, Lambda |
-| `example-sns-fanout-api` | SNS fanout pattern | API Gateway, SNS, Lambda |
-| `example-bedrock-rag-api` | RAG API with Bedrock | API Gateway, Bedrock, OpenSearch |
-| `example-amplify-hosting-auth` | Static hosting with auth | Amplify, Cognito |
+| `apigw-sqs-lambda-dynamodb` | Async API with SQS worker pattern | API Gateway, SQS, Lambda, DynamoDB |
+| `apigw-lambda-dynamodb` | Serverless REST API | API Gateway, Lambda, DynamoDB |
+| `apigw-lambda-rds` | Serverless API with RDS | API Gateway, Lambda, RDS PostgreSQL |
+| `apigw-lambda-aurora` | Serverless API with Aurora | API Gateway, Lambda, Aurora Serverless |
+| `apigw-lambda-dynamodb-cognito` | API with authentication | API Gateway, Lambda, DynamoDB, Cognito |
+| `apigw-lambda-rds-proxy` | API with RDS Proxy | API Gateway, Lambda, RDS Proxy |
+| `alb-ecs-fargate` | Container API on Fargate | ECS Fargate, ALB, ECR |
+| `alb-ecs-fargate-rds` | Container API with RDS | ECS Fargate, ALB, RDS |
+| `eks-cluster` | Kubernetes cluster | EKS, VPC, IAM |
+| `eks-argocd` | EKS with GitOps | EKS, ArgoCD, Helm |
+| `apigw-eventbridge-lambda` | Event-driven fanout | API Gateway, EventBridge, Lambda |
+| `apigw-sns-lambda` | SNS fanout pattern | API Gateway, SNS, Lambda |
+| `apigw-lambda-bedrock-rag` | RAG API with Bedrock | API Gateway, Bedrock, OpenSearch |
+| `amplify-cognito-apigw-lambda` | Full-stack with auth | Amplify, Cognito, API Gateway, Lambda |
 
 ### Choosing the Right Blueprint
 
@@ -558,22 +548,22 @@ flowchart TD
     Q1 -->|Asynchronous| Q3{Pattern?}
     Q1 -->|Containers| Q4{Orchestration?}
     
-    Q2 -->|NoSQL| B1[example-serverless-api-dynamodb]
+    Q2 -->|NoSQL| B1[apigw-lambda-dynamodb]
     Q2 -->|SQL| Q5{Connection pooling?}
-    Q2 -->|None| B2[example-serverless-api-cognito]
+    Q2 -->|None| B2[apigw-lambda-dynamodb-cognito]
     
-    Q5 -->|Yes| B3[example-serverless-api-rds-proxy]
-    Q5 -->|No| B4[example-serverless-api-rds]
+    Q5 -->|Yes| B3[apigw-lambda-rds-proxy]
+    Q5 -->|No| B4[apigw-lambda-rds]
     
-    Q3 -->|Queue worker| B5[example-sqs-worker-api]
-    Q3 -->|Fan-out events| B6[example-eventbridge-fanout-api]
-    Q3 -->|Pub/sub| B7[example-sns-fanout-api]
+    Q3 -->|Queue worker| B5[apigw-sqs-lambda-dynamodb]
+    Q3 -->|Fan-out events| B6[apigw-eventbridge-lambda]
+    Q3 -->|Pub/sub| B7[apigw-sns-lambda]
     
-    Q4 -->|ECS Fargate| B8[example-ecs-fargate-api]
+    Q4 -->|ECS Fargate| B8[alb-ecs-fargate]
     Q4 -->|Kubernetes| Q6{GitOps?}
     
-    Q6 -->|Yes| B9[example-eks-argocd]
-    Q6 -->|No| B10[example-eks-cluster]
+    Q6 -->|Yes| B9[eks-argocd]
+    Q6 -->|No| B10[eks-cluster]
 ```
 
 ## Development Setup
@@ -622,7 +612,7 @@ Blueprints include native Terraform tests (`.tftest.hcl`) for validation.
 
 ```bash
 # Navigate to the blueprint's environment
-cd aws/example-serverless-api-dynamodb/environments/dev
+cd aws/apigw-lambda-dynamodb/environments/dev
 
 # Initialize Terraform
 terraform init
@@ -646,7 +636,7 @@ terraform test -verbose
 ### Test Structure
 
 ```
-aws/example-{name}/
+aws/{blueprint-name}/
 ├── environments/
 │   └── dev/
 │       └── *.tf
@@ -672,6 +662,94 @@ run "validate_project_name" {
   }
 }
 ```
+
+## Secrets Management
+
+All blueprints follow the [terraform-secrets-poc](../terraform-secrets-poc) engineering standard for secure secret handling. This ensures passwords and credentials are never stored in Terraform state.
+
+### Secret Flows
+
+| Flow | Use Case | How It Works |
+|------|----------|--------------|
+| **Flow A** | Database passwords | Ephemeral password → `password_wo` → RDS/Aurora. Password never in state. |
+| **Flow B** | Third-party APIs | Terraform creates shell → Engineer seeds value → App reads at runtime. |
+
+### Flow A: TF-Generated Secrets (Database Passwords)
+
+```mermaid
+sequenceDiagram
+    participant TF as Terraform
+    participant RDS as RDS Instance
+    
+    TF->>TF: Generate ephemeral password
+    TF->>RDS: Send via password_wo
+    RDS->>RDS: Store password internally
+    TF->>TF: State has version only (no secret)
+```
+
+- Uses `ephemeral "random_password"` (Terraform 1.11+)
+- Password sent via `password_wo` (write-only attribute)
+- Password **never** stored in `terraform.tfstate`
+- Applications use IAM Database Authentication
+
+**Blueprints using Flow A:**
+- `alb-ecs-fargate-rds`
+- `apigw-lambda-aurora`
+- `apigw-lambda-rds`
+- `apigw-lambda-rds-proxy` (uses RDS-managed password)
+
+### Flow B: Third-Party Secrets (API Keys)
+
+```mermaid
+sequenceDiagram
+    participant TF as Terraform
+    participant SM as Secrets Manager
+    participant Eng as Engineer
+    participant App as Application
+    
+    TF->>SM: Create shell (empty secret)
+    Eng->>SM: Seed value via CLI
+    App->>SM: getSecretValue()
+    SM-->>App: Return secret
+```
+
+- Terraform creates empty secret "shell"
+- Engineers seed values after `terraform apply`
+- Applications read at runtime via AWS SDK
+
+**Seeding secrets:**
+```bash
+aws secretsmanager put-secret-value \
+  --secret-id /dev/myapp/stripe-api-key \
+  --secret-string '{"api_key": "sk_live_xxx"}'
+```
+
+### Naming Convention
+
+All secrets follow the `/{env}/{app}/{purpose}` naming pattern:
+
+| Example | Description |
+|---------|-------------|
+| `/dev/myapp/db-credentials` | Database connection metadata |
+| `/dev/myapp/stripe-api-key` | Stripe API key |
+| `/dev/myapp/oauth-credentials` | OAuth client credentials |
+
+### Secret Tags
+
+All secrets include governance tags:
+
+```hcl
+tags = {
+  SecretFlow = "A-tf-generated" | "B-third-party"
+  SecretType = "database" | "api-key" | "oauth-credentials"
+  DataClass  = "secret"
+}
+```
+
+### Requirements
+
+- **Terraform**: >= 1.11 (for ephemeral values and write-only arguments)
+- **AWS Provider**: >= 5.0
 
 ## Official Modules
 

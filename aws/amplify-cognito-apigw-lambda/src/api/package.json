@@ -1,0 +1,7 @@
+{
+  "name": "api-handler",
+  "version": "1.0.0",
+  "description": "Lambda handler with Cognito authentication",
+  "main": "index.js",
+  "license": "MIT"
+}
