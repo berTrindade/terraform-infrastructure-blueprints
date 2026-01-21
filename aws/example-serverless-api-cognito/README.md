@@ -121,6 +121,24 @@ Then update the Lambda handler in `src/api/index.js` to handle the new routes.
 - Easy to see the full API surface at a glance
 - Validation catches invalid methods early
 
+## References
+
+This example follows patterns recommended by:
+
+### Official Terraform Modules
+- [terraform-aws-modules/lambda](https://registry.terraform.io/modules/terraform-aws-modules/lambda/aws/latest) - Lambda packaging, IAM, and CloudWatch integration
+- [terraform-aws-modules/apigateway-v2](https://registry.terraform.io/modules/terraform-aws-modules/apigateway-v2/aws/latest) - HTTP API with dynamic route definitions via `routes` map
+
+### AWS & HashiCorp Best Practices
+- [AWS Prescriptive Guidance: Using Community Modules](https://docs.aws.amazon.com/prescriptive-guidance/latest/terraform-aws-provider-best-practices/community.html)
+- [AWS Prescriptive Guidance: Code Structure](https://docs.aws.amazon.com/prescriptive-guidance/latest/terraform-aws-provider-best-practices/structure.html)
+- [HashiCorp: Standard Module Structure](https://developer.hashicorp.com/terraform/language/modules/develop/structure)
+- [HashiCorp: Module Creation Pattern](https://developer.hashicorp.com/terraform/tutorials/modules/pattern-module-creation)
+
+### JWT Authorization Pattern
+- [AWS Samples: HTTP API + Cognito JWT](https://github.com/aws-samples/http-api-gateway-jwt-cognito) - Official AWS example
+- [HTTP Gateway with Cognito in Terraform](https://andrewtarry.com/posts/aws-http-gateway-with-cognito-and-terraform/)
+
 ## When to Use This Blueprint
 
 ### Decision Flowchart
