@@ -1,0 +1,299 @@
+# .github/workflows/validate.yml
+# Maintainer CI: Validates blueprints on push and PR
+# Ensures all blueprints follow quality standards
+
+name: Validate Blueprints
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'aws/**'
+      - 'gcp/**'
+      - 'azure/**'
+      - 'scripts/**'
+      - '.github/workflows/validate.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'aws/**'
+      - 'gcp/**'
+      - 'azure/**'
+
+env:
+  TF_VERSION: '1.9.0'
+
+jobs:
+  # ============================================
+  # DETECT: Find changed blueprints
+  # ============================================
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      blueprints: ${{ steps.changes.outputs.blueprints }}
+      has_changes: ${{ steps.changes.outputs.has_changes }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find changed blueprints
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_SHA="${{ github.event.before }}"
+          fi
+          
+          # Handle initial commit
+          if [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            CHANGED_FILES=$(git ls-files)
+          else
+            CHANGED_FILES=$(git diff --name-only $BASE_SHA ${{ github.sha }})
+          fi
+          
+          # Extract unique blueprint paths
+          BLUEPRINTS=$(echo "$CHANGED_FILES" | grep -E '^(aws|gcp|azure)/example-' | cut -d'/' -f1,2 | sort -u | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          
+          echo "Changed blueprints: $BLUEPRINTS"
+          echo "blueprints=$BLUEPRINTS" >> $GITHUB_OUTPUT
+          
+          if [ "$BLUEPRINTS" = "[]" ] || [ -z "$BLUEPRINTS" ]; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+  # ============================================
+  # VALIDATE: Run validation on each blueprint
+  # ============================================
+  validate:
+    name: Validate
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        blueprint: ${{ fromJson(needs.detect-changes.outputs.blueprints) }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+
+      - name: Install Trivy
+        run: |
+          sudo apt-get install wget apt-transport-https gnupg lsb-release -y
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install trivy -y
+
+      - name: Install Checkov
+        run: pip install checkov
+
+      # ----------------------------------------
+      # Structure validation
+      # ----------------------------------------
+      - name: Check structure
+        id: structure
+        run: |
+          echo "## Structure Check" >> $GITHUB_STEP_SUMMARY
+          
+          BLUEPRINT="${{ matrix.blueprint }}"
+          ERRORS=0
+          
+          # Required directories
+          for dir in "environments/dev" "modules"; do
+            if [ -d "$BLUEPRINT/$dir" ]; then
+              echo "✅ $dir/ exists" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ $dir/ missing" >> $GITHUB_STEP_SUMMARY
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+          
+          # Required files
+          for file in "README.md" "scripts/create-environment.sh" ".github/workflows/deploy.yml"; do
+            if [ -f "$BLUEPRINT/$file" ]; then
+              echo "✅ $file exists" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ $file missing" >> $GITHUB_STEP_SUMMARY
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+          
+          # Required Terraform files
+          for file in "main.tf" "variables.tf" "outputs.tf" "versions.tf" "terraform.tfvars"; do
+            if [ -f "$BLUEPRINT/environments/dev/$file" ]; then
+              echo "✅ environments/dev/$file exists" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ environments/dev/$file missing" >> $GITHUB_STEP_SUMMARY
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+          
+          if [ $ERRORS -gt 0 ]; then
+            echo "::error::Structure check failed with $ERRORS errors"
+            exit 1
+          fi
+
+      # ----------------------------------------
+      # Terraform format
+      # ----------------------------------------
+      - name: Terraform Format
+        id: fmt
+        run: |
+          cd "${{ matrix.blueprint }}"
+          terraform fmt -check -recursive
+        continue-on-error: true
+
+      - name: Format check result
+        if: steps.fmt.outcome == 'failure'
+        run: |
+          echo "## Format Check" >> $GITHUB_STEP_SUMMARY
+          echo "❌ Terraform formatting issues found" >> $GITHUB_STEP_SUMMARY
+          echo "Run: \`terraform fmt -recursive\`" >> $GITHUB_STEP_SUMMARY
+          exit 1
+
+      # ----------------------------------------
+      # Terraform validate
+      # ----------------------------------------
+      - name: Terraform Init
+        run: |
+          cd "${{ matrix.blueprint }}/environments/dev"
+          terraform init -backend=false
+
+      - name: Terraform Validate
+        id: validate
+        run: |
+          cd "${{ matrix.blueprint }}/environments/dev"
+          terraform validate
+        continue-on-error: true
+
+      - name: Validate check result
+        if: steps.validate.outcome == 'failure'
+        run: |
+          echo "## Validation Check" >> $GITHUB_STEP_SUMMARY
+          echo "❌ Terraform validation failed" >> $GITHUB_STEP_SUMMARY
+          exit 1
+
+      # ----------------------------------------
+      # TFLint
+      # ----------------------------------------
+      - name: TFLint
+        id: tflint
+        run: |
+          cd "${{ matrix.blueprint }}/environments/dev"
+          tflint --init
+          tflint --format=compact
+        continue-on-error: true
+
+      - name: TFLint result
+        run: |
+          echo "## TFLint" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.tflint.outcome }}" = "failure" ]; then
+            echo "⚠️ TFLint found issues (non-blocking)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ TFLint passed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      # ----------------------------------------
+      # Security scanning
+      # ----------------------------------------
+      - name: Trivy Security Scan
+        id: trivy
+        run: |
+          cd "${{ matrix.blueprint }}"
+          trivy config --severity HIGH,CRITICAL --exit-code 0 --format table .
+        continue-on-error: true
+
+      - name: Checkov Security Scan
+        id: checkov
+        run: |
+          cd "${{ matrix.blueprint }}"
+          checkov -d . --quiet --compact --skip-check CKV_AWS_18,CKV_AWS_19,CKV_AWS_21,CKV_AWS_145,CKV2_AWS_62 || true
+        continue-on-error: true
+
+      - name: Security scan result
+        run: |
+          echo "## Security Scan" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Security scan completed (review warnings in logs)" >> $GITHUB_STEP_SUMMARY
+
+      # ----------------------------------------
+      # README validation
+      # ----------------------------------------
+      - name: Check README
+        run: |
+          echo "## README Check" >> $GITHUB_STEP_SUMMARY
+          
+          README="${{ matrix.blueprint }}/README.md"
+          ERRORS=0
+          
+          for section in "Architecture" "Quick Start" "Estimated Costs" "Cleanup"; do
+            if grep -qi "^##.*$section" "$README"; then
+              echo "✅ Has '$section' section" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ Missing '$section' section" >> $GITHUB_STEP_SUMMARY
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+          
+          if grep -q '```mermaid' "$README"; then
+            echo "✅ Has Mermaid diagram" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Missing Mermaid diagram (recommended)" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ $ERRORS -gt 0 ]; then
+            echo "::error::README check failed"
+            exit 1
+          fi
+
+      # ----------------------------------------
+      # Summary
+      # ----------------------------------------
+      - name: Summary
+        if: always()
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "**Blueprint:** \`${{ matrix.blueprint }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Terraform Version:** ${{ env.TF_VERSION }}" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================
+  # ALL PASS: Final status
+  # ============================================
+  validation-status:
+    name: Validation Status
+    needs: [detect-changes, validate]
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check validation results
+        run: |
+          if [ "${{ needs.detect-changes.outputs.has_changes }}" = "false" ]; then
+            echo "No blueprint changes detected"
+            exit 0
+          fi
+          
+          if [ "${{ needs.validate.result }}" = "success" ]; then
+            echo "✅ All blueprint validations passed!"
+            exit 0
+          else
+            echo "❌ Some blueprint validations failed"
+            exit 1
+          fi

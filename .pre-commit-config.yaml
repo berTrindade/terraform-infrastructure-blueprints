@@ -1,0 +1,113 @@
+# .pre-commit-config.yaml
+# Maintainer pre-commit hooks for validating blueprints
+#
+# Installation:
+#   pip install pre-commit
+#   pre-commit install
+#
+# Manual run (all files):
+#   pre-commit run -a
+#
+# Run on specific blueprint:
+#   pre-commit run -a --files aws/example-sqs-worker-api/**/*
+
+repos:
+  # ============================================
+  # Terraform/OpenTofu validation
+  # ============================================
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.96.1
+    hooks:
+      # Format Terraform files
+      - id: terraform_fmt
+
+      # Validate Terraform configuration
+      - id: terraform_validate
+        args:
+          - --hook-config=--retry-once-with-cleanup=true
+
+      # Lint Terraform files for best practices
+      - id: terraform_tflint
+        args:
+          - --args=--only=terraform_deprecated_interpolation
+          - --args=--only=terraform_deprecated_index
+          - --args=--only=terraform_unused_declarations
+          - --args=--only=terraform_comment_syntax
+          - --args=--only=terraform_documented_outputs
+          - --args=--only=terraform_documented_variables
+          - --args=--only=terraform_typed_variables
+          - --args=--only=terraform_naming_convention
+          - --args=--only=terraform_required_version
+          - --args=--only=terraform_required_providers
+
+      # Security scanning with Trivy
+      - id: terraform_trivy
+        args:
+          - --args=--severity=HIGH,CRITICAL
+          - --args=--skip-dirs=.terraform
+
+      # Policy compliance with Checkov
+      - id: terraform_checkov
+        args:
+          - --args=--quiet
+          - --args=--compact
+          - --args=--skip-check=CKV_AWS_18    # S3 access logging (not always needed)
+          - --args=--skip-check=CKV_AWS_19    # S3 encryption (handled by default)
+          - --args=--skip-check=CKV_AWS_21    # S3 versioning (optional for some cases)
+          - --args=--skip-check=CKV_AWS_145   # KMS CMK (AWS managed is fine for blueprints)
+          - --args=--skip-check=CKV2_AWS_62   # EventBridge DLQ (optional)
+
+      # Auto-generate documentation
+      - id: terraform_docs
+        args:
+          - --hook-config=--path-to-file=README.md
+          - --hook-config=--add-to-existing-file=true
+          - --hook-config=--create-file-if-not-exist=false
+
+  # ============================================
+  # General file checks
+  # ============================================
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      # Trim trailing whitespace
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+
+      # Ensure files end with newline
+      - id: end-of-file-fixer
+
+      # Check YAML syntax
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+
+      # Check JSON syntax
+      - id: check-json
+
+      # Detect private keys (security)
+      - id: detect-private-key
+
+      # Check for merge conflicts
+      - id: check-merge-conflict
+
+      # Check for large files
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+
+  # ============================================
+  # Shell script validation
+  # ============================================
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        args: [--severity=warning]
+
+  # ============================================
+  # Markdown linting
+  # ============================================
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.41.0
+    hooks:
+      - id: markdownlint
+        args: [--disable, MD013, MD033, MD041, --]  # Allow long lines, HTML, first line not h1
