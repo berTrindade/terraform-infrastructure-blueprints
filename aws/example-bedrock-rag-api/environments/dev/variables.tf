@@ -92,3 +92,54 @@ variable "log_retention_days" {
   type    = number
   default = 14
 }
+
+# ============================================
+# API Routes Configuration
+# ============================================
+# Define your RAG API routes here - similar to serverless.yml
+
+variable "api_routes" {
+  description = "API route configuration - declarative like serverless.yml."
+  type = map(object({
+    method      = string
+    path        = string
+    description = optional(string, "")
+  }))
+
+  default = {
+    query = {
+      method      = "POST"
+      path        = "/query"
+      description = "Query knowledge base with RAG"
+    }
+    ingest = {
+      method      = "POST"
+      path        = "/ingest"
+      description = "Get pre-signed URL for document upload"
+    }
+    sources = {
+      method      = "GET"
+      path        = "/sources"
+      description = "List documents in knowledge base"
+    }
+    sync = {
+      method      = "POST"
+      path        = "/sync"
+      description = "Trigger knowledge base sync"
+    }
+  }
+
+  validation {
+    condition = alltrue([
+      for k, v in var.api_routes : contains(["GET", "POST", "PUT", "DELETE", "PATCH", "ANY"], v.method)
+    ])
+    error_message = "Route method must be one of: GET, POST, PUT, DELETE, PATCH, ANY."
+  }
+
+  validation {
+    condition = alltrue([
+      for k, v in var.api_routes : startswith(v.path, "/")
+    ])
+    error_message = "Route path must start with /."
+  }
+}

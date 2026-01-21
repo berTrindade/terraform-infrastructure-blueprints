@@ -80,21 +80,120 @@ resource "aws_opensearchserverless_access_policy" "kb_access" {
   depends_on = [module.knowledge]
 }
 
-module "api" {
-  source              = "../../modules/api"
-  api_name            = module.naming.api_gateway
-  cors_allow_origins  = var.cors_allow_origins
-  function_name       = module.naming.api_lambda
-  role_name           = module.naming.lambda_role
-  log_group_name      = module.naming.log_group_api
-  source_dir          = "${path.module}/../../src/api"
-  memory_size         = var.lambda_memory_size
-  timeout             = var.lambda_timeout
-  knowledge_base_id   = module.knowledge.knowledge_base_id
-  data_source_id      = module.knowledge.data_source_id
-  generation_model_id = var.generation_model_id
-  s3_bucket_name      = module.storage.bucket_name
-  s3_bucket_arn       = module.storage.bucket_arn
-  log_retention_days  = var.log_retention_days
-  tags                = module.tagging.tags
+# ============================================
+# API Layer: Lambda (Official Module)
+# ============================================
+# Routes are defined in var.api_routes - add new routes there!
+
+data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}
+data "aws_partition" "current" {}
+
+module "api_lambda" {
+  source  = "terraform-aws-modules/lambda/aws"
+  version = "~> 7.0"
+
+  function_name = module.naming.api_lambda
+  description   = "RAG query handler for Bedrock Knowledge Base"
+  handler       = "index.handler"
+  runtime       = "nodejs20.x"
+
+  source_path = "${path.module}/../../src/api"
+
+  memory_size = var.lambda_memory_size
+  timeout     = var.lambda_timeout
+
+  environment_variables = {
+    KNOWLEDGE_BASE_ID = module.knowledge.knowledge_base_id
+    MODEL_ID          = var.generation_model_id
+    S3_BUCKET         = module.storage.bucket_name
+    DATA_SOURCE_ID    = module.knowledge.data_source_id
+  }
+
+  # CloudWatch Logs
+  cloudwatch_logs_retention_in_days = var.log_retention_days
+
+  # IAM permissions for Bedrock and S3
+  attach_policy_statements = true
+  policy_statements = {
+    bedrock_retrieve = {
+      effect = "Allow"
+      actions = [
+        "bedrock:RetrieveAndGenerate",
+        "bedrock:Retrieve"
+      ]
+      resources = ["arn:${data.aws_partition.current.partition}:bedrock:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:knowledge-base/${module.knowledge.knowledge_base_id}"]
+    }
+    bedrock_invoke = {
+      effect    = "Allow"
+      actions   = ["bedrock:InvokeModel"]
+      resources = ["arn:${data.aws_partition.current.partition}:bedrock:${data.aws_region.current.name}::foundation-model/${var.generation_model_id}"]
+    }
+    bedrock_ingestion = {
+      effect = "Allow"
+      actions = [
+        "bedrock:StartIngestionJob",
+        "bedrock:GetIngestionJob",
+        "bedrock:ListIngestionJobs"
+      ]
+      resources = ["arn:${data.aws_partition.current.partition}:bedrock:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:knowledge-base/${module.knowledge.knowledge_base_id}"]
+    }
+    s3 = {
+      effect = "Allow"
+      actions = [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:ListBucket"
+      ]
+      resources = [
+        module.storage.bucket_arn,
+        "${module.storage.bucket_arn}/*"
+      ]
+    }
+  }
+
+  # API Gateway trigger
+  allowed_triggers = {
+    APIGateway = {
+      service    = "apigateway"
+      source_arn = "${module.api_gateway.api_execution_arn}/*/*"
+    }
+  }
+
+  tags = module.tagging.tags
+}
+
+# ============================================
+# API Gateway v2 (Official Module)
+# ============================================
+# Routes are dynamically generated from var.api_routes
+
+module "api_gateway" {
+  source  = "terraform-aws-modules/apigateway-v2/aws"
+  version = "~> 5.0"
+
+  name          = module.naming.api_gateway
+  description   = "RAG API for Bedrock Knowledge Base"
+  protocol_type = "HTTP"
+
+  cors_configuration = {
+    allow_origins = var.cors_allow_origins
+    allow_methods = ["GET", "POST", "OPTIONS"]
+    allow_headers = ["Content-Type", "Authorization"]
+    max_age       = 300
+  }
+
+  # Dynamic routes from var.api_routes - like serverless.yml!
+  create_routes_and_integrations = true
+  routes = {
+    for name, config in var.api_routes : "${config.method} ${config.path}" => {
+      integration = {
+        uri                    = module.api_lambda.lambda_function_arn
+        type                   = "AWS_PROXY"
+        payload_format_version = "2.0"
+      }
+    }
+  }
+
+  tags = module.tagging.tags
 }

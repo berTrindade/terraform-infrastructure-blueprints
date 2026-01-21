@@ -37,20 +37,110 @@ module "data" {
   tags                          = module.tagging.tags
 }
 
-module "api" {
-  source              = "../../modules/api"
-  api_name            = module.naming.api_gateway
-  cors_allow_origins  = var.cors_allow_origins
-  cognito_client_id   = module.auth.user_pool_client_id
-  cognito_issuer_url  = module.auth.issuer_url
-  function_name       = module.naming.api_lambda
-  role_name           = module.naming.lambda_role
-  log_group_name      = module.naming.log_group_api
-  source_dir          = "${path.module}/../../src/api"
-  memory_size         = var.lambda_memory_size
-  timeout             = var.lambda_timeout
-  dynamodb_table_name = module.data.table_name
-  dynamodb_table_arn  = module.data.table_arn
-  log_retention_days  = var.log_retention_days
-  tags                = module.tagging.tags
+# ============================================
+# API Layer: Lambda (Official Module)
+# ============================================
+# Routes are defined in var.api_routes - add new routes there!
+
+module "api_lambda" {
+  source  = "terraform-aws-modules/lambda/aws"
+  version = "~> 7.0"
+
+  function_name = module.naming.api_lambda
+  description   = "CRUD API handler with Cognito JWT authentication"
+  handler       = "index.handler"
+  runtime       = "nodejs20.x"
+
+  source_path = "${path.module}/../../src/api"
+
+  memory_size = var.lambda_memory_size
+  timeout     = var.lambda_timeout
+
+  environment_variables = {
+    DYNAMODB_TABLE = module.data.table_name
+  }
+
+  # CloudWatch Logs
+  cloudwatch_logs_retention_in_days = var.log_retention_days
+
+  # IAM permissions for DynamoDB
+  attach_policy_statements = true
+  policy_statements = {
+    dynamodb = {
+      effect = "Allow"
+      actions = [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:Query",
+        "dynamodb:Scan"
+      ]
+      resources = [
+        module.data.table_arn,
+        "${module.data.table_arn}/index/*"
+      ]
+    }
+  }
+
+  # API Gateway trigger
+  allowed_triggers = {
+    APIGateway = {
+      service    = "apigateway"
+      source_arn = "${module.api_gateway.api_execution_arn}/*/*"
+    }
+  }
+
+  tags = module.tagging.tags
+}
+
+# ============================================
+# API Gateway v2 with JWT Auth (Official Module)
+# ============================================
+# Routes are dynamically generated from var.api_routes
+# All routes require Cognito JWT authentication
+
+module "api_gateway" {
+  source  = "terraform-aws-modules/apigateway-v2/aws"
+  version = "~> 5.0"
+
+  name          = module.naming.api_gateway
+  description   = "REST API with Cognito JWT authentication"
+  protocol_type = "HTTP"
+
+  cors_configuration = {
+    allow_origins = var.cors_allow_origins
+    allow_methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    allow_headers = ["Content-Type", "Authorization", "X-Amz-Date", "X-Api-Key"]
+    max_age       = 300
+  }
+
+  # JWT Authorizer for Cognito
+  authorizers = {
+    cognito = {
+      authorizer_type  = "JWT"
+      identity_sources = ["$request.header.Authorization"]
+      name             = "cognito-jwt"
+      jwt_configuration = {
+        audience = [module.auth.user_pool_client_id]
+        issuer   = module.auth.issuer_url
+      }
+    }
+  }
+
+  # Dynamic routes from var.api_routes with JWT authorization
+  create_routes_and_integrations = true
+  routes = {
+    for name, config in var.api_routes : "${config.method} ${config.path}" => {
+      integration = {
+        uri                    = module.api_lambda.lambda_function_arn
+        type                   = "AWS_PROXY"
+        payload_format_version = "2.0"
+      }
+      authorization_type = "JWT"
+      authorizer_key     = "cognito"
+    }
+  }
+
+  tags = module.tagging.tags
 }

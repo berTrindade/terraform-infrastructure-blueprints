@@ -142,6 +142,39 @@ curl "$API_URL/items"
 | PUT | /items/{id} | Update item |
 | DELETE | /items/{id} | Delete item |
 
+## Adding New Routes
+
+Routes are defined declaratively in `variables.tf` - similar to Serverless Framework's `serverless.yml`:
+
+```hcl
+# environments/dev/variables.tf
+variable "api_routes" {
+  default = {
+    # Existing routes...
+    
+    # Add new routes here!
+    search_items = {
+      method      = "GET"
+      path        = "/items/search"
+      description = "Search items"
+    }
+    bulk_create = {
+      method      = "POST"
+      path        = "/items/bulk"
+      description = "Bulk create items"
+    }
+  }
+}
+```
+
+Then update the Lambda handler in `src/api/index.js` to handle the new routes.
+
+**Benefits of this pattern:**
+- Routes visible in Terraform config (not hidden in Lambda code)
+- Easy to see the full API surface at a glance
+- Validation catches invalid methods early
+- Follows terraform-aws-modules best practices
+
 ## Configuration
 
 ### Key Variables

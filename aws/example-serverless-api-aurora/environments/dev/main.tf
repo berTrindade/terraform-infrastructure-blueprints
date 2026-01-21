@@ -192,38 +192,96 @@ resource "random_password" "db_temp" {
 }
 
 # ============================================
-# API Layer: API Gateway + Lambda
+# API Layer: Lambda (Official Module)
 # ============================================
+# Routes are defined in var.api_routes - add new routes there!
 
-module "api" {
-  source = "../../modules/api"
+module "api_lambda" {
+  source  = "terraform-aws-modules/lambda/aws"
+  version = "~> 7.0"
 
-  # API Gateway
-  api_name           = module.naming.api_gateway
-  cors_allow_origins = var.cors_allow_origins
+  function_name = module.naming.api_lambda
+  description   = "CRUD API handler for Aurora Serverless v2"
+  handler       = "index.handler"
+  runtime       = "nodejs20.x"
 
-  # Lambda
-  function_name  = module.naming.api_lambda
-  role_name      = module.naming.lambda_role
-  log_group_name = module.naming.log_group_api
-  source_dir     = "${path.module}/../../src/api"
-  memory_size    = var.lambda_memory_size
-  timeout        = var.lambda_timeout
+  source_path = "${path.module}/../../src/api"
+
+  memory_size = var.lambda_memory_size
+  timeout     = var.lambda_timeout
 
   # VPC configuration
-  subnet_ids        = module.vpc.private_subnets
-  security_group_id = aws_security_group.lambda.id
+  vpc_subnet_ids         = module.vpc.private_subnets
+  vpc_security_group_ids = [aws_security_group.lambda.id]
 
-  # Database configuration
-  db_secret_arn = module.secrets.secret_arn
-  db_host       = module.data.db_host
-  db_port       = module.data.db_port
-  db_name       = var.db_name
+  environment_variables = {
+    DB_SECRET_ARN = module.secrets.secret_arn
+    DB_HOST       = module.data.db_host
+    DB_PORT       = tostring(module.data.db_port)
+    DB_NAME       = var.db_name
+  }
 
-  # Observability
-  log_retention_days = var.log_retention_days
+  # CloudWatch Logs
+  cloudwatch_logs_retention_in_days = var.log_retention_days
+
+  # IAM permissions
+  attach_policy_statements = true
+  policy_statements = {
+    secrets = {
+      effect    = "Allow"
+      actions   = ["secretsmanager:GetSecretValue"]
+      resources = [module.secrets.secret_arn]
+    }
+  }
+
+  # Attach VPC policy for ENI creation
+  attach_network_policy = true
+
+  # API Gateway trigger
+  allowed_triggers = {
+    APIGateway = {
+      service    = "apigateway"
+      source_arn = "${module.api_gateway.api_execution_arn}/*/*"
+    }
+  }
 
   tags = module.tagging.tags
 
   depends_on = [module.secrets, module.data]
+}
+
+# ============================================
+# API Gateway v2 (Official Module)
+# ============================================
+# Routes are dynamically generated from var.api_routes
+
+module "api_gateway" {
+  source  = "terraform-aws-modules/apigateway-v2/aws"
+  version = "~> 5.0"
+
+  name          = module.naming.api_gateway
+  description   = "Serverless API Gateway for Aurora"
+  protocol_type = "HTTP"
+
+  cors_configuration = {
+    allow_origins = var.cors_allow_origins
+    allow_methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    allow_headers = ["Content-Type", "Authorization", "X-Amz-Date", "X-Api-Key"]
+    max_age       = 300
+  }
+
+  # Dynamic routes from var.api_routes - like serverless.yml!
+  # Add new routes by updating the api_routes variable
+  create_routes_and_integrations = true
+  routes = {
+    for name, config in var.api_routes : "${config.method} ${config.path}" => {
+      integration = {
+        uri                    = module.api_lambda.lambda_function_arn
+        type                   = "AWS_PROXY"
+        payload_format_version = "2.0"
+      }
+    }
+  }
+
+  tags = module.tagging.tags
 }

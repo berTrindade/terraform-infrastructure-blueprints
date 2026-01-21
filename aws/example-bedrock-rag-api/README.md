@@ -94,6 +94,39 @@ curl -X POST "$API_URL/query" \
 | POST | /sync | Trigger knowledge base sync |
 | GET | /sources | List indexed documents |
 
+## Adding New Routes
+
+Routes are defined declaratively in `variables.tf` - similar to Serverless Framework's `serverless.yml`:
+
+```hcl
+# environments/dev/variables.tf
+variable "api_routes" {
+  default = {
+    # Existing routes...
+    
+    # Add new routes here!
+    summarize = {
+      method      = "POST"
+      path        = "/summarize"
+      description = "Summarize a document"
+    }
+    chat = {
+      method      = "POST"
+      path        = "/chat"
+      description = "Multi-turn conversation with RAG"
+    }
+  }
+}
+```
+
+Then update the Lambda handler in `src/api/index.js` to handle the new routes.
+
+**Benefits of this pattern:**
+- Routes visible in Terraform config (not hidden in Lambda code)
+- Easy to see the full API surface at a glance
+- Validation catches invalid methods early
+- Follows terraform-aws-modules best practices
+
 ### Query Request
 
 ```json

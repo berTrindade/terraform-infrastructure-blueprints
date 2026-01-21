@@ -2,17 +2,17 @@
 
 output "api_endpoint" {
   description = "Base URL of the API"
-  value       = module.api.api_endpoint
+  value       = module.api_gateway.api_endpoint
 }
 
 output "query_endpoint" {
   description = "POST endpoint for RAG queries"
-  value       = module.api.query_endpoint
+  value       = "${module.api_gateway.api_endpoint}/query"
 }
 
 output "ingest_endpoint" {
   description = "POST endpoint for document upload URLs"
-  value       = module.api.ingest_endpoint
+  value       = "${module.api_gateway.api_endpoint}/ingest"
 }
 
 output "knowledge_base_id" {
@@ -42,10 +42,10 @@ output "opensearch_dashboard" {
 
 output "lambda_function_name" {
   description = "Lambda function name"
-  value       = module.api.lambda_function_name
+  value       = module.api_lambda.lambda_function_name
 }
 
 output "lambda_log_group" {
   description = "CloudWatch log group"
-  value       = module.api.lambda_log_group
+  value       = module.api_lambda.cloudwatch_log_group_name
 }

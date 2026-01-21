@@ -88,6 +88,39 @@ All endpoints require `Authorization: Bearer <token>` header.
 | PUT | /items/{id} | Update item (if yours) |
 | DELETE | /items/{id} | Delete item (if yours) |
 
+## Adding New Routes
+
+Routes are defined declaratively in `variables.tf` - similar to Serverless Framework's `serverless.yml`. All routes automatically require JWT authentication:
+
+```hcl
+# environments/dev/variables.tf
+variable "api_routes" {
+  default = {
+    # Existing routes...
+    
+    # Add new routes here (all require JWT auth)!
+    search_items = {
+      method      = "GET"
+      path        = "/items/search"
+      description = "Search items (requires auth)"
+    }
+    get_profile = {
+      method      = "GET"
+      path        = "/profile"
+      description = "Get user profile (requires auth)"
+    }
+  }
+}
+```
+
+Then update the Lambda handler in `src/api/index.js` to handle the new routes.
+
+**Benefits of this pattern:**
+- Routes visible in Terraform config (not hidden in Lambda code)
+- All routes automatically protected with Cognito JWT
+- Easy to see the full API surface at a glance
+- Validation catches invalid methods early
+
 ## When to Use This Blueprint
 
 ### Decision Flowchart

@@ -7,12 +7,12 @@
 
 output "api_endpoint" {
   description = "Base URL of the API Gateway"
-  value       = module.api.api_endpoint
+  value       = module.api_gateway.api_endpoint
 }
 
 output "items_endpoint" {
   description = "Full URL for items endpoint"
-  value       = module.api.items_endpoint
+  value       = "${module.api_gateway.api_endpoint}/items"
 }
 
 # ============================================
@@ -21,12 +21,12 @@ output "items_endpoint" {
 
 output "lambda_function_name" {
   description = "Name of the Lambda function"
-  value       = module.api.lambda_function_name
+  value       = module.api_lambda.lambda_function_name
 }
 
 output "lambda_log_group" {
   description = "CloudWatch log group for Lambda"
-  value       = module.api.lambda_log_group
+  value       = module.api_lambda.cloudwatch_log_group_name
 }
 
 # ============================================
@@ -73,5 +73,5 @@ output "vpc_id" {
 
 output "private_subnet_ids" {
   description = "IDs of the private subnets"
-  value       = module.vpc.private_subnet_ids
+  value       = module.vpc.private_subnets
 }

@@ -276,6 +276,7 @@ module "api_lambda" {
 # ============================================
 # API Gateway (Official Module)
 # ============================================
+# Routes are dynamically generated from var.api_routes
 
 module "api_gateway" {
   source  = "terraform-aws-modules/apigateway-v2/aws"
@@ -292,37 +293,11 @@ module "api_gateway" {
     max_age       = 300
   }
 
+  # Dynamic routes from var.api_routes - like serverless.yml!
+  # Add new routes by updating the api_routes variable
   create_routes_and_integrations = true
   routes = {
-    "POST /items" = {
-      integration = {
-        uri                    = module.api_lambda.lambda_function_arn
-        type                   = "AWS_PROXY"
-        payload_format_version = "2.0"
-      }
-    }
-    "GET /items" = {
-      integration = {
-        uri                    = module.api_lambda.lambda_function_arn
-        type                   = "AWS_PROXY"
-        payload_format_version = "2.0"
-      }
-    }
-    "GET /items/{id}" = {
-      integration = {
-        uri                    = module.api_lambda.lambda_function_arn
-        type                   = "AWS_PROXY"
-        payload_format_version = "2.0"
-      }
-    }
-    "PUT /items/{id}" = {
-      integration = {
-        uri                    = module.api_lambda.lambda_function_arn
-        type                   = "AWS_PROXY"
-        payload_format_version = "2.0"
-      }
-    }
-    "DELETE /items/{id}" = {
+    for name, config in var.api_routes : "${config.method} ${config.path}" => {
       integration = {
         uri                    = module.api_lambda.lambda_function_arn
         type                   = "AWS_PROXY"
