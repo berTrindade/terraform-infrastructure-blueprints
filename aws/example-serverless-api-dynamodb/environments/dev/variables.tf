@@ -79,3 +79,60 @@ variable "log_retention_days" {
   type        = number
   default     = 14
 }
+
+# ============================================
+# API Routes Configuration
+# ============================================
+# Define your API routes here - similar to serverless.yml
+# Add new routes by adding entries to this map
+
+variable "api_routes" {
+  description = "API route configuration - declarative like serverless.yml. Add new routes here."
+  type = map(object({
+    method      = string
+    path        = string
+    description = optional(string, "")
+  }))
+
+  default = {
+    list_items = {
+      method      = "GET"
+      path        = "/items"
+      description = "List all items"
+    }
+    create_item = {
+      method      = "POST"
+      path        = "/items"
+      description = "Create a new item"
+    }
+    get_item = {
+      method      = "GET"
+      path        = "/items/{id}"
+      description = "Get item by ID"
+    }
+    update_item = {
+      method      = "PUT"
+      path        = "/items/{id}"
+      description = "Update item by ID"
+    }
+    delete_item = {
+      method      = "DELETE"
+      path        = "/items/{id}"
+      description = "Delete item by ID"
+    }
+  }
+
+  validation {
+    condition = alltrue([
+      for k, v in var.api_routes : contains(["GET", "POST", "PUT", "DELETE", "PATCH", "ANY"], v.method)
+    ])
+    error_message = "Route method must be one of: GET, POST, PUT, DELETE, PATCH, ANY."
+  }
+
+  validation {
+    condition = alltrue([
+      for k, v in var.api_routes : startswith(v.path, "/")
+    ])
+    error_message = "Route path must start with /."
+  }
+}

@@ -60,6 +60,46 @@ curl "$API_URL/items"
 | PUT | /items/{id} | Update item |
 | DELETE | /items/{id} | Delete item |
 
+## Adding New Routes
+
+Routes are defined declaratively in `variables.tf` - similar to Serverless Framework's `serverless.yml`:
+
+```hcl
+# environments/dev/variables.tf
+variable "api_routes" {
+  default = {
+    # Existing routes...
+    
+    # Add new routes here!
+    checkout = {
+      method      = "POST"
+      path        = "/orders/{id}/checkout"
+      description = "Process order checkout"
+    }
+    get_order = {
+      method      = "GET"
+      path        = "/orders/{id}"
+      description = "Get order by ID"
+    }
+  }
+}
+```
+
+Then update the Lambda handler in `src/api/index.js` to handle the new routes:
+
+```javascript
+// Add to the routing logic
+if (method === 'POST' && path.match(/^\/orders\/[^/]+\/checkout$/)) {
+  response = await processCheckout(pathParameters.id, body);
+}
+```
+
+**Benefits of this pattern:**
+- Routes visible in Terraform config (not hidden in Lambda code)
+- Easy to see the full API surface at a glance
+- Validation catches invalid methods early
+- Follows terraform-aws-modules best practices
+
 ## Directory Structure
 
 ```

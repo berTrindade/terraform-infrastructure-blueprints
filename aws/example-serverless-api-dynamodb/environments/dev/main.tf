@@ -103,6 +103,7 @@ module "api_lambda" {
 # ============================================
 # API Gateway v2 (Official Module)
 # ============================================
+# Routes are defined in var.api_routes - add new routes there!
 
 module "api_gateway" {
   source  = "terraform-aws-modules/apigateway-v2/aws"
@@ -119,10 +120,11 @@ module "api_gateway" {
     max_age       = 300
   }
 
-  # Lambda integration
+  # Dynamic routes from var.api_routes - like serverless.yml!
+  # Add new routes by updating the api_routes variable
   create_routes_and_integrations = true
   routes = {
-    "ANY /{proxy+}" = {
+    for name, config in var.api_routes : "${config.method} ${config.path}" => {
       integration = {
         uri                    = module.api_lambda.lambda_function_arn
         type                   = "AWS_PROXY"
