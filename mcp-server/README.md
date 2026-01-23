@@ -145,7 +145,14 @@ echo $(gh auth token) | docker login ghcr.io -u $(gh api user -q .login) --passw
 
 ### Docker is slow on first run
 
-The first run downloads the image (~200MB). Pre-pull it:
+The first time Cursor calls the MCP server, Docker downloads the image (~200MB), which can take 10-15 seconds.
+
+| | Without pre-pull | With pre-pull |
+|---|---|---|
+| **First MCP call** | ~10-15 seconds (downloads image) | Instant |
+| **Subsequent calls** | Instant (cached) | Instant |
+
+**Pre-pulling is optional** - Docker downloads it automatically on first use. But if you want instant response on your first query:
 
 ```bash
 docker pull ghcr.io/bertrindade/infra-mcp:latest
