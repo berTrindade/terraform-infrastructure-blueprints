@@ -91,7 +91,7 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
 
       - name: Cache Terraform providers
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ${{ matrix.blueprint }}/environments/dev/.terraform
@@ -104,7 +104,7 @@ jobs:
         uses: terraform-linters/setup-tflint@v4
 
       - name: Cache TFLint plugins
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.tflint.d
           key: tflint-${{ matrix.blueprint }}-${{ hashFiles(format('{0}/environments/dev/**/*.tf', matrix.blueprint)) }}
@@ -112,7 +112,7 @@ jobs:
             tflint-${{ matrix.blueprint }}-
 
       - name: Cache pip packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/pip
           key: pip-checkov-${{ hashFiles('**/requirements*.txt') }}
@@ -120,7 +120,7 @@ jobs:
             pip-checkov-
 
       - name: Cache apt packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /var/cache/apt
           key: apt-${{ runner.os }}-${{ hashFiles('**/.github/workflows/validate.yml') }}
