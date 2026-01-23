@@ -101,7 +101,7 @@ jobs:
             terraform-${{ matrix.blueprint }}-
 
       - name: Setup TFLint
-        uses: terraform-linters/setup-tflint@v4
+        uses: terraform-linters/setup-tflint@v6
 
       - name: Cache TFLint plugins
         uses: actions/cache@v4
