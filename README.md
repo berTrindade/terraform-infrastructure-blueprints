@@ -473,43 +473,31 @@ The MCP server makes your AI assistant automatically aware of these blueprints. 
 
 Distributed via GitHub Container Registry (same as youandustwo).
 
-#### Setup
+#### Quick Setup
 
-1. **Authenticate to GitHub Container Registry** (one-time, same as youandustwo):
-
+1. **Add `read:packages` scope** (one-time):
    ```bash
-   docker login ghcr.io
+   gh auth refresh -h github.com -s read:packages
    ```
 
-2. **Add to your AI tool config:**
+2. **Login to GitHub Container Registry** (one-time):
+   ```bash
+   echo $(gh auth token) | docker login ghcr.io -u $(gh api user -q .login) --password-stdin
+   ```
 
-   **Cursor** (`~/.cursor/mcp.json`):
+3. **Add to Cursor config** (`~/.cursor/mcp.json`):
    ```json
    {
      "mcpServers": {
        "ustwo-infra": {
          "command": "docker",
-         "args": ["run", "--rm", "-i", "ghcr.io/ustwo/infra-mcp:latest"]
+         "args": ["run", "--rm", "-i", "ghcr.io/bertrindade/infra-mcp:latest"]
        }
      }
    }
    ```
 
-   **Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
-   ```json
-   {
-     "mcpServers": {
-       "ustwo-infra": {
-         "command": "docker",
-         "args": ["run", "--rm", "-i", "ghcr.io/ustwo/infra-mcp:latest"]
-       }
-     }
-   }
-   ```
-
-3. **Restart your AI tool**
-
-4. **Start asking:**
+4. **Restart Cursor** and start asking:
    - "I need a serverless API with PostgreSQL"
    - "Add RDS to my existing project"
    - "What blueprints do we have for async processing?"
