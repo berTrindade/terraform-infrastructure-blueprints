@@ -502,6 +502,7 @@ Distributed via GitHub Container Registry (same as youandustwo).
    - "Add RDS to my existing project"
    - "What blueprints do we have for async processing?"
 
+**Updates:** The `:latest` tag automatically gets the newest version. Docker pulls updates automatically when Cursor restarts - no action needed.
 See [mcp-server/README.md](mcp-server/README.md) for full documentation.
 
 ## CI/CD Pipeline

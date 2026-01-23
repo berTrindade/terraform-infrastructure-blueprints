@@ -72,6 +72,16 @@ Just ask naturally:
 "Should I use Lambda or ECS for my Python API?"
 ```
 
+## Updates
+
+The MCP server uses the `:latest` tag, which automatically points to the newest version. **No action needed** - Docker will pull updates automatically when Cursor restarts or after a few hours.
+
+**To force an immediate update:**
+
+```bash
+docker pull ghcr.io/bertrindade/infra-mcp:latest
+# Then restart Cursor
+```
 ## Claude Desktop Setup
 
 Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
@@ -158,6 +168,7 @@ The first time Cursor calls the MCP server, Docker downloads the image (~200MB),
 docker pull ghcr.io/bertrindade/infra-mcp:latest
 ```
 
+**Note:** After updates are published, Docker will automatically pull the new version when Cursor restarts. No manual action needed.
 ---
 
 ## Alternative: Run from Source
