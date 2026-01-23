@@ -15,6 +15,7 @@
 - [Available Blueprints](#available-blueprints)
 - [Secrets Management](#secrets-management)
 - [Official Modules](#official-modules)
+- [Architecture Decision Records](#architecture-decision-records)
 - [Maintainer](#maintainer)
 
 ## Terraform Infrastructure Blueprints
@@ -22,7 +23,7 @@
 Opinionated, repeatable Infrastructure-as-Code blueprints for bootstrapping cloud foundations across GCP, AWS, and Azure.
 Each blueprint is a fully self-contained IaC package that includes everything needed to deploy that pattern: modules, configurations, and conventions all in one place.
 
-Consultants copy the example they need, adapt it, and hand over clean, client-owned infrastructure code.
+Consultants copy the example they need or extract patterns to add to existing projects, adapt it, and hand over clean, client-owned infrastructure code.
 No dependencies. No shared modules. No vendor lock-in.
 
 ## What is this?
@@ -42,11 +43,18 @@ Every blueprint folder contains:
 - Its own main Terraform configuration
 - Clear documentation for how to use it
 
-Copy any example and you have a working blueprint.
+Copy any example and you have a working blueprint. Or extract specific patterns to add capabilities to existing projects.
+
+### Two Ways to Use
+
+1. **Copy whole blueprint** → Start new projects from scratch
+2. **Extract patterns** → Add modules/patterns to existing Terraform projects
+
+See [ADR-0002](docs/adr/0002-expand-scope-pattern-extraction.md) for the rationale behind supporting both workflows.
 
 ## What it is not
 
-- Not a reusable Terraform module source
+- Not a shared module registry (blueprints remain self-contained, but patterns can be extracted)
 - Not tied to any ustwo system, pipeline, or secret
 - Not referencing other examples or shared folders
 - Not intended as a turnkey production platform
@@ -459,6 +467,55 @@ AI can reliably:
 
 All without risking vendor lock-in.
 
+### MCP Server (Recommended for ustwo developers)
+
+The MCP server makes your AI assistant automatically aware of these blueprints. Once configured, you can simply ask "I need a serverless API with PostgreSQL" and the AI knows about our blueprints.
+
+Distributed via GitHub Container Registry (same as youandustwo).
+
+#### Setup
+
+1. **Authenticate to GitHub Container Registry** (one-time, same as youandustwo):
+
+   ```bash
+   docker login ghcr.io
+   ```
+
+2. **Add to your AI tool config:**
+
+   **Cursor** (`~/.cursor/mcp.json`):
+   ```json
+   {
+     "mcpServers": {
+       "ustwo-infra": {
+         "command": "docker",
+         "args": ["run", "--rm", "-i", "ghcr.io/ustwo/infra-mcp:latest"]
+       }
+     }
+   }
+   ```
+
+   **Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+   ```json
+   {
+     "mcpServers": {
+       "ustwo-infra": {
+         "command": "docker",
+         "args": ["run", "--rm", "-i", "ghcr.io/ustwo/infra-mcp:latest"]
+       }
+     }
+   }
+   ```
+
+3. **Restart your AI tool**
+
+4. **Start asking:**
+   - "I need a serverless API with PostgreSQL"
+   - "Add RDS to my existing project"
+   - "What blueprints do we have for async processing?"
+
+See [mcp-server/README.md](mcp-server/README.md) for full documentation.
+
 ## CI/CD Pipeline
 
 For best practices, you can combine all checks (validation, linting, security scan) into a single workflow, and keep the release workflow separate:
@@ -780,6 +837,16 @@ This repository uses official [terraform-aws-modules](https://registry.terraform
 - [terraform-aws-modules GitHub](https://github.com/terraform-aws-modules)
 - [Terraform Registry](https://registry.terraform.io/namespaces/terraform-aws-modules)
 - [AWS Prescriptive Guidance](https://docs.aws.amazon.com/prescriptive-guidance/)
+
+## Architecture Decision Records
+
+We use [ADRs](docs/adr/README.md) to document significant architectural decisions. Key decisions include:
+
+| ADR | Title | Status |
+|-----|-------|--------|
+| [0001](docs/adr/0001-standalone-blueprints.md) | Standalone Self-Contained Blueprints | Approved |
+| [0002](docs/adr/0002-expand-scope-pattern-extraction.md) | Expand Scope to Support Pattern Extraction | Approved |
+| [0003](docs/adr/0003-mcp-server-ai-discovery.md) | MCP Server for AI-Assisted Blueprint Discovery | Approved |
 
 ## Maintainer
 
