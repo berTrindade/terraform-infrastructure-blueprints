@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { BLUEPRINTS, EXTRACTION_PATTERNS } from "../index.js";
 // Local copy for backwards compatibility with existing tests
 const BLUEPRINTS_LOCAL = [
     { name: "apigw-lambda-dynamodb", description: "Serverless REST API with DynamoDB", database: "DynamoDB", pattern: "Sync", useCase: "Simple CRUD, NoSQL, lowest cost" },
