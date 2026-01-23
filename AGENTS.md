@@ -262,7 +262,7 @@ module "vpc" {
 3. **Provide setup instructions**:
    ```bash
    # Download the blueprint
-   npx tiged ustwo/terraform-infrastructure-blueprints/aws/apigw-lambda-rds ./infra
+   npx tiged berTrindade/terraform-infrastructure-blueprints/aws/apigw-lambda-rds ./infra
    
    # Navigate and configure
    cd infra/environments/dev
@@ -297,7 +297,7 @@ module "vpc" {
 
 ```bash
 # Download a blueprint
-npx tiged ustwo/terraform-infrastructure-blueprints/aws/{blueprint-name} ./infra
+npx tiged berTrindade/terraform-infrastructure-blueprints/aws/{blueprint-name} ./infra
 
 # Initialize and deploy
 cd infra/environments/dev

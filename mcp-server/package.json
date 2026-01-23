@@ -27,7 +27,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ustwo/terraform-infrastructure-blueprints.git",
+    "url": "git+https://github.com/berTrindade/terraform-infrastructure-blueprints.git",
     "directory": "mcp-server"
   },
   "publishConfig": {

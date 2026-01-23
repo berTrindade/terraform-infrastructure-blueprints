@@ -170,7 +170,7 @@ async function getAgentsMdContent() {
     }
     // Try fetching from GitHub using gh CLI
     try {
-        const content = execSync('gh api repos/ustwo/terraform-infrastructure-blueprints/contents/AGENTS.md --jq ".content" | base64 -d', { encoding: "utf-8", timeout: 10000 });
+        const content = execSync('gh api repos/berTrindade/terraform-infrastructure-blueprints/contents/AGENTS.md --jq ".content" | base64 -d', { encoding: "utf-8", timeout: 10000 });
         return content;
     }
     catch {
@@ -192,7 +192,7 @@ ${blueprintTable}
 
 \`\`\`bash
 # Download a blueprint
-npx tiged ustwo/terraform-infrastructure-blueprints/aws/{blueprint-name} ./infra
+npx tiged berTrindade/terraform-infrastructure-blueprints/aws/{blueprint-name} ./infra
 
 # Deploy
 cd infra/environments/dev
@@ -275,7 +275,7 @@ ${blueprint.description}
 
 \`\`\`bash
 # Download this blueprint
-npx tiged ustwo/terraform-infrastructure-blueprints/aws/${blueprint.name} ./infra
+npx tiged berTrindade/terraform-infrastructure-blueprints/aws/${blueprint.name} ./infra
 
 # Deploy
 cd infra/environments/dev
@@ -357,7 +357,7 @@ server.tool("recommend_blueprint", "Get a blueprint recommendation based on requ
                 type: "text",
                 text: `**Recommended: ${top.name}**\n\n${top.description}\n\n` +
                     `- Database: ${top.database}\n- Pattern: ${top.pattern}\n- Use case: ${top.useCase}\n\n` +
-                    `\`\`\`bash\nnpx tiged ustwo/terraform-infrastructure-blueprints/aws/${top.name} ./infra\n\`\`\`\n\n` +
+                    `\`\`\`bash\nnpx tiged berTrindade/terraform-infrastructure-blueprints/aws/${top.name} ./infra\n\`\`\`\n\n` +
                     (recommendations.length > 1
                         ? `**Alternatives:**\n${recommendations
                             .slice(1, 4)
@@ -401,11 +401,11 @@ ${pattern.integrationSteps.map((step, i) => `${i + 1}. ${step}`).join("\n")}
 ## Reference
 
 View the full blueprint on GitHub for context:
-https://github.com/ustwo/terraform-infrastructure-blueprints/tree/main/aws/${pattern.blueprint}
+https://github.com/berTrindade/terraform-infrastructure-blueprints/tree/main/aws/${pattern.blueprint}
 
 Or clone the repo locally as a reference library:
 \`\`\`bash
-git clone git@github.com:ustwo/terraform-infrastructure-blueprints.git ~/ustwo-blueprints
+git clone git@github.com:berTrindade/terraform-infrastructure-blueprints.git ~/terraform-blueprints
 \`\`\`
 
 ## Important

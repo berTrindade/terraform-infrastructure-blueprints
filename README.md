@@ -385,17 +385,17 @@ Use [tiged](https://github.com/tiged/tiged) to download a specific blueprint wit
 
 ```bash
 # Download an AWS serverless API blueprint
-npx tiged ustwo/terraform-infrastructure-blueprints/aws/apigw-lambda-dynamodb my-api
+npx tiged berTrindade/terraform-infrastructure-blueprints/aws/apigw-lambda-dynamodb my-api
 
 # Download an AWS ECS Fargate blueprint
-npx tiged ustwo/terraform-infrastructure-blueprints/aws/alb-ecs-fargate my-ecs-app
+npx tiged berTrindade/terraform-infrastructure-blueprints/aws/alb-ecs-fargate my-ecs-app
 
 # Download an AWS EKS cluster blueprint
-npx tiged ustwo/terraform-infrastructure-blueprints/aws/eks-cluster my-eks-cluster
+npx tiged berTrindade/terraform-infrastructure-blueprints/aws/eks-cluster my-eks-cluster
 
 # GCP and Azure blueprints coming soon
-# npx tiged ustwo/terraform-infrastructure-blueprints/gcp/{blueprint} my-gcp-project
-# npx tiged ustwo/terraform-infrastructure-blueprints/azure/{blueprint} my-azure-project
+# npx tiged berTrindade/terraform-infrastructure-blueprints/gcp/{blueprint} my-gcp-project
+# npx tiged berTrindade/terraform-infrastructure-blueprints/azure/{blueprint} my-azure-project
 ```
 
 ### 3. Use AI Tools
