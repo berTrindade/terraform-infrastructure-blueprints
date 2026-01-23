@@ -184,50 +184,43 @@ server.resource("list", "blueprints://list", {
     };
 });
 // Register tools
-"search_blueprints",
-    "Search for blueprints matching a use case or requirement",
-    {
-        query: z.string().describe("Search query (e.g., 'serverless api postgres', 'async queue', 'kubernetes')"),
-    },
-    async ({ query }) => {
-        const searchQuery = (query || "").toLowerCase();
-        const results = BLUEPRINTS.filter((b) => b.name.toLowerCase().includes(searchQuery) ||
-            b.description.toLowerCase().includes(searchQuery) ||
-            b.database.toLowerCase().includes(searchQuery) ||
-            b.useCase.toLowerCase().includes(searchQuery) ||
-            b.pattern.toLowerCase().includes(searchQuery));
+server.tool("search_blueprints", "Search for blueprints matching a use case or requirement", {
+    query: z.string().describe("Search query (e.g., 'serverless api postgres', 'async queue', 'kubernetes')"),
+}, async ({ query }) => {
+    const searchQuery = (query || "").toLowerCase();
+    const results = BLUEPRINTS.filter((b) => b.name.toLowerCase().includes(searchQuery) ||
+        b.description.toLowerCase().includes(searchQuery) ||
+        b.database.toLowerCase().includes(searchQuery) ||
+        b.useCase.toLowerCase().includes(searchQuery) ||
+        b.pattern.toLowerCase().includes(searchQuery));
+    return {
+        content: [
+            {
+                type: "text",
+                text: results.length > 0
+                    ? `Found ${results.length} blueprint(s):\n\n${results
+                        .map((b) => `**${b.name}**\n${b.description}\n- Database: ${b.database}\n- Pattern: ${b.pattern}\n- Use case: ${b.useCase}`)
+                        .join("\n\n")}`
+                    : `No blueprints found matching "${query}". Try searching for: serverless, postgres, dynamodb, async, kubernetes, containers`,
+            },
+        ],
+    };
+});
+server.tool("get_blueprint_details", "Get detailed information about a specific blueprint", {
+    name: z.string().describe("Blueprint name (e.g., 'apigw-lambda-rds')"),
+}, async ({ name: blueprintName }) => {
+    const blueprint = BLUEPRINTS.find((b) => b.name === blueprintName);
+    if (!blueprint) {
         return {
             content: [
                 {
                     type: "text",
-                    text: results.length > 0
-                        ? `Found ${results.length} blueprint(s):\n\n${results
-                            .map((b) => `**${b.name}**\n${b.description}\n- Database: ${b.database}\n- Pattern: ${b.pattern}\n- Use case: ${b.useCase}`)
-                            .join("\n\n")}`
-                        : `No blueprints found matching "${query}". Try searching for: serverless, postgres, dynamodb, async, kubernetes, containers`,
+                    text: `Blueprint "${blueprintName}" not found. Available blueprints:\n${BLUEPRINTS.map((b) => `- ${b.name}`).join("\n")}`,
                 },
             ],
         };
-    };
-;
-"get_blueprint_details",
-    "Get detailed information about a specific blueprint",
-    {
-        name: z.string().describe("Blueprint name (e.g., 'apigw-lambda-rds')"),
-    },
-    async ({ name: blueprintName }) => {
-        const blueprint = BLUEPRINTS.find((b) => b.name === blueprintName);
-        if (!blueprint) {
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: `Blueprint "${blueprintName}" not found. Available blueprints:\n${BLUEPRINTS.map((b) => `- ${b.name}`).join("\n")}`,
-                    },
-                ],
-            };
-        }
-        const details = `# ${blueprint.name}
+    }
+    const details = `# ${blueprint.name}
 
 ${blueprint.description}
 
@@ -265,99 +258,91 @@ aws/${blueprint.name}/
 └── README.md
 \`\`\`
 `;
-        return {
-            content: [{ type: "text", text: details }],
-        };
+    return {
+        content: [{ type: "text", text: details }],
     };
-;
-"recommend_blueprint",
-    "Get a blueprint recommendation based on requirements",
-    {
-        database: z.string().optional().describe("Database type: dynamodb, postgresql, aurora, none"),
-        pattern: z.string().optional().describe("API pattern: sync, async"),
-        auth: z.boolean().optional().describe("Whether authentication is needed"),
-        containers: z.boolean().optional().describe("Whether containers (ECS/EKS) are needed"),
-    },
-    async ({ database, pattern, auth, containers }) => {
-        let recommendations = [...BLUEPRINTS];
-        // Filter by containers first
-        if (containers) {
-            recommendations = recommendations.filter((b) => b.name.includes("ecs") || b.name.includes("eks"));
+});
+server.tool("recommend_blueprint", "Get a blueprint recommendation based on requirements", {
+    database: z.string().optional().describe("Database type: dynamodb, postgresql, aurora, none"),
+    pattern: z.string().optional().describe("API pattern: sync, async"),
+    auth: z.boolean().optional().describe("Whether authentication is needed"),
+    containers: z.boolean().optional().describe("Whether containers (ECS/EKS) are needed"),
+}, async ({ database, pattern, auth, containers }) => {
+    let recommendations = [...BLUEPRINTS];
+    // Filter by containers first
+    if (containers) {
+        recommendations = recommendations.filter((b) => b.name.includes("ecs") || b.name.includes("eks"));
+    }
+    else if (containers === false) {
+        recommendations = recommendations.filter((b) => !b.name.includes("ecs") && !b.name.includes("eks"));
+    }
+    // Filter by database
+    if (database) {
+        const dbLower = database.toLowerCase();
+        if (dbLower === "none" || dbLower === "n/a") {
+            recommendations = recommendations.filter((b) => b.database === "N/A");
         }
-        else if (containers === false) {
-            recommendations = recommendations.filter((b) => !b.name.includes("ecs") && !b.name.includes("eks"));
+        else {
+            recommendations = recommendations.filter((b) => b.database.toLowerCase().includes(dbLower));
         }
-        // Filter by database
-        if (database) {
-            const dbLower = database.toLowerCase();
-            if (dbLower === "none" || dbLower === "n/a") {
-                recommendations = recommendations.filter((b) => b.database === "N/A");
-            }
-            else {
-                recommendations = recommendations.filter((b) => b.database.toLowerCase().includes(dbLower));
-            }
-        }
-        // Filter by pattern
-        if (pattern) {
-            recommendations = recommendations.filter((b) => b.pattern.toLowerCase().includes(pattern.toLowerCase()));
-        }
-        // Filter by auth
-        if (auth) {
-            recommendations = recommendations.filter((b) => b.name.includes("cognito") || b.name.includes("amplify"));
-        }
-        if (recommendations.length === 0) {
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: "No exact match found. Here are some suggestions:\n\n" +
-                            "- For serverless APIs: apigw-lambda-dynamodb or apigw-lambda-rds\n" +
-                            "- For async processing: apigw-sqs-lambda-dynamodb\n" +
-                            "- For containers: alb-ecs-fargate or eks-cluster\n" +
-                            "- For auth: apigw-lambda-dynamodb-cognito",
-                    },
-                ],
-            };
-        }
-        const top = recommendations[0];
+    }
+    // Filter by pattern
+    if (pattern) {
+        recommendations = recommendations.filter((b) => b.pattern.toLowerCase().includes(pattern.toLowerCase()));
+    }
+    // Filter by auth
+    if (auth) {
+        recommendations = recommendations.filter((b) => b.name.includes("cognito") || b.name.includes("amplify"));
+    }
+    if (recommendations.length === 0) {
         return {
             content: [
                 {
                     type: "text",
-                    text: `**Recommended: ${top.name}**\n\n${top.description}\n\n` +
-                        `- Database: ${top.database}\n- Pattern: ${top.pattern}\n- Use case: ${top.useCase}\n\n` +
-                        `\`\`\`bash\nnpx tiged berTrindade/terraform-infrastructure-blueprints/aws/${top.name} ./infra\n\`\`\`\n\n` +
-                        (recommendations.length > 1
-                            ? `**Alternatives:**\n${recommendations
-                                .slice(1, 4)
-                                .map((b) => `- ${b.name}: ${b.description}`)
-                                .join("\n")}`
-                            : ""),
+                    text: "No exact match found. Here are some suggestions:\n\n" +
+                        "- For serverless APIs: apigw-lambda-dynamodb or apigw-lambda-rds\n" +
+                        "- For async processing: apigw-sqs-lambda-dynamodb\n" +
+                        "- For containers: alb-ecs-fargate or eks-cluster\n" +
+                        "- For auth: apigw-lambda-dynamodb-cognito",
                 },
             ],
         };
+    }
+    const top = recommendations[0];
+    return {
+        content: [
+            {
+                type: "text",
+                text: `**Recommended: ${top.name}**\n\n${top.description}\n\n` +
+                    `- Database: ${top.database}\n- Pattern: ${top.pattern}\n- Use case: ${top.useCase}\n\n` +
+                    `\`\`\`bash\nnpx tiged berTrindade/terraform-infrastructure-blueprints/aws/${top.name} ./infra\n\`\`\`\n\n` +
+                    (recommendations.length > 1
+                        ? `**Alternatives:**\n${recommendations
+                            .slice(1, 4)
+                            .map((b) => `- ${b.name}: ${b.description}`)
+                            .join("\n")}`
+                        : ""),
+            },
+        ],
     };
-;
-"extract_pattern",
-    "Get guidance on extracting a specific pattern/capability from blueprints to add to an existing project",
-    {
-        capability: z.string().describe("Capability to extract: database, queue, auth, events, ai, notifications"),
-    },
-    async ({ capability }) => {
-        const capLower = (capability || "").toLowerCase();
-        const pattern = EXTRACTION_PATTERNS[capLower];
-        if (!pattern) {
-            const available = Object.keys(EXTRACTION_PATTERNS).join(", ");
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: `Unknown capability "${capability}". Available capabilities: ${available}`,
-                    },
-                ],
-            };
-        }
-        const output = `# Extract: ${capability}
+});
+server.tool("extract_pattern", "Get guidance on extracting a specific pattern/capability from blueprints to add to an existing project", {
+    capability: z.string().describe("Capability to extract: database, queue, auth, events, ai, notifications"),
+}, async ({ capability }) => {
+    const capLower = (capability || "").toLowerCase();
+    const pattern = EXTRACTION_PATTERNS[capLower];
+    if (!pattern) {
+        const available = Object.keys(EXTRACTION_PATTERNS).join(", ");
+        return {
+            content: [
+                {
+                    type: "text",
+                    text: `Unknown capability "${capability}". Available capabilities: ${available}`,
+                },
+            ],
+        };
+    }
+    const output = `# Extract: ${capability}
 
 **Source Blueprint:** \`${pattern.blueprint}\`
 
@@ -387,11 +372,10 @@ git clone git@github.com:berTrindade/terraform-infrastructure-blueprints.git ~/t
 - Update security groups to allow access from your existing resources
 - Follow your project's existing patterns for outputs and state management
 `;
-        return {
-            content: [{ type: "text", text: output }],
-        };
+    return {
+        content: [{ type: "text", text: output }],
     };
-;
+});
 // Start server
 async function main() {
     const transport = new StdioServerTransport();

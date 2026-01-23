@@ -211,6 +211,7 @@ server.resource(
 );
 
 // Register tools
+server.tool(
   "search_blueprints",
   "Search for blueprints matching a use case or requirement",
   {
@@ -242,6 +243,7 @@ server.resource(
   }
 );
 
+server.tool(
   "get_blueprint_details",
   "Get detailed information about a specific blueprint",
   {
@@ -306,6 +308,7 @@ aws/${blueprint.name}/
   }
 );
 
+server.tool(
   "recommend_blueprint",
   "Get a blueprint recommendation based on requirements",
   {
@@ -389,6 +392,7 @@ aws/${blueprint.name}/
   }
 );
 
+server.tool(
   "extract_pattern",
   "Get guidance on extracting a specific pattern/capability from blueprints to add to an existing project",
   {
@@ -446,7 +450,6 @@ git clone git@github.com:berTrindade/terraform-infrastructure-blueprints.git ~/t
     };
   }
 );
-
 
 // Start server
 async function main() {
