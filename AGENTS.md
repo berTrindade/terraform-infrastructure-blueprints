@@ -12,7 +12,7 @@ Opinionated, standalone Infrastructure-as-Code blueprints for AWS. Each blueprin
 
 ## Supported Scenarios
 
-This repository supports five core consultant scenarios. Understanding which scenario applies helps provide the right guidance.
+This repository supports two core consultant scenarios. Understanding which scenario applies helps provide the right guidance.
 
 ### Scenario 1: App Exists, Need Infrastructure
 
@@ -43,47 +43,6 @@ This repository supports five core consultant scenarios. Understanding which sce
 | Auth (Cognito) | `apigw-lambda-dynamodb-cognito` | `modules/auth/` |
 | Events (EventBridge) | `apigw-eventbridge-lambda` | `modules/events/` |
 | AI/RAG (Bedrock) | `apigw-lambda-bedrock-rag` | `modules/ai/`, `modules/vectorstore/` |
-
-### Scenario 3: Client Brief Only
-
-**User says**: "Starting a new project. Client needs: REST API, user auth, PostgreSQL for product data, async order processing."
-
-**AI should**:
-1. Parse requirements and map to blueprint features
-2. Use decision tree to recommend primary blueprint
-3. Identify if multiple blueprints need combining
-4. Provide tiged command and setup instructions
-5. Offer customization guidance
-
-### Scenario 4: Add AI Features
-
-**User says**: "Client wants to add document Q&A to their existing app. They have S3 for document storage."
-
-**AI should**:
-1. Recommend `apigw-lambda-bedrock-rag` as pattern source
-2. Extract Bedrock and OpenSearch modules
-3. Adapt to integrate with existing S3 and API infrastructure
-4. Provide IAM policies needed for Bedrock access
-
-### Scenario 5: Compare Options
-
-**User says**: "Should we use serverless Lambda or containers for the API? Client has a Python backend."
-
-**AI should**:
-1. Compare relevant blueprints side-by-side
-2. Explain trade-offs:
-
-| Aspect | Serverless (Lambda) | Containers (ECS Fargate) |
-|--------|---------------------|-------------------------|
-| **Cold starts** | Yes, can add latency | No, always warm |
-| **Cost model** | Pay per invocation | Pay for running tasks |
-| **Scaling** | Automatic, instant | Automatic, slower |
-| **Runtime control** | Limited to Lambda runtimes | Full control |
-| **Max duration** | 15 minutes | Unlimited |
-| **Best for** | Spiky traffic, low cost | Steady traffic, custom runtimes |
-
-3. Recommend based on specific requirements
-4. Provide blueprint for chosen approach
 
 ## Blueprint Catalog
 

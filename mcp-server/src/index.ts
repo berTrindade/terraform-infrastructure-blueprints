@@ -113,48 +113,6 @@ export const EXTRACTION_PATTERNS: Record<string, { blueprint: string; modules: s
   },
 };
 
-// Comparison data for architectural decisions
-export const COMPARISONS: Record<string, { optionA: any; optionB: any; factors: Array<{ factor: string; optionA: string; optionB: string }> }> = {
-  "serverless-vs-containers": {
-    optionA: { name: "Serverless (Lambda)", blueprints: ["apigw-lambda-dynamodb", "apigw-lambda-rds"] },
-    optionB: { name: "Containers (ECS Fargate)", blueprints: ["alb-ecs-fargate", "alb-ecs-fargate-rds"] },
-    factors: [
-      { factor: "Cold starts", optionA: "Yes, can add 100ms-few seconds latency", optionB: "No, containers always warm" },
-      { factor: "Cost model", optionA: "Pay per invocation (great for spiky traffic)", optionB: "Pay for running tasks (better for steady traffic)" },
-      { factor: "Scaling speed", optionA: "Instant, automatic", optionB: "Automatic but slower (minutes)" },
-      { factor: "Max duration", optionA: "15 minutes per invocation", optionB: "Unlimited" },
-      { factor: "Runtime control", optionA: "Limited to Lambda runtimes", optionB: "Full control, any runtime" },
-      { factor: "Complexity", optionA: "Simpler, less to manage", optionB: "More complex, but more flexible" },
-      { factor: "Best for", optionA: "APIs, event processing, cost-sensitive", optionB: "Long-running processes, custom runtimes" },
-    ],
-  },
-  "dynamodb-vs-rds": {
-    optionA: { name: "DynamoDB (NoSQL)", blueprints: ["apigw-lambda-dynamodb", "apigw-sqs-lambda-dynamodb"] },
-    optionB: { name: "RDS PostgreSQL (SQL)", blueprints: ["apigw-lambda-rds", "alb-ecs-fargate-rds"] },
-    factors: [
-      { factor: "Data model", optionA: "Key-value, document (denormalized)", optionB: "Relational (normalized)" },
-      { factor: "Query flexibility", optionA: "Limited to primary/secondary keys", optionB: "Full SQL, complex joins" },
-      { factor: "Scaling", optionA: "Automatic, unlimited", optionB: "Manual or Aurora Serverless" },
-      { factor: "Cost model", optionA: "Pay per request or provisioned capacity", optionB: "Pay for instance hours" },
-      { factor: "Transactions", optionA: "Limited transaction support", optionB: "Full ACID transactions" },
-      { factor: "Schema", optionA: "Schemaless, flexible", optionB: "Schema required, migrations needed" },
-      { factor: "Best for", optionA: "Simple access patterns, massive scale", optionB: "Complex queries, reporting, relational data" },
-    ],
-  },
-  "sync-vs-async": {
-    optionA: { name: "Sync API (request/response)", blueprints: ["apigw-lambda-dynamodb", "apigw-lambda-rds"] },
-    optionB: { name: "Async (queue-based)", blueprints: ["apigw-sqs-lambda-dynamodb", "apigw-eventbridge-lambda"] },
-    factors: [
-      { factor: "Response time", optionA: "Immediate response required", optionB: "Accepted response, processed later" },
-      { factor: "Reliability", optionA: "Fails if downstream fails", optionB: "Retries automatically, DLQ for failures" },
-      { factor: "Coupling", optionA: "Tightly coupled", optionB: "Loosely coupled, services independent" },
-      { factor: "Throughput", optionA: "Limited by slowest component", optionB: "Smooths traffic spikes" },
-      { factor: "Complexity", optionA: "Simpler to implement and debug", optionB: "More complex, eventual consistency" },
-      { factor: "Use cases", optionA: "User-facing APIs, real-time needs", optionB: "Background jobs, event processing" },
-      { factor: "Best for", optionA: "Simple CRUD, immediate feedback needed", optionB: "Heavy processing, multiple consumers" },
-    ],
-  },
-};
 
 // Try to fetch AGENTS.md content
 async function getAgentsMdContent(): Promise<string> {
@@ -253,7 +211,6 @@ server.resource(
 );
 
 // Register tools
-server.tool(
   "search_blueprints",
   "Search for blueprints matching a use case or requirement",
   {
@@ -285,7 +242,6 @@ server.tool(
   }
 );
 
-server.tool(
   "get_blueprint_details",
   "Get detailed information about a specific blueprint",
   {
@@ -350,7 +306,6 @@ aws/${blueprint.name}/
   }
 );
 
-server.tool(
   "recommend_blueprint",
   "Get a blueprint recommendation based on requirements",
   {
@@ -434,7 +389,6 @@ server.tool(
   }
 );
 
-server.tool(
   "extract_pattern",
   "Get guidance on extracting a specific pattern/capability from blueprints to add to an existing project",
   {
@@ -493,62 +447,6 @@ git clone git@github.com:berTrindade/terraform-infrastructure-blueprints.git ~/t
   }
 );
 
-server.tool(
-  "compare_blueprints",
-  "Compare two architectural approaches to help make a decision",
-  {
-    comparison: z.string().describe("Comparison type: serverless-vs-containers, dynamodb-vs-rds, sync-vs-async"),
-  },
-  async ({ comparison }) => {
-    const compLower = (comparison || "").toLowerCase();
-    const data = COMPARISONS[compLower];
-
-    if (!data) {
-      const available = Object.keys(COMPARISONS).join(", ");
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Unknown comparison "${comparison}". Available comparisons: ${available}`,
-          },
-        ],
-      };
-    }
-
-    const tableRows = data.factors
-      .map((f) => `| ${f.factor} | ${f.optionA} | ${f.optionB} |`)
-      .join("\n");
-
-    const output = `# Comparison: ${data.optionA.name} vs ${data.optionB.name}
-
-## Side-by-Side
-
-| Factor | ${data.optionA.name} | ${data.optionB.name} |
-|--------|${"-".repeat(data.optionA.name.length + 2)}|${"-".repeat(data.optionB.name.length + 2)}|
-${tableRows}
-
-## Relevant Blueprints
-
-**${data.optionA.name}:**
-${data.optionA.blueprints.map((b: string) => `- \`${b}\``).join("\n")}
-
-**${data.optionB.name}:**
-${data.optionB.blueprints.map((b: string) => `- \`${b}\``).join("\n")}
-
-## Decision Guide
-
-Choose **${data.optionA.name}** when:
-${data.factors.filter((_, i) => i < 3).map((f) => `- You need: ${f.optionA.split(",")[0]}`).join("\n")}
-
-Choose **${data.optionB.name}** when:
-${data.factors.filter((_, i) => i < 3).map((f) => `- You need: ${f.optionB.split(",")[0]}`).join("\n")}
-`;
-
-    return {
-      content: [{ type: "text", text: output }],
-    };
-  }
-);
 
 // Start server
 async function main() {
