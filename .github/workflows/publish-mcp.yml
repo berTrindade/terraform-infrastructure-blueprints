@@ -13,7 +13,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/infra-mcp
 
 jobs:
   test:
@@ -60,13 +59,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract version from tag
-        id: version
+      - name: Extract metadata
+        id: meta
         run: |
+          # Lowercase the image name (Docker requires lowercase)
+          IMAGE_NAME=$(echo "${{ github.repository_owner }}/infra-mcp" | tr '[:upper:]' '[:lower:]')
+          echo "image_name=$IMAGE_NAME" >> $GITHUB_OUTPUT
+          
+          # Extract version from tag or input
           if [ "${{ github.event.inputs.version }}" != "" ]; then
             echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
           elif [[ "${{ github.ref }}" == refs/tags/mcp-v* ]]; then
-            echo "version=${GITHUB_REF#refs/tags/mcp-v}" >> $GITHUB_OUTPUT
+            VERSION=${GITHUB_REF#refs/tags/mcp-v}
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
           else
             echo "version=latest" >> $GITHUB_OUTPUT
           fi
@@ -78,7 +83,7 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ steps.meta.outputs.image_name }}:${{ steps.meta.outputs.version }}
+            ${{ env.REGISTRY }}/${{ steps.meta.outputs.image_name }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
