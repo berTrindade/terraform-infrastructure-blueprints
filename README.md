@@ -1,5 +1,7 @@
 # Table of Contents
 
+- [Introduction](#terraform-infrastructure-blueprints)
+- [Features](#features)
 - [What is this?](#what-is-this)
 - [What it is not](#what-it-is-not)
 - [Repository layout](#repository-layout)
@@ -16,7 +18,9 @@
 - [Secrets Management](#secrets-management)
 - [Official Modules](#official-modules)
 - [Architecture Decision Records](#architecture-decision-records)
-- [Maintainer](#maintainer)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contact](#contact)
 
 ## Terraform Infrastructure Blueprints
 
@@ -25,6 +29,18 @@ Each blueprint is a fully self-contained IaC package that includes everything ne
 
 Consultants copy the example they need or extract patterns to add to existing projects, adapt it, and hand over clean, client-owned infrastructure code.
 No dependencies. No shared modules. No vendor lock-in.
+
+## Features
+
+- **Self-Contained Blueprints** - Each blueprint includes all modules, configurations, and documentation needed to deploy
+- **Multiple Cloud Providers** - AWS blueprints available now, with GCP and Azure coming soon
+- **Production-Ready Patterns** - Battle-tested infrastructure patterns for serverless, containers, and Kubernetes
+- **Zero Vendor Lock-in** - No dependencies on ustwo systems or shared modules - clients own everything
+- **AI-Optimized Structure** - Blueprints designed for easy AI-assisted code generation and adaptation
+- **Comprehensive Testing** - Native Terraform tests included in every blueprint
+- **Security Best Practices** - Ephemeral secrets, least-privilege IAM, and security scanning built-in
+- **Multiple Usage Patterns** - Copy entire blueprints or extract specific modules for existing projects
+- **Clear Documentation** - Every blueprint includes architecture diagrams, quick start guides, and cost estimates
 
 ## What is this?
 
@@ -837,6 +853,19 @@ We use [ADRs](docs/adr/README.md) to document significant architectural decision
 | [0002](docs/adr/0002-expand-scope-pattern-extraction.md) | Expand Scope to Support Pattern Extraction | Approved |
 | [0003](docs/adr/0003-mcp-server-ai-discovery.md) | MCP Server for AI-Assisted Blueprint Discovery | Approved |
 
-## Maintainer
+## Contributing
 
-Bernardo Trindade de Abreu (<bernardo.trindade-de-abreu@ustwo.com>)
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on how to submit pull requests, report issues, and suggest improvements.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
+## Contact
+
+For questions, suggestions, or support:
+
+- **Maintainer**: Bernardo Trindade de Abreu
+- **Email**: bernardo.trindade-de-abreu@ustwo.com
+- **GitHub Issues**: [Open an issue](https://github.com/berTrindade/terraform-infrastructure-blueprints/issues) for bug reports or feature requests
+- **Pull Requests**: [Submit a PR](https://github.com/berTrindade/terraform-infrastructure-blueprints/pulls) for contributions

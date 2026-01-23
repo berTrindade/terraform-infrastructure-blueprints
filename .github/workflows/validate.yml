@@ -56,8 +56,8 @@ jobs:
             CHANGED_FILES=$(git diff --name-only $BASE_SHA ${{ github.sha }})
           fi
           
-          # Extract unique blueprint paths
-          BLUEPRINTS=$(echo "$CHANGED_FILES" | grep -E '^(aws|gcp|azure)/example-' | cut -d'/' -f1,2 | sort -u | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          # Extract unique blueprint paths (handle both example-* and direct blueprint names)
+          BLUEPRINTS=$(echo "$CHANGED_FILES" | grep -E '^(aws|gcp|azure)/[^/]+/' | cut -d'/' -f1,2 | sort -u | jq -R -s -c 'split("\n") | map(select(length > 0))')
           
           echo "Changed blueprints: $BLUEPRINTS"
           echo "blueprints=$BLUEPRINTS" >> $GITHUB_OUTPUT
@@ -90,19 +90,55 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
+      - name: Cache Terraform providers
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ matrix.blueprint }}/environments/dev/.terraform
+            ${{ matrix.blueprint }}/environments/dev/.terraform.lock.hcl
+          key: terraform-${{ matrix.blueprint }}-${{ hashFiles(format('{0}/environments/dev/versions.tf', matrix.blueprint)) }}
+          restore-keys: |
+            terraform-${{ matrix.blueprint }}-
+
       - name: Setup TFLint
         uses: terraform-linters/setup-tflint@v4
 
+      - name: Cache TFLint plugins
+        uses: actions/cache@v4
+        with:
+          path: ~/.tflint.d
+          key: tflint-${{ matrix.blueprint }}-${{ hashFiles(format('{0}/environments/dev/**/*.tf', matrix.blueprint)) }}
+          restore-keys: |
+            tflint-${{ matrix.blueprint }}-
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-checkov-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            pip-checkov-
+
+      - name: Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt
+          key: apt-${{ runner.os }}-${{ hashFiles('**/.github/workflows/validate.yml') }}
+          restore-keys: |
+            apt-${{ runner.os }}-
+
       - name: Install Trivy
         run: |
-          sudo apt-get install wget apt-transport-https gnupg lsb-release -y
+          sudo apt-get update
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
           wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
           echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
           sudo apt-get update
-          sudo apt-get install trivy -y
+          sudo apt-get install -y trivy
 
       - name: Install Checkov
-        run: pip install checkov
+        run: |
+          pip install --cache-dir ~/.cache/pip checkov
 
       # ----------------------------------------
       # Structure validation
@@ -174,7 +210,7 @@ jobs:
       - name: Terraform Init
         run: |
           cd "${{ matrix.blueprint }}/environments/dev"
-          terraform init -backend=false
+          terraform init -backend=false -upgrade=false
 
       - name: Terraform Validate
         id: validate

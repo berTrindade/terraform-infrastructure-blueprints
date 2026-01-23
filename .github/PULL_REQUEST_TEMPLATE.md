@@ -23,10 +23,21 @@ Fixes #
 
 <!-- List the blueprints this PR modifies -->
 
-- [ ] `example-sqs-worker-api`
-- [ ] `example-serverless-api-*`
-- [ ] `example-ecs-*`
-- [ ] `example-eks-*`
+- [ ] `apigw-sqs-lambda-dynamodb`
+- [ ] `apigw-lambda-dynamodb`
+- [ ] `apigw-lambda-rds`
+- [ ] `apigw-lambda-aurora`
+- [ ] `apigw-lambda-dynamodb-cognito`
+- [ ] `apigw-lambda-rds-proxy`
+- [ ] `alb-ecs-fargate`
+- [ ] `alb-ecs-fargate-rds`
+- [ ] `eks-cluster`
+- [ ] `eks-argocd`
+- [ ] `apigw-eventbridge-lambda`
+- [ ] `apigw-sns-lambda`
+- [ ] `apigw-lambda-bedrock-rag`
+- [ ] `amplify-cognito-apigw-lambda`
+- [ ] Repository/CI infrastructure
 - [ ] Other: 
 
 ## Checklist

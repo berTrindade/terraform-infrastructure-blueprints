@@ -29,7 +29,7 @@ body:
     attributes:
       label: Suggested Name
       description: Proposed name for the blueprint
-      placeholder: "example-lambda-stepfunctions"
+      placeholder: "apigw-lambda-stepfunctions"
     validations:
       required: true
 
@@ -90,7 +90,7 @@ body:
     attributes:
       label: Similar Existing Blueprints
       description: Are there existing blueprints this is similar to?
-      placeholder: "Similar to example-sqs-worker-api but with Step Functions instead of SQS"
+      placeholder: "Similar to apigw-sqs-lambda-dynamodb but with Step Functions instead of SQS"
 
   - type: textarea
     id: references

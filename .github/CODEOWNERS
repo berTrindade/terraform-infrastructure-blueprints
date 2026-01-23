@@ -8,12 +8,16 @@
 /aws/ @berTrindade
 
 # High-impact infrastructure patterns
-/aws/example-eks-*/ @berTrindade
-/aws/example-ecs-*/ @berTrindade
-/aws/example-serverless-*/ @berTrindade
+/aws/eks-*/ @berTrindade
+/aws/alb-ecs-*/ @berTrindade
+/aws/apigw-*/ @berTrindade
 
 # CI/CD and repository configuration
 /.github/ @berTrindade
 
 # Documentation
 /*.md @berTrindade
+/docs/ @berTrindade
+
+# MCP server
+/mcp-server/ @berTrindade

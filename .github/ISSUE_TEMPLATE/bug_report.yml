@@ -17,20 +17,20 @@ body:
       label: Blueprint
       description: Which blueprint is affected?
       options:
-        - example-sqs-worker-api
-        - example-serverless-api-dynamodb
-        - example-serverless-api-rds
-        - example-serverless-api-aurora
-        - example-serverless-api-cognito
-        - example-serverless-api-rds-proxy
-        - example-ecs-fargate-api
-        - example-ecs-fargate-rds
-        - example-eks-cluster
-        - example-eks-argocd
-        - example-eventbridge-fanout-api
-        - example-sns-fanout-api
-        - example-bedrock-rag-api
-        - example-amplify-hosting-auth
+        - apigw-sqs-lambda-dynamodb
+        - apigw-lambda-dynamodb
+        - apigw-lambda-rds
+        - apigw-lambda-aurora
+        - apigw-lambda-dynamodb-cognito
+        - apigw-lambda-rds-proxy
+        - alb-ecs-fargate
+        - alb-ecs-fargate-rds
+        - eks-cluster
+        - eks-argocd
+        - apigw-eventbridge-lambda
+        - apigw-sns-lambda
+        - apigw-lambda-bedrock-rag
+        - amplify-cognito-apigw-lambda
         - Other (specify in description)
     validations:
       required: true

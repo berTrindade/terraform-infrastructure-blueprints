@@ -1,0 +1,86 @@
+# .gitignore - Terraform Infrastructure Blueprints
+# Root-level gitignore for the entire repository
+
+# Local .terraform directories
+**/.terraform/*
+
+# Lock file (uncomment if you want to commit it)
+# .terraform.lock.hcl
+
+# .tfstate files - NEVER commit state files
+*.tfstate
+*.tfstate.*
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Exclude all .tfvars files (may contain sensitive data)
+# Keep .tfvars.example files
+*.tfvars
+!*.tfvars.example
+*.tfvars.json
+
+# Ignore override files (local development)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# CLI configuration files
+.terraformrc
+terraform.rc
+
+# Environment variables and secrets
+.env
+.env.*
+secrets/
+*.secret
+*.pem
+*.key
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+*.code-workspace
+
+# Terraform plan output files
+*.tfplan
+*.tfplan.json
+tfplan
+tfplan.json
+
+# Lambda deployment packages
+*.zip
+
+# Node.js (for Lambda and scripts)
+node_modules/
+package-lock.json
+
+# Coverage and test output
+coverage/
+.nyc_output/
+
+# Build artifacts
+dist/
+build/
+*.log
+
+# Python (for scripts and tools)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
