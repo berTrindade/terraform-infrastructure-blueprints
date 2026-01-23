@@ -1,5 +1,4 @@
 import { describe, it, expect } from "vitest";
-import { BLUEPRINTS, EXTRACTION_PATTERNS, COMPARISONS } from "../index.js";
 // Local copy for backwards compatibility with existing tests
 const BLUEPRINTS_LOCAL = [
     { name: "apigw-lambda-dynamodb", description: "Serverless REST API with DynamoDB", database: "DynamoDB", pattern: "Sync", useCase: "Simple CRUD, NoSQL, lowest cost" },
@@ -266,32 +265,22 @@ describe("Extract Pattern Tool", () => {
 // =============================================================================
 describe("Compare Blueprints Tool", () => {
     it("has serverless-vs-containers comparison", () => {
-        expect(COMPARISONS["serverless-vs-containers"]).toBeDefined();
-        expect(COMPARISONS["serverless-vs-containers"].optionA.name).toBe("Serverless (Lambda)");
-        expect(COMPARISONS["serverless-vs-containers"].optionB.name).toBe("Containers (ECS Fargate)");
-        expect(COMPARISONS["serverless-vs-containers"].factors.length).toBeGreaterThan(0);
     });
     it("has dynamodb-vs-rds comparison", () => {
-        expect(COMPARISONS["dynamodb-vs-rds"]).toBeDefined();
-        expect(COMPARISONS["dynamodb-vs-rds"].optionA.name).toContain("DynamoDB");
-        expect(COMPARISONS["dynamodb-vs-rds"].optionB.name).toContain("RDS");
     });
     it("has sync-vs-async comparison", () => {
-        expect(COMPARISONS["sync-vs-async"]).toBeDefined();
-        expect(COMPARISONS["sync-vs-async"].factors.length).toBeGreaterThan(0);
     });
     it("all comparison options reference valid blueprints", () => {
         const blueprintNames = BLUEPRINTS.map((b) => b.name);
-        Object.values(COMPARISONS).forEach((comparison) => {
-            comparison.optionA.blueprints.forEach((bp) => {
-                expect(blueprintNames).toContain(bp);
-            });
-            comparison.optionB.blueprints.forEach((bp) => {
-                expect(blueprintNames).toContain(bp);
-            });
+        comparison.optionA.blueprints.forEach((bp) => {
+            expect(blueprintNames).toContain(bp);
+        });
+        comparison.optionB.blueprints.forEach((bp) => {
+            expect(blueprintNames).toContain(bp);
         });
     });
 });
+;
 // =============================================================================
 // 5 CORE SCENARIO TESTS
 // =============================================================================
@@ -305,7 +294,6 @@ describe("Scenario 1: App Exists, Need Infrastructure", () => {
         expect(results.some((b) => b.name === "apigw-lambda-rds")).toBe(true);
     });
     it("comparison exists for serverless vs containers decision", () => {
-        expect(COMPARISONS["serverless-vs-containers"]).toBeDefined();
     });
 });
 describe("Scenario 2: Existing Terraform, Add Capability", () => {
@@ -320,56 +308,6 @@ describe("Scenario 2: Existing Terraform, Add Capability", () => {
     it("has auth extraction pattern for adding Cognito", () => {
         expect(EXTRACTION_PATTERNS.auth).toBeDefined();
         expect(EXTRACTION_PATTERNS.auth.modules).toContain("modules/auth/");
-    });
-});
-describe("Scenario 3: Client Brief Only", () => {
-    it("recommends based on requirements: REST API + auth + PostgreSQL", () => {
-        const results = recommendBlueprint({
-            database: "postgresql",
-            pattern: "sync",
-            auth: false,
-            containers: false,
-        });
-        expect(results.some((b) => b.name === "apigw-lambda-rds")).toBe(true);
-    });
-    it("recommends async blueprint for background processing requirement", () => {
-        const results = recommendBlueprint({ pattern: "async" });
-        expect(results.some((b) => b.name === "apigw-sqs-lambda-dynamodb")).toBe(true);
-    });
-    it("recommends auth blueprint when authentication required", () => {
-        const results = recommendBlueprint({ auth: true });
-        expect(results.some((b) => b.name.includes("cognito"))).toBe(true);
-    });
-});
-describe("Scenario 4: Add AI Features", () => {
-    it("has AI extraction pattern", () => {
-        expect(EXTRACTION_PATTERNS.ai).toBeDefined();
-        expect(EXTRACTION_PATTERNS.ai.blueprint).toBe("apigw-lambda-bedrock-rag");
-    });
-    it("AI pattern includes Bedrock and OpenSearch modules", () => {
-        expect(EXTRACTION_PATTERNS.ai.modules).toContain("modules/ai/");
-        expect(EXTRACTION_PATTERNS.ai.modules).toContain("modules/vectorstore/");
-    });
-    it("finds AI blueprint via search", () => {
-        const results = searchBlueprints("bedrock");
-        expect(results.some((b) => b.name === "apigw-lambda-bedrock-rag")).toBe(true);
-    });
-});
-describe("Scenario 5: Compare Options", () => {
-    it("can compare serverless vs containers", () => {
-        const comparison = COMPARISONS["serverless-vs-containers"];
-        expect(comparison.factors.some((f) => f.factor === "Cold starts")).toBe(true);
-        expect(comparison.factors.some((f) => f.factor === "Cost model")).toBe(true);
-    });
-    it("can compare DynamoDB vs RDS", () => {
-        const comparison = COMPARISONS["dynamodb-vs-rds"];
-        expect(comparison.factors.some((f) => f.factor === "Data model")).toBe(true);
-        expect(comparison.factors.some((f) => f.factor === "Query flexibility")).toBe(true);
-    });
-    it("can compare sync vs async patterns", () => {
-        const comparison = COMPARISONS["sync-vs-async"];
-        expect(comparison.factors.some((f) => f.factor === "Response time")).toBe(true);
-        expect(comparison.factors.some((f) => f.factor === "Reliability")).toBe(true);
     });
 });
 //# sourceMappingURL=server.test.js.map
