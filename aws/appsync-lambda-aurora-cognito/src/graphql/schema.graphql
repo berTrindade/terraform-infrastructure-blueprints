@@ -1,0 +1,33 @@
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+type Query {
+  getUser(id: ID!): User @aws_cognito_user_pools
+  listUsers(limit: Int, nextToken: String): UserConnection @aws_cognito_user_pools
+}
+
+type Mutation {
+  createUser(input: UserInput!): User! @aws_cognito_user_pools
+  updateUser(id: ID!, input: UserInput!): User! @aws_cognito_user_pools
+  deleteUser(id: ID!): Boolean! @aws_cognito_user_pools
+}
+
+type User @aws_cognito_user_pools {
+  id: ID!
+  email: String!
+  name: String
+  createdAt: String!
+  updatedAt: String!
+}
+
+input UserInput @aws_cognito_user_pools {
+  email: String!
+  name: String
+}
+
+type UserConnection {
+  items: [User!]!
+  nextToken: String
+}

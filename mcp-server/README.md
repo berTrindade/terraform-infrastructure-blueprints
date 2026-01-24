@@ -56,7 +56,7 @@ Create or edit `~/.cursor/mcp.json`:
 
 Quit Cursor completely (Cmd+Q) and reopen it.
 
-### Step 5: Start using it!
+### Step 5: Start using it
 
 Just ask naturally:
 
@@ -82,6 +82,7 @@ The MCP server uses the `:latest` tag, which automatically points to the newest 
 docker pull ghcr.io/bertrindade/infra-mcp:latest
 # Then restart Cursor
 ```
+
 ## Claude Desktop Setup
 
 Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
@@ -101,30 +102,31 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 | Tool | Description | Example Use Case |
 |------|-------------|------------------|
-| `search_blueprints` | Search blueprints by keyword | "Find async processing blueprints" |
-| `get_blueprint_details` | Get full details of a blueprint | "Show me apigw-lambda-rds details" |
-| `recommend_blueprint` | Get recommendation based on requirements | "I need PostgreSQL with containers" |
-| `extract_pattern` | Get guidance on extracting a capability | "How do I add a queue to existing Terraform?" |
-| `compare_blueprints` | Compare architectural approaches | "Lambda vs ECS - which should I use?" |
+| `recommend_blueprint` | Get blueprint recommendation with full details based on requirements | "I need PostgreSQL with containers" |
+| `extract_pattern` | Get guidance on extracting a capability from blueprints to add to existing project | "How do I add a queue to existing Terraform?" |
 
 ## Example Prompts
 
 **Starting a new project:**
+
 ```
 "I have a React + Node app with PostgreSQL running locally. How do I deploy to AWS?"
 ```
 
 **Adding to existing infrastructure:**
+
 ```
 "I have existing Terraform with API Gateway and Lambda. I need to add SQS for background processing."
 ```
 
 **Making architectural decisions:**
+
 ```
 "Should I use serverless Lambda or containers for my Python data processing API?"
 ```
 
 **Adding AI capabilities:**
+
 ```
 "I have S3 for document storage. How do I add Bedrock RAG for document Q&A?"
 ```
@@ -168,7 +170,7 @@ The first time Cursor calls the MCP server, Docker downloads the image (~200MB),
 docker pull ghcr.io/bertrindade/infra-mcp:latest
 ```
 
-**Note:** After updates are published, Docker will automatically pull the new version when Cursor restarts. No manual action needed.
+**Note:** After updates are published, Docker will automatically pull the new version when Cursor restarts. No manual action needed
 ---
 
 ## Alternative: Run from Source
@@ -229,5 +231,6 @@ git push origin mcp-v1.0.1
 ```
 
 This creates:
+
 - `ghcr.io/bertrindade/infra-mcp:1.0.1`
 - `ghcr.io/bertrindade/infra-mcp:latest`

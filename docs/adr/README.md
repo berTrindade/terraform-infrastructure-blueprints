@@ -85,7 +85,8 @@ In most cases storing in the same repository as the code allows for easy access 
 
 | ADR | Title | Status | Date |
 |-----|-------|--------|------|
-| [0001](0001-standalone-blueprints.md) | Standalone Self-Contained Blueprints | Approved | 2025-01-06 |
+| [0001](0001-standalone-blueprints.md) | Standalone Self-Contained Blueprints | Approved | 2026-01-23 |
 | [0002](0002-expand-scope-pattern-extraction.md) | Expand Scope to Support Pattern Extraction | Approved | 2026-01-23 |
 | [0003](0003-mcp-server-ai-discovery.md) | MCP Server for AI-Assisted Blueprint Discovery | Approved | 2026-01-23 |
 | [0004](0004-supported-consultant-scenarios.md) | Supported Consultant Scenarios | Approved | 2026-01-23 |
+| [0005](0005-secrets-management-pattern.md) | Secrets Management Pattern | Approved | 2026-01-24 |

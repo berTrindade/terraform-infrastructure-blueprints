@@ -10,7 +10,6 @@
 - [Creating Additional Environments](#creating-additional-environments)
 - [Development Setup](#development-setup)
 - [Testing](#testing)
-- [How to use](#how-to-use)
 - [Ways to Use](#ways-to-use)
 - [AI accessibility](#ai-accessibility)
 - [CI/CD Pipeline](#cicd-pipeline)
@@ -24,7 +23,7 @@
 
 ## Terraform Infrastructure Blueprints
 
-Opinionated, repeatable Infrastructure-as-Code blueprints for bootstrapping cloud foundations across GCP, AWS, and Azure.
+Opinionated, repeatable Infrastructure-as-Code blueprints for bootstrapping cloud foundations across AWS, Azure, and GCP.
 Each blueprint is a fully self-contained IaC package that includes everything needed to deploy that pattern: modules, configurations, and conventions all in one place.
 
 Consultants copy the example they need or extract patterns to add to existing projects, adapt it, and hand over clean, client-owned infrastructure code.
@@ -33,7 +32,7 @@ No dependencies. No shared modules. No vendor lock-in.
 ## Features
 
 - **Self-Contained Blueprints** - Each blueprint includes all modules, configurations, and documentation needed to deploy
-- **Multiple Cloud Providers** - AWS blueprints available now, with GCP and Azure coming soon
+- **Multiple Cloud Providers** - AWS, Azure, and GCP blueprints available
 - **Production-Ready Patterns** - Battle-tested infrastructure patterns for serverless, containers, and Kubernetes
 - **Zero Vendor Lock-in** - No dependencies on ustwo systems or shared modules - clients own everything
 - **AI-Optimized Structure** - Blueprints designed for easy AI-assisted code generation and adaptation
@@ -47,8 +46,8 @@ No dependencies. No shared modules. No vendor lock-in.
 A library of complete, standalone IaC blueprints, organized by cloud provider:
 
 - **AWS** → Serverless, container, event-driven, AI/ML, and full-stack patterns
-- **GCP** → Coming soon
-- **Azure** → Coming soon
+- **Azure** → Serverless Functions with PostgreSQL
+- **GCP** → App Engine with Cloud SQL and Cloud Storage
 
 Every blueprint folder contains:
 
@@ -97,9 +96,11 @@ Everything is local, isolated, and modifiable.
     ...
   # ... more blueprints
 /gcp/
-  # Coming soon
+  gcp-appengine-cloudsql-strapi/
+    ...
 /azure/
-  # Coming soon
+  azure-functions-postgresql/
+    ...
 ```
 
 ### Key principles
@@ -382,8 +383,6 @@ Configure approval gates in GitHub:
 
 Then use the deploy workflow to promote between environments with manual approval.
 
-## How to use
-
 ## Ways to Use
 
 ### 1. Direct Copy
@@ -409,9 +408,11 @@ npx tiged berTrindade/terraform-infrastructure-blueprints/aws/alb-ecs-fargate my
 # Download an AWS EKS cluster blueprint
 npx tiged berTrindade/terraform-infrastructure-blueprints/aws/eks-cluster my-eks-cluster
 
-# GCP and Azure blueprints coming soon
-# npx tiged berTrindade/terraform-infrastructure-blueprints/gcp/{blueprint} my-gcp-project
-# npx tiged berTrindade/terraform-infrastructure-blueprints/azure/{blueprint} my-azure-project
+# Download a GCP blueprint
+npx tiged berTrindade/terraform-infrastructure-blueprints/gcp/gcp-appengine-cloudsql-strapi my-gcp-app
+
+# Download an Azure blueprint
+npx tiged berTrindade/terraform-infrastructure-blueprints/azure/azure-functions-postgresql my-azure-app
 ```
 
 ### 3. Use AI Tools
@@ -599,6 +600,18 @@ This manual update flow ensures you stay secure and benefit from improvements, w
 | `apigw-sns-lambda` | SNS fanout pattern | API Gateway, SNS, Lambda |
 | `apigw-lambda-bedrock-rag` | RAG API with Bedrock | API Gateway, Bedrock, OpenSearch |
 | `amplify-cognito-apigw-lambda` | Full-stack with auth | Amplify, Cognito, API Gateway, Lambda |
+
+### Azure Blueprints
+
+| Blueprint | Description | Key Services |
+|-----------|-------------|--------------|
+| `azure-functions-postgresql` | Serverless API with PostgreSQL | Azure Functions, PostgreSQL Flexible Server, Storage Account, Application Insights |
+
+### GCP Blueprints
+
+| Blueprint | Description | Key Services |
+|-----------|-------------|--------------|
+| `gcp-appengine-cloudsql-strapi` | Containerized app with Cloud SQL | App Engine, Cloud SQL PostgreSQL, Cloud Storage, VPC |
 
 ### Choosing the Right Blueprint
 
@@ -852,6 +865,8 @@ We use [ADRs](docs/adr/README.md) to document significant architectural decision
 | [0001](docs/adr/0001-standalone-blueprints.md) | Standalone Self-Contained Blueprints | Approved |
 | [0002](docs/adr/0002-expand-scope-pattern-extraction.md) | Expand Scope to Support Pattern Extraction | Approved |
 | [0003](docs/adr/0003-mcp-server-ai-discovery.md) | MCP Server for AI-Assisted Blueprint Discovery | Approved |
+| [0004](docs/adr/0004-supported-consultant-scenarios.md) | Supported Consultant Scenarios | Approved |
+| [0005](docs/adr/0005-secrets-management-pattern.md) | Secrets Management Pattern | Approved |
 
 ## Contributing
 

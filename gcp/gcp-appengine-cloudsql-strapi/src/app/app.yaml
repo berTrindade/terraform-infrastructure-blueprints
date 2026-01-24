@@ -1,0 +1,12 @@
+runtime: nodejs20
+
+env_variables:
+  NODE_ENV: production
+  DB_HOST: /cloudsql/PROJECT_ID:REGION:INSTANCE_NAME
+  DB_USER: DATABASE_USER
+  DB_PASSWORD: DATABASE_PASSWORD
+  DB_NAME: DATABASE_NAME
+  STORAGE_BUCKET: STORAGE_BUCKET_NAME
+
+vpc_access_connector:
+  name: projects/PROJECT_ID/locations/REGION/connectors/VPC_CONNECTOR_NAME
