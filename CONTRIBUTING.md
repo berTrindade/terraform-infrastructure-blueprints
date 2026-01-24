@@ -179,7 +179,7 @@ docs(readme): update quick start guide
 
 ### Running Tests
 
-Each blueprint includes Terraform tests (`.tftest.hcl`):
+Each blueprint includes Terraform tests (`.tftest.hcl`). See [Testing Guide](docs/guides/testing.md) for detailed instructions:
 
 ```bash
 cd aws/apigw-lambda-dynamodb/environments/dev
@@ -332,6 +332,13 @@ All blueprints are scanned for:
 - Vulnerabilities in dependencies
 
 Address HIGH and CRITICAL findings before merging.
+
+## Additional Guides
+
+- **[Deployment Guide](docs/guides/deployment.md)** - Detailed step-by-step deployment instructions
+- **[Environment Creation](docs/guides/environments.md)** - Creating staging and production environments
+- **[Testing Guide](docs/guides/testing.md)** - Running and writing Terraform tests
+- **[CI/CD Pipeline](docs/guides/cicd.md)** - Setting up CI/CD workflows
 
 ## Contact
 
