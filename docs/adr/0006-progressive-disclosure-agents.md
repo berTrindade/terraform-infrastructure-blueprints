@@ -1,6 +1,6 @@
 # Progressive Disclosure for AGENTS.md
 
-Date: 2026-01-24
+Date: 2026-01-26
 Owner: Bernardo Trindade de Abreu
 Status: Approved
 
