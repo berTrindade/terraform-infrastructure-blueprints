@@ -234,6 +234,26 @@ For significant architectural decisions:
 - Follow the ADR template (see [Architecture Decision Records](docs/adr/README.md))
 - Update the ADR index in the main README
 
+### Maintaining AGENTS.md
+
+The root `AGENTS.md` file uses progressive disclosure to minimize token consumption for AI assistants. See [ADR-0006](docs/adr/0006-progressive-disclosure-agents.md) for the rationale.
+
+**Rules for root `AGENTS.md`:**
+- Keep it minimal (~10-15 lines)
+- Include only: project description, key principle, consultancy model, and references to detailed docs
+- Do NOT add detailed content (blueprint catalogs, workflows, patterns, etc.)
+
+**Where to add new content:**
+- **Blueprint catalog updates** → `docs/blueprints/catalog.md`
+- **New workflows or scenarios** → `docs/blueprints/workflows.md`
+- **New patterns** → `docs/blueprints/patterns.md`
+- **Customization examples** → `docs/blueprints/customization.md`
+
+**Why this matters:**
+- AI assistants load `AGENTS.md` on every request
+- Detailed content should be in referenced files that are loaded only when needed
+- This reduces token consumption and improves response efficiency
+
 ## Pull Request Process
 
 ### PR Checklist

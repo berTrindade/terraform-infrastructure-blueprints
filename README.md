@@ -98,6 +98,7 @@ We use [ADRs](docs/adr/README.md) to document significant architectural decision
 | [0003](docs/adr/0003-mcp-server-ai-discovery.md) | MCP Server for AI-Assisted Blueprint Discovery | Approved |
 | [0004](docs/adr/0004-supported-consultant-scenarios.md) | Supported Consultant Scenarios | Approved |
 | [0005](docs/adr/0005-secrets-management-pattern.md) | Secrets Management Pattern | Approved |
+| [0006](docs/adr/0006-progressive-disclosure-agents.md) | Progressive Disclosure for AGENTS.md | Approved |
 
 ## Key Information
 
