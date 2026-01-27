@@ -417,7 +417,10 @@ async function discoverFilesInDirectory(dirPath, cloud, blueprintName, relativeP
         }
     }
     catch (error) {
-        // Silently skip directories we can't read
+        // Skip directories we can't read (expected for some file system operations)
+        if (error instanceof Error && !error.message.includes("ENOENT")) {
+            console.error(`Error discovering files in directory:`, error);
+        }
     }
 }
 // Get MIME type based on file extension
@@ -519,7 +522,7 @@ const server = new McpServer({
     version: "1.0.0",
 });
 // Register resources
-server.resource("catalog", "blueprints://catalog", {
+server.registerResource("catalog", "blueprints://catalog", {
     description: "Full AI context for infrastructure blueprints including decision trees and workflows",
     mimeType: "text/markdown",
 }, async () => {
@@ -528,7 +531,7 @@ server.resource("catalog", "blueprints://catalog", {
         contents: [{ uri: "blueprints://catalog", mimeType: "text/markdown", text: content }],
     };
 });
-server.resource("list", "blueprints://list", {
+server.registerResource("list", "blueprints://list", {
     description: "JSON list of all available blueprints with metadata",
     mimeType: "application/json",
 }, async () => {
@@ -553,7 +556,11 @@ async function registerModuleFiles(blueprintPath, cloud, blueprintName, moduleDi
         }
     }
     catch (error) {
-        // Silently skip if modules directory doesn't exist or can't be read
+        // Skip if modules directory doesn't exist or can't be read
+        // This is expected for blueprints without modules
+        if (error instanceof Error && !error.message.includes("ENOENT")) {
+            console.error(`Error reading modules directory for ${blueprintName}:`, error);
+        }
     }
 }
 // Recursively register files in a module directory
@@ -578,7 +585,7 @@ async function registerModuleDirectoryFiles(dirPath, cloud, blueprintName, relat
                 if (relevantExtensions.includes(ext)) {
                     const fileUri = `blueprints://${cloud}/${blueprintName}/${entryRelativePath}`;
                     const resourceName = `blueprint-${cloud}-${blueprintName}-${entryRelativePath.replace(/[^a-zA-Z0-9-]/g, "-")}`;
-                    server.resource(resourceName, fileUri, {
+                    server.registerResource(resourceName, fileUri, {
                         description: `${entryRelativePath} from ${blueprintName} blueprint`,
                         mimeType: getMimeType(entry),
                     }, async () => {
@@ -604,7 +611,10 @@ async function registerModuleDirectoryFiles(dirPath, cloud, blueprintName, relat
         }
     }
     catch (error) {
-        // Silently skip directories we can't read
+        // Skip directories we can't read (expected for some file system operations)
+        if (error instanceof Error && !error.message.includes("ENOENT")) {
+            console.error(`Error registering module directory files:`, error);
+        }
     }
 }
 // Register important blueprint file resources dynamically
@@ -628,7 +638,7 @@ async function registerImportantBlueprintResources() {
                     const readmePath = path.join(blueprintPath, "README.md");
                     if (fs.existsSync(readmePath)) {
                         const readmeUri = `blueprints://${cloud}/${blueprintName}/README.md`;
-                        server.resource(`blueprint-${cloud}-${blueprintName}-readme`.replace(/[^a-zA-Z0-9-]/g, "-"), readmeUri, {
+                        server.registerResource(`blueprint-${cloud}-${blueprintName}-readme`.replace(/[^a-zA-Z0-9-]/g, "-"), readmeUri, {
                             description: `README documentation for ${blueprintName} blueprint`,
                             mimeType: "text/markdown",
                         }, async () => {
@@ -654,7 +664,7 @@ async function registerImportantBlueprintResources() {
                     const mainTfPath = path.join(blueprintPath, "environments", "dev", "main.tf");
                     if (fs.existsSync(mainTfPath)) {
                         const mainTfUri = `blueprints://${cloud}/${blueprintName}/environments/dev/main.tf`;
-                        server.resource(`blueprint-${cloud}-${blueprintName}-main-tf`.replace(/[^a-zA-Z0-9-]/g, "-"), mainTfUri, {
+                        server.registerResource(`blueprint-${cloud}-${blueprintName}-main-tf`.replace(/[^a-zA-Z0-9-]/g, "-"), mainTfUri, {
                             description: `Main Terraform configuration for ${blueprintName} blueprint`,
                             mimeType: "text/x-hcl",
                         }, async () => {
@@ -681,6 +691,9 @@ async function registerImportantBlueprintResources() {
                 }
                 catch (error) {
                     // Skip blueprints we can't access
+                    if (error instanceof Error) {
+                        console.error(`Error registering blueprint ${blueprintName}:`, error.message);
+                    }
                     continue;
                 }
             }
@@ -692,12 +705,201 @@ async function registerImportantBlueprintResources() {
 }
 // Resources will be registered in main() before server starts
 // Register tools
-server.tool("recommend_blueprint", "Get a blueprint recommendation based on requirements", {
-    database: z.string().optional().describe("Database type: dynamodb, postgresql, aurora, none"),
-    pattern: z.string().optional().describe("API pattern: sync, async"),
-    auth: z.boolean().optional().describe("Whether authentication is needed"),
-    containers: z.boolean().optional().describe("Whether containers (ECS/EKS) are needed"),
-    cloud: z.string().optional().describe("Cloud provider: aws, azure, gcp"),
+server.registerTool("search_blueprints", {
+    description: "Search for blueprints matching a use case or requirement. Supports keyword matching with synonyms (e.g., 'database' matches 'postgresql', 'rds', 'dynamodb').",
+    inputSchema: {
+        query: z.string().describe("Search query (e.g., 'serverless api postgres', 'async queue', 'kubernetes')"),
+    },
+}, async ({ query }) => {
+    const queryLower = query.toLowerCase();
+    const queryWords = queryLower.split(/\s+/);
+    // Keyword synonyms mapping
+    const synonyms = {
+        "database": ["postgresql", "postgres", "rds", "dynamodb", "aurora", "mysql", "sql"],
+        "postgresql": ["postgres", "rds", "database", "sql"],
+        "postgres": ["postgresql", "rds", "database", "sql"],
+        "rds": ["postgresql", "postgres", "database", "sql"],
+        "dynamodb": ["dynamo", "database", "nosql"],
+        "queue": ["sqs", "async", "message"],
+        "async": ["queue", "sqs", "event", "background"],
+        "serverless": ["lambda", "function"],
+        "lambda": ["serverless", "function"],
+        "container": ["docker", "ecs", "fargate", "eks", "kubernetes"],
+        "kubernetes": ["k8s", "eks", "container"],
+        "auth": ["authentication", "cognito", "user"],
+        "api": ["rest", "graphql", "endpoint"],
+    };
+    // Expand query with synonyms
+    const expandedTerms = new Set();
+    queryWords.forEach(word => {
+        expandedTerms.add(word);
+        if (synonyms[word]) {
+            synonyms[word].forEach(syn => expandedTerms.add(syn));
+        }
+    });
+    // Score blueprints based on matches
+    const scored = BLUEPRINTS.map(blueprint => {
+        const searchableText = `${blueprint.name} ${blueprint.description} ${blueprint.database} ${blueprint.pattern} ${blueprint.useCase}`.toLowerCase();
+        let score = 0;
+        // Exact phrase match
+        if (searchableText.includes(queryLower)) {
+            score += 10;
+        }
+        // Individual word matches
+        queryWords.forEach(word => {
+            if (searchableText.includes(word)) {
+                score += 3;
+            }
+            // Synonym matches
+            if (synonyms[word]) {
+                synonyms[word].forEach(syn => {
+                    if (searchableText.includes(syn)) {
+                        score += 2;
+                    }
+                });
+            }
+        });
+        return { blueprint, score };
+    }).filter(item => item.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10);
+    if (scored.length === 0) {
+        return {
+            content: [{
+                    type: "text",
+                    text: `No blueprints found matching "${query}".\n\nTry searching for:\n- 'serverless postgresql' or 'lambda rds'\n- 'async queue' or 'sqs'\n- 'containers' or 'ecs'\n- 'auth' or 'cognito'\n\nOr use \`recommend_blueprint\` with specific requirements.`
+                }]
+        };
+    }
+    const results = scored.map(({ blueprint, score }) => {
+        const cloudProvider = getCloudProvider(blueprint.name) || "aws";
+        return `- **${blueprint.name}** (${cloudProvider.toUpperCase()}) - ${blueprint.description}\n  - Database: ${blueprint.database} | Pattern: ${blueprint.pattern} | Use Case: ${blueprint.useCase}`;
+    }).join("\n\n");
+    return {
+        content: [{
+                type: "text",
+                text: `# Search Results for "${query}"\n\nFound ${scored.length} matching blueprint(s):\n\n${results}\n\n## Next Steps\n\nUse \`get_blueprint_details(name: "${scored[0].blueprint.name}")\` to get detailed information about a specific blueprint.\n\nOr use \`fetch_blueprint_file(blueprint: "${scored[0].blueprint.name}", path: "README.md")\` to fetch specific blueprint files.`
+            }]
+    };
+});
+server.registerTool("get_blueprint_details", {
+    description: "Get detailed information about a specific blueprint including structure, modules, and quick start instructions.",
+    inputSchema: {
+        name: z.string().describe("Blueprint name (e.g., 'apigw-lambda-rds')"),
+    },
+}, async ({ name }) => {
+    const blueprint = BLUEPRINTS.find(b => b.name === name);
+    if (!blueprint) {
+        const available = BLUEPRINTS.map(b => b.name).join(", ");
+        return {
+            content: [{
+                    type: "text",
+                    text: `Blueprint "${name}" not found.\n\nAvailable blueprints:\n${available.split(", ").map(b => `- ${b}`).join("\n")}\n\nUse \`search_blueprints\` to find blueprints by use case.`
+                }]
+        };
+    }
+    const cloudProvider = getCloudProvider(blueprint.name) || "aws";
+    const cloudPath = cloudProvider === "aws" ? "aws" : cloudProvider;
+    const details = `# ${blueprint.name}
+
+${blueprint.description}
+
+## Details
+- **Database**: ${blueprint.database}
+- **Pattern**: ${blueprint.pattern}
+- **Use Case**: ${blueprint.useCase}
+- **Origin**: ${blueprint.origin || "TBD"}
+- **Cloud Provider**: ${cloudProvider.toUpperCase()}
+
+## Quick Start
+
+\`\`\`bash
+# Download this blueprint
+npx tiged berTrindade/terraform-infrastructure-blueprints/${cloudPath}/${blueprint.name} ./infra
+
+# Deploy
+cd infra/environments/dev
+terraform init
+terraform plan
+terraform apply
+\`\`\`
+
+## Structure
+
+\`\`\`
+${cloudPath}/${blueprint.name}/
+├── environments/
+│   └── dev/
+│       ├── main.tf
+│       ├── variables.tf
+│       ├── outputs.tf
+│       └── terraform.tfvars
+├── modules/
+├── src/
+├── tests/
+└── README.md
+\`\`\`
+
+## Access Blueprint Files
+
+Use MCP resources to access blueprint files:
+
+- **README**: \`blueprints://${cloudProvider}/${blueprint.name}/README.md\`
+- **Main Config**: \`blueprints://${cloudProvider}/${blueprint.name}/environments/dev/main.tf\`
+
+Or use \`fetch_blueprint_file(blueprint: "${blueprint.name}", path: "README.md")\` to fetch files directly.
+`;
+    return {
+        content: [{ type: "text", text: details }],
+    };
+});
+server.registerTool("fetch_blueprint_file", {
+    description: "Fetch a specific file from a blueprint. Returns the file content directly. Example: fetch_blueprint_file(blueprint: 'apigw-lambda-rds', path: 'modules/data/main.tf')",
+    inputSchema: {
+        blueprint: z.string().describe("Blueprint name (e.g., 'apigw-lambda-rds')"),
+        path: z.string().describe("File path relative to blueprint root (e.g., 'README.md', 'modules/data/main.tf', 'environments/dev/main.tf')"),
+    },
+}, async ({ blueprint, path }) => {
+    const blueprintData = BLUEPRINTS.find(b => b.name === blueprint);
+    if (!blueprintData) {
+        const available = BLUEPRINTS.map(b => b.name).join(", ");
+        return {
+            content: [{
+                    type: "text",
+                    text: `Blueprint "${blueprint}" not found.\n\nAvailable blueprints: ${available}`
+                }]
+        };
+    }
+    const cloudProvider = getCloudProvider(blueprint) || "aws";
+    const uri = `blueprints://${cloudProvider}/${blueprint}/${path}`;
+    try {
+        const { content, mimeType } = await readBlueprintFile(uri);
+        return {
+            content: [{
+                    type: "text",
+                    text: `# ${blueprint}/${path}\n\n\`\`\`${mimeType.includes("hcl") ? "hcl" : mimeType.includes("markdown") ? "markdown" : "text"}\n${content}\n\`\`\``
+                }]
+        };
+    }
+    catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return {
+            content: [{
+                    type: "text",
+                    text: `Error fetching file: ${errorMessage}\n\nMake sure the path is correct. Common paths:\n- README.md\n- environments/dev/main.tf\n- modules/data/main.tf\n- modules/vpc/main.tf`
+                }]
+        };
+    }
+});
+server.registerTool("recommend_blueprint", {
+    description: "Get a blueprint recommendation based on requirements. Example: recommend_blueprint(database: 'postgresql', pattern: 'sync', auth: false)",
+    inputSchema: {
+        database: z.string().optional().describe("Database type: dynamodb, postgresql, aurora, none"),
+        pattern: z.string().optional().describe("API pattern: sync, async"),
+        auth: z.boolean().optional().describe("Whether authentication is needed"),
+        containers: z.boolean().optional().describe("Whether containers (ECS/EKS) are needed"),
+        cloud: z.string().optional().describe("Cloud provider: aws, azure, gcp"),
+    },
 }, async ({ database, pattern, auth, containers, cloud }) => {
     let recommendations = [...BLUEPRINTS];
     // Filter by containers first
@@ -811,9 +1013,13 @@ ${cloudPath}/${top.name}/
         ],
     };
 });
-server.tool("extract_pattern", "Get guidance on extracting a specific pattern/capability from blueprints to add to an existing project", {
-    capability: z.string().describe("Capability to extract: database, queue, auth, events, ai, notifications"),
-}, async ({ capability }) => {
+server.registerTool("extract_pattern", {
+    description: "Get guidance on extracting a specific pattern/capability from blueprints to add to an existing project. Optionally include file contents. Example: extract_pattern(capability: 'database', include_files: true)",
+    inputSchema: {
+        capability: z.string().describe("Capability to extract: database, queue, auth, events, ai, notifications"),
+        include_files: z.boolean().optional().describe("If true, includes actual file contents from key modules (default: false)"),
+    },
+}, async ({ capability, include_files = false }) => {
     const capLower = (capability || "").toLowerCase();
     const pattern = EXTRACTION_PATTERNS[capLower];
     if (!pattern) {
@@ -835,6 +1041,35 @@ server.tool("extract_pattern", "Get guidance on extracting a specific pattern/ca
         const modulePath = m.endsWith("/") ? m : `${m}/`;
         return `blueprints://${cloudProvider}/${pattern.blueprint}/${modulePath}main.tf`;
     });
+    let fileContents = "";
+    if (include_files) {
+        try {
+            // Fetch key files
+            const filesToFetch = [
+                `blueprints://${cloudProvider}/${pattern.blueprint}/README.md`,
+                `blueprints://${cloudProvider}/${pattern.blueprint}/environments/dev/main.tf`,
+                ...moduleResourceUris,
+            ];
+            const contents = await Promise.all(filesToFetch.map(async (uri) => {
+                try {
+                    const { content } = await readBlueprintFile(uri);
+                    const fileName = uri.split("/").pop() || uri;
+                    return `### ${fileName}\n\n\`\`\`${fileName.endsWith(".tf") ? "hcl" : fileName.endsWith(".md") ? "markdown" : "text"}\n${content}\n\`\`\`\n`;
+                }
+                catch (error) {
+                    const fileName = uri.split("/").pop() || uri;
+                    if (error instanceof Error) {
+                        console.error(`Error fetching file ${fileName}:`, error.message);
+                    }
+                    return `### ${fileName}\n\n*File not found or could not be read*\n`;
+                }
+            }));
+            fileContents = `\n## File Contents\n\n${contents.join("\n")}`;
+        }
+        catch (error) {
+            fileContents = `\n## File Contents\n\n*Error fetching files: ${error instanceof Error ? error.message : String(error)}*\n`;
+        }
+    }
     const output = `# Extract: ${capability}
 
 **Source Blueprint:** \`${pattern.blueprint}\`
@@ -859,10 +1094,11 @@ ${pattern.integrationSteps.map((step, i) => `${i + 1}. ${step}`).join("\n")}
 
 ## How to Use
 
-1. **Fetch the blueprint files** using the MCP resource URIs above to see actual production-tested code
+1. **Fetch the blueprint files** using the MCP resource URIs above or use \`fetch_blueprint_file(blueprint: "${pattern.blueprint}", path: "...")\`
 2. **Review the examples** - these are battle-tested patterns from real projects
 3. **Copy and adapt** the modules to your existing Terraform project
 4. **Manual integration** - you'll integrate the code manually based on the examples
+${include_files ? "\n**Note**: File contents are included below. If you need more files, use `fetch_blueprint_file`." : "\n**Tip**: Set `include_files: true` to get file contents directly, or use `fetch_blueprint_file` for specific files."}
 
 ## Additional Reference
 
@@ -875,14 +1111,74 @@ https://github.com/berTrindade/terraform-infrastructure-blueprints/tree/main/${c
 - Update security groups to allow access from your existing resources
 - Follow your project's existing patterns for outputs and state management
 - These are **reference examples** - you'll integrate them manually into your project
+${fileContents}`;
+    return {
+        content: [{ type: "text", text: output }],
+    };
+});
+server.registerTool("compare_blueprints", {
+    description: "Compare two architectural approaches to help make a decision. Example: compare_blueprints(comparison: 'serverless-vs-containers')",
+    inputSchema: {
+        comparison: z.string().describe("Comparison type: serverless-vs-containers, dynamodb-vs-rds, sync-vs-async"),
+    },
+}, async ({ comparison }) => {
+    const compLower = comparison.toLowerCase();
+    const comp = COMPARISONS[compLower];
+    if (!comp) {
+        const available = Object.keys(COMPARISONS).join(", ");
+        return {
+            content: [{
+                    type: "text",
+                    text: `Unknown comparison "${comparison}". Available comparisons: ${available}`
+                }]
+        };
+    }
+    const optionABlueprints = comp.optionA.blueprints.map(name => {
+        const bp = BLUEPRINTS.find(b => b.name === name);
+        return bp ? `- **${name}**: ${bp.description}` : `- ${name}`;
+    }).join("\n");
+    const optionBBlueprints = comp.optionB.blueprints.map(name => {
+        const bp = BLUEPRINTS.find(b => b.name === name);
+        return bp ? `- **${name}**: ${bp.description}` : `- ${name}`;
+    }).join("\n");
+    const factorsTable = comp.factors.map(f => {
+        const optionAVal = f.optionA || "N/A";
+        const optionBVal = f.optionB || "N/A";
+        const desc = f.description ? ` - ${f.description}` : "";
+        return `| ${f.factor} | ${optionAVal} | ${optionBVal} |${desc}|`;
+    }).join("\n");
+    const output = `# ${comp.optionA.name} vs ${comp.optionB.name}
+
+## ${comp.optionA.name}
+
+**Blueprints:**
+${optionABlueprints}
+
+## ${comp.optionB.name}
+
+**Blueprints:**
+${optionBBlueprints}
+
+## Comparison Factors
+
+| Factor | ${comp.optionA.name} | ${comp.optionB.name} | Notes |
+|--------|---------------------|---------------------|-------|
+${factorsTable}
+
+## Recommendation
+
+Use \`recommend_blueprint\` with your specific requirements to get a tailored recommendation, or use \`search_blueprints\` to find blueprints matching your use case.
 `;
     return {
         content: [{ type: "text", text: output }],
     };
 });
-server.tool("find_by_project", "Find blueprint used by a specific project and optionally get cross-cloud equivalents", {
-    project_name: z.string().describe("Project name (e.g., 'Mavie', 'HM Impuls', 'SuprDOG')"),
-    target_cloud: z.string().optional().describe("Target cloud provider for equivalent: aws, azure, gcp"),
+server.registerTool("find_by_project", {
+    description: "Find blueprint used by a specific project and optionally get cross-cloud equivalents. Example: find_by_project(project_name: 'Mavie', target_cloud: 'aws')",
+    inputSchema: {
+        project_name: z.string().describe("Project name (e.g., 'Mavie', 'HM Impuls', 'SuprDOG')"),
+        target_cloud: z.string().optional().describe("Target cloud provider for equivalent: aws, azure, gcp"),
+    },
 }, async ({ project_name, target_cloud }) => {
     const projectLower = project_name.toLowerCase();
     const projectMatch = Object.entries(PROJECT_BLUEPRINTS).find(([key]) => key.toLowerCase().includes(projectLower) || projectLower.includes(key.toLowerCase()));
