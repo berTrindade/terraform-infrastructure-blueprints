@@ -55,12 +55,7 @@ module "vpc" {
     "kubernetes.io/cluster/${module.naming.cluster}" = "shared"
   }
 
-  # VPC Flow Logs
-  enable_flow_log                      = true
-  flow_log_destination_type            = "cloud-watch-logs"
-  flow_log_cloudwatch_log_group_name   = "/aws/vpc/${module.naming.vpc}/flow-logs"
-  flow_log_cloudwatch_log_group_retention_in_days = 7
-  flow_log_cloudwatch_iam_role_arn     = aws_iam_role.vpc_flow_logs.arn
+  # VPC Flow Logs - Created separately below to use custom IAM role
 
   tags = module.tagging.tags
 }
@@ -105,6 +100,24 @@ resource "aws_iam_role_policy" "vpc_flow_logs" {
 
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
+
+# CloudWatch Log Group for VPC Flow Logs
+resource "aws_cloudwatch_log_group" "vpc_flow_logs" {
+  name              = "/aws/vpc/${module.naming.vpc}/flow-logs"
+  retention_in_days = 7
+
+  tags = module.tagging.tags
+}
+
+# VPC Flow Log
+resource "aws_flow_log" "vpc_flow_logs" {
+  iam_role_arn    = aws_iam_role.vpc_flow_logs.arn
+  log_destination = aws_cloudwatch_log_group.vpc_flow_logs.arn
+  traffic_type    = "ALL"
+  vpc_id          = module.vpc.vpc_id
+
+  tags = module.tagging.tags
+}
 
 # ============================================
 # EKS Cluster (Official Module)
