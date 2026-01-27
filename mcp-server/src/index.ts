@@ -7,6 +7,11 @@ import { execSync } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
+import { promisify } from "util";
+
+const readdir = promisify(fs.readdir);
+const stat = promisify(fs.stat);
+const readFile = promisify(fs.readFile);
 
 // ESM __dirname equivalent
 const __filename = fileURLToPath(import.meta.url);
@@ -249,6 +254,166 @@ function getCloudProvider(blueprintName: string): "aws" | "azure" | "gcp" | null
   return null;
 }
 
+// Get the workspace root directory
+function getWorkspaceRoot(): string {
+  // Try multiple paths to find workspace root
+  const possiblePaths = [
+    path.join(__dirname, "../.."),
+    path.join(__dirname, "../../.."),
+    process.cwd(),
+  ];
+
+  for (const possiblePath of possiblePaths) {
+    const awsPath = path.join(possiblePath, "aws");
+    const azurePath = path.join(possiblePath, "azure");
+    const gcpPath = path.join(possiblePath, "gcp");
+    if (fs.existsSync(awsPath) && fs.existsSync(azurePath) && fs.existsSync(gcpPath)) {
+      return possiblePath;
+    }
+  }
+
+  // Fallback to __dirname/../..
+  return path.join(__dirname, "../..");
+}
+
+// Discover all blueprint files and return resource URIs
+async function discoverBlueprintResources(): Promise<Array<{ uri: string; name: string; description: string; mimeType: string }>> {
+  const resources: Array<{ uri: string; name: string; description: string; mimeType: string }> = [];
+  const workspaceRoot = getWorkspaceRoot();
+  const clouds = ["aws", "azure", "gcp"];
+
+  for (const cloud of clouds) {
+    const cloudPath = path.join(workspaceRoot, cloud);
+    if (!fs.existsSync(cloudPath)) continue;
+
+    try {
+      const blueprintDirs = await readdir(cloudPath);
+      
+      for (const blueprintName of blueprintDirs) {
+        const blueprintPath = path.join(cloudPath, blueprintName);
+        const blueprintStat = await stat(blueprintPath);
+        
+        if (!blueprintStat.isDirectory()) continue;
+
+        // Add README.md resource
+        const readmePath = path.join(blueprintPath, "README.md");
+        if (fs.existsSync(readmePath)) {
+          resources.push({
+            uri: `blueprints://${cloud}/${blueprintName}/README.md`,
+            name: `${blueprintName} - README`,
+            description: `Documentation for ${blueprintName} blueprint`,
+            mimeType: "text/markdown",
+          });
+        }
+
+        // Recursively discover files in blueprint directory
+        await discoverFilesInDirectory(
+          blueprintPath,
+          cloud,
+          blueprintName,
+          "",
+          resources
+        );
+      }
+    } catch (error) {
+      console.error(`Error scanning ${cloud} directory:`, error);
+    }
+  }
+
+  return resources;
+}
+
+// Recursively discover files in a directory
+async function discoverFilesInDirectory(
+  dirPath: string,
+  cloud: string,
+  blueprintName: string,
+  relativePath: string,
+  resources: Array<{ uri: string; name: string; description: string; mimeType: string }>
+): Promise<void> {
+  try {
+    const entries = await readdir(dirPath);
+    
+    for (const entry of entries) {
+      const fullPath = path.join(dirPath, entry);
+      const entryStat = await stat(fullPath);
+      const entryRelativePath = relativePath ? `${relativePath}/${entry}` : entry;
+
+      if (entryStat.isDirectory()) {
+        // Skip node_modules, .git, and other hidden/system directories
+        if (entry.startsWith(".") && entry !== "." && entry !== "..") {
+          continue;
+        }
+        await discoverFilesInDirectory(fullPath, cloud, blueprintName, entryRelativePath, resources);
+      } else if (entryStat.isFile()) {
+        // Only include relevant file types
+        const ext = path.extname(entry);
+        const relevantExtensions = [".tf", ".md", ".json", ".sh", ".sql", ".yaml", ".yml", ".js", ".ts", ".graphql", ".hcl"];
+        
+        if (relevantExtensions.includes(ext) || entry === "Dockerfile" || entry.endsWith(".example")) {
+          const mimeType = getMimeType(entry);
+          resources.push({
+            uri: `blueprints://${cloud}/${blueprintName}/${entryRelativePath}`,
+            name: `${blueprintName} - ${entryRelativePath}`,
+            description: `${entryRelativePath} from ${blueprintName} blueprint`,
+            mimeType,
+          });
+        }
+      }
+    }
+  } catch (error) {
+    // Silently skip directories we can't read
+  }
+}
+
+// Get MIME type based on file extension
+function getMimeType(filename: string): string {
+  const ext = path.extname(filename).toLowerCase();
+  const mimeTypes: Record<string, string> = {
+    ".md": "text/markdown",
+    ".tf": "text/x-hcl",
+    ".hcl": "text/x-hcl",
+    ".json": "application/json",
+    ".sh": "text/x-shellscript",
+    ".sql": "text/x-sql",
+    ".yaml": "text/yaml",
+    ".yml": "text/yaml",
+    ".js": "text/javascript",
+    ".ts": "text/typescript",
+    ".graphql": "text/x-graphql",
+  };
+  return mimeTypes[ext] || "text/plain";
+}
+
+// Read a blueprint file from a resource URI
+async function readBlueprintFile(uri: string): Promise<{ content: string; mimeType: string }> {
+  // Parse URI: blueprints://aws/apigw-lambda-rds/README.md
+  const match = uri.match(/^blueprints:\/\/([^/]+)\/([^/]+)\/(.+)$/);
+  if (!match) {
+    throw new Error(`Invalid blueprint URI: ${uri}`);
+  }
+
+  const [, cloud, blueprintName, filePath] = match;
+  const workspaceRoot = getWorkspaceRoot();
+  const fullPath = path.join(workspaceRoot, cloud, blueprintName, filePath);
+
+  // Security: ensure path is within workspace
+  const resolvedPath = path.resolve(fullPath);
+  const resolvedWorkspace = path.resolve(workspaceRoot);
+  if (!resolvedPath.startsWith(resolvedWorkspace)) {
+    throw new Error(`Path outside workspace: ${filePath}`);
+  }
+
+  if (!fs.existsSync(resolvedPath)) {
+    throw new Error(`File not found: ${uri}`);
+  }
+
+  const content = await readFile(resolvedPath, "utf-8");
+  const mimeType = getMimeType(filePath);
+
+  return { content, mimeType };
+}
+
 // Try to fetch AGENTS.md content
 async function getAgentsMdContent(): Promise<string> {
   // Try local file first (if running from repo)
@@ -344,6 +509,100 @@ server.resource(
     };
   }
 );
+
+// Register important blueprint file resources dynamically
+// We'll register READMEs and main environment files for each blueprint
+// Other files can be accessed by registering additional resources as needed
+async function registerImportantBlueprintResources() {
+  const workspaceRoot = getWorkspaceRoot();
+  const clouds = ["aws", "azure", "gcp"];
+
+  for (const cloud of clouds) {
+    const cloudPath = path.join(workspaceRoot, cloud);
+    if (!fs.existsSync(cloudPath)) continue;
+
+    try {
+      const blueprintDirs = await readdir(cloudPath);
+      
+      for (const blueprintName of blueprintDirs) {
+        const blueprintPath = path.join(cloudPath, blueprintName);
+        try {
+          const blueprintStat = await stat(blueprintPath);
+          if (!blueprintStat.isDirectory()) continue;
+
+          // Register README.md
+          const readmePath = path.join(blueprintPath, "README.md");
+          if (fs.existsSync(readmePath)) {
+            const readmeUri = `blueprints://${cloud}/${blueprintName}/README.md`;
+            server.resource(
+              `blueprint-${cloud}-${blueprintName}-readme`.replace(/[^a-zA-Z0-9-]/g, "-"),
+              readmeUri,
+              {
+                description: `README documentation for ${blueprintName} blueprint`,
+                mimeType: "text/markdown",
+              },
+              async () => {
+                try {
+                  const { content, mimeType } = await readBlueprintFile(readmeUri);
+                  return {
+                    contents: [{ uri: readmeUri, mimeType, text: content }],
+                  };
+                } catch (error) {
+                  const errorMessage = error instanceof Error ? error.message : String(error);
+                  return {
+                    contents: [{
+                      uri: readmeUri,
+                      mimeType: "text/plain",
+                      text: `Error reading file: ${errorMessage}`,
+                    }],
+                  };
+                }
+              }
+            );
+          }
+
+          // Register main environment file
+          const mainTfPath = path.join(blueprintPath, "environments", "dev", "main.tf");
+          if (fs.existsSync(mainTfPath)) {
+            const mainTfUri = `blueprints://${cloud}/${blueprintName}/environments/dev/main.tf`;
+            server.resource(
+              `blueprint-${cloud}-${blueprintName}-main-tf`.replace(/[^a-zA-Z0-9-]/g, "-"),
+              mainTfUri,
+              {
+                description: `Main Terraform configuration for ${blueprintName} blueprint`,
+                mimeType: "text/x-hcl",
+              },
+              async () => {
+                try {
+                  const { content, mimeType } = await readBlueprintFile(mainTfUri);
+                  return {
+                    contents: [{ uri: mainTfUri, mimeType, text: content }],
+                  };
+                } catch (error) {
+                  const errorMessage = error instanceof Error ? error.message : String(error);
+                  return {
+                    contents: [{
+                      uri: mainTfUri,
+                      mimeType: "text/plain",
+                      text: `Error reading file: ${errorMessage}`,
+                    }],
+                  };
+                }
+              }
+            );
+          }
+        } catch (error) {
+          // Skip blueprints we can't access
+          continue;
+        }
+      }
+    } catch (error) {
+      console.error(`Error registering ${cloud} blueprint resources:`, error);
+    }
+  }
+}
+
+// Resources will be registered in main() before server starts
 
 // Register tools
 server.tool(
@@ -507,6 +766,15 @@ server.tool(
       };
     }
 
+    const cloudProvider = getCloudProvider(pattern.blueprint) || "aws";
+    const moduleResourceUris = pattern.modules.map((m) => {
+      // Convert module path to resource URI
+      // e.g., "modules/data/" -> "blueprints://aws/apigw-lambda-rds/modules/data/main.tf"
+      // Ensure the path ends with / before appending main.tf
+      const modulePath = m.endsWith("/") ? m : `${m}/`;
+      return `blueprints://${cloudProvider}/${pattern.blueprint}/${modulePath}main.tf`;
+    });
+
     const output = `# Extract: ${capability}
 
 **Source Blueprint:** \`${pattern.blueprint}\`
@@ -517,25 +785,36 @@ ${pattern.description}
 
 ${pattern.modules.map((m) => `- \`${m}\``).join("\n")}
 
+## Reference Files (MCP Resources)
+
+Access these blueprint files as MCP resources for battle-tested examples:
+
+- **Blueprint README**: \`blueprints://${cloudProvider}/${pattern.blueprint}/README.md\`
+- **Main Environment Config**: \`blueprints://${cloudProvider}/${pattern.blueprint}/environments/dev/main.tf\`
+${moduleResourceUris.map((uri) => `- **Module File**: \`${uri}\``).join("\n")}
+
 ## Integration Steps
 
 ${pattern.integrationSteps.map((step, i) => `${i + 1}. ${step}`).join("\n")}
 
-## Reference
+## How to Use
+
+1. **Fetch the blueprint files** using the MCP resource URIs above to see actual production-tested code
+2. **Review the examples** - these are battle-tested patterns from real projects
+3. **Copy and adapt** the modules to your existing Terraform project
+4. **Manual integration** - you'll integrate the code manually based on the examples
+
+## Additional Reference
 
 View the full blueprint on GitHub for context:
-https://github.com/berTrindade/terraform-infrastructure-blueprints/tree/main/aws/${pattern.blueprint}
-
-Or clone the repo locally as a reference library:
-\`\`\`bash
-git clone git@github.com:berTrindade/terraform-infrastructure-blueprints.git ~/terraform-blueprints
-\`\`\`
+https://github.com/berTrindade/terraform-infrastructure-blueprints/tree/main/${cloudProvider}/${pattern.blueprint}
 
 ## Important
 
 - Adapt module variables to match your existing naming conventions
 - Update security groups to allow access from your existing resources
 - Follow your project's existing patterns for outputs and state management
+- These are **reference examples** - you'll integrate them manually into your project
 `;
 
     return {
@@ -632,6 +911,9 @@ server.tool(
 
 // Start server
 async function main() {
+  // Register important blueprint resources before connecting
+  await registerImportantBlueprintResources();
+  
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("ustwo Infrastructure Blueprints MCP Server running");
