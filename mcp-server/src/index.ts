@@ -1112,8 +1112,8 @@ server.registerTool(
         if (cloud) {
           const provider = getCloudProvider(b.name);
           if ((cloud.toLowerCase() === "aws" && provider === "aws") ||
-              (cloud.toLowerCase() === "azure" && provider === "azure") ||
-              (cloud.toLowerCase() === "gcp" && provider === "gcp")) score += 2;
+            (cloud.toLowerCase() === "azure" && provider === "azure") ||
+            (cloud.toLowerCase() === "gcp" && provider === "gcp")) score += 2;
         }
         return { blueprint: b, score };
       }).filter(item => item.score > 0)
@@ -1121,13 +1121,13 @@ server.registerTool(
         .slice(0, 3);
 
       const suggestions = allScored.length > 0
-        ? allScored.map(({ blueprint, score }) => 
-            `- **${blueprint.name}** (${score}% match): ${blueprint.description}`
-          ).join("\n")
+        ? allScored.map(({ blueprint, score }) =>
+          `- **${blueprint.name}** (${score}% match): ${blueprint.description}`
+        ).join("\n")
         : "- For serverless APIs: apigw-lambda-dynamodb or apigw-lambda-rds\n" +
-          "- For async processing: apigw-sqs-lambda-dynamodb\n" +
-          "- For containers: alb-ecs-fargate or eks-cluster\n" +
-          "- For auth: apigw-lambda-dynamodb-cognito";
+        "- For async processing: apigw-sqs-lambda-dynamodb\n" +
+        "- For containers: alb-ecs-fargate or eks-cluster\n" +
+        "- For auth: apigw-lambda-dynamodb-cognito";
 
       const missingFeatures = [];
       if (database) missingFeatures.push(`database: ${database}`);
@@ -1193,6 +1193,8 @@ ${cloudPath}/${top.name}/
 \`\`\`
 `;
 
+    const nextSteps = `\n\n## Next Steps\n\n1. **Review the blueprint structure**: Use MCP resources to explore \`blueprints://${cloudProvider}/${top.name}/README.md\`\n2. **Get integration details**: Call \`extract_pattern(capability: "${database || "database"}")\` for specific patterns\n3. **Reference blueprint files**: Access files via MCP resources (e.g., \`blueprints://${cloudProvider}/${top.name}/environments/dev/main.tf\`)\n4. **Follow blueprint patterns**: Ensure your code matches production-tested patterns from the blueprint`;
+
     return {
       content: [
         {
@@ -1203,7 +1205,8 @@ ${cloudPath}/${top.name}/
                 .slice(1, 4)
                 .map((b) => `- **${b.name}**: ${b.description} (Database: ${b.database}, Pattern: ${b.pattern})`)
                 .join("\n")}`
-              : ""),
+              : "") +
+            nextSteps,
         },
       ],
     };
@@ -1329,7 +1332,15 @@ https://github.com/berTrindade/terraform-infrastructure-blueprints/tree/main/${c
 - Update security groups to allow access from your existing resources
 - Follow your project's existing patterns for outputs and state management
 - These are **reference examples** - you'll integrate them manually into your project
-${quickReference}${fileContents}`;
+${quickReference}${fileContents}
+
+## Next Steps
+
+1. **Review the blueprint files** using MCP resources listed above
+2. **Copy module code** from the blueprint to your project
+3. **Adapt variables** to match your existing naming conventions
+4. **Test integration** with \`terraform plan\` before applying
+5. **Follow blueprint patterns** - these are production-tested from real projects`;
 
     return {
       content: [{ type: "text", text: output }],
@@ -1361,7 +1372,7 @@ server.registerTool(
     }
 
     const cloudProvider = getCloudProvider(pattern.blueprint) || "aws";
-    
+
     // Fetch actual module files to generate examples
     let moduleExample = "";
     try {
@@ -1531,7 +1542,7 @@ server.registerTool(
   },
   async ({ primary_pattern }) => {
     const capLower = (primary_pattern || "").toLowerCase();
-    
+
     const relatedPatterns: Record<string, Array<{ capability: string; reason: string; blueprint: string }>> = {
       database: [
         { capability: "secrets", reason: "Database credentials management", blueprint: "apigw-lambda-rds" },
@@ -1553,7 +1564,7 @@ server.registerTool(
     };
 
     const related = relatedPatterns[capLower] || [];
-    
+
     if (related.length === 0) {
       return {
         content: [{
@@ -1563,7 +1574,7 @@ server.registerTool(
       };
     }
 
-    const output = `# Related Patterns for: ${primary_pattern}\n\nWhen implementing **${primary_pattern}**, you'll typically also need:\n\n${related.map((r, i) => 
+    const output = `# Related Patterns for: ${primary_pattern}\n\nWhen implementing **${primary_pattern}**, you'll typically also need:\n\n${related.map((r, i) =>
       `${i + 1}. **${r.capability}**\n   - Reason: ${r.reason}\n   - See blueprint: \`${r.blueprint}\``
     ).join("\n\n")}\n\n## Integration Order\n\n1. Start with the primary pattern (${primary_pattern})\n2. Add related patterns incrementally\n3. Test each addition before moving to the next\n\nUse \`extract_pattern(capability: "${related[0].capability}")\` to get integration details.`;
 
@@ -1619,7 +1630,7 @@ server.registerTool(
     };
 
     const checksToRun = validationChecks[capLower] || [];
-    
+
     if (checksToRun.length === 0) {
       return {
         content: [{
@@ -1632,9 +1643,9 @@ server.registerTool(
     const requiredChecks = checksToRun.filter(c => c.required);
     const optionalChecks = checksToRun.filter(c => !c.required);
 
-    const output = `# Validation Checklist: ${capability}\n\n## Required Components\n\n${requiredChecks.map((c, i) => 
+    const output = `# Validation Checklist: ${capability}\n\n## Required Components\n\n${requiredChecks.map((c, i) =>
       `${i + 1}. ✅ **${c.check}**\n   💡 ${c.tip}`
-    ).join("\n\n")}\n\n## Recommended Components\n\n${optionalChecks.map((c, i) => 
+    ).join("\n\n")}\n\n## Recommended Components\n\n${optionalChecks.map((c, i) =>
       `${i + 1}. ⚠️ **${c.check}**\n   💡 ${c.tip}`
     ).join("\n\n")}\n\n## Validation Steps\n\n1. Review your Terraform code against each check above\n2. Ensure all required components are present\n3. Add recommended components for production readiness\n4. Run \`terraform plan\` to verify configuration\n5. Test integration in dev environment first\n\n## Get Help\n\nUse \`get_integration_example(capability: "${capability}")\` for code examples.\nUse \`extract_pattern(capability: "${capability}", include_files: true)\` for complete module files.`;
 
@@ -1797,6 +1808,298 @@ server.registerTool(
     }
 
     return { content: [{ type: "text", text: response }] };
+  }
+);
+
+server.registerTool(
+  "get_workflow_guidance",
+  {
+    description: "Get step-by-step workflow guidance for infrastructure tasks. ALWAYS call this FIRST before writing Terraform code to understand the correct workflow.",
+    inputSchema: {
+      task: z.enum(["new_project", "add_capability", "migrate_cloud", "general"]).describe("Task type: 'new_project' (starting new), 'add_capability' (adding features), 'migrate_cloud' (cross-cloud), 'general' (overview)"),
+    },
+  },
+  async ({ task }) => {
+    const workflows: Record<string, string> = {
+      new_project: `# Workflow: Starting a New Project
+
+## Step-by-Step Process
+
+1. **Call recommend_blueprint()** with your requirements:
+   \`\`\`
+   recommend_blueprint(
+     database: "postgresql",  # or "dynamodb", "aurora", "none"
+     pattern: "sync",          # or "async"
+     auth: false,              # true if you need authentication
+     containers: false,        # true if you need containers (ECS/EKS)
+     cloud: "aws"             # "aws", "azure", or "gcp"
+   )
+   \`\`\`
+
+2. **Review the recommended blueprint** - Check the structure and patterns
+
+3. **Get integration details** for specific capabilities:
+   \`\`\`
+   extract_pattern(capability: "database")
+   extract_pattern(capability: "auth")
+   \`\`\`
+
+4. **Reference blueprint files** via MCP resources:
+   - \`blueprints://aws/apigw-lambda-rds/README.md\`
+   - \`blueprints://aws/apigw-lambda-rds/environments/dev/main.tf\`
+   - \`blueprints://aws/apigw-lambda-rds/modules/data/main.tf\`
+
+5. **Follow blueprint patterns** - These are production-tested from real projects
+
+## Important Rules
+
+- ✅ ALWAYS use blueprint patterns instead of generic Terraform
+- ✅ Reference specific blueprint files before writing code
+- ✅ Follow ephemeral password patterns (password_wo)
+- ✅ Enable IAM Database Authentication for RDS
+- ✅ Use official Terraform modules (VPC, Lambda, etc.)
+- ❌ DON'T store passwords in Secrets Manager (use password_wo)
+- ❌ DON'T use NAT Gateway for Lambda (use VPC endpoints)
+- ❌ DON'T write generic code without blueprint reference`,
+
+      add_capability: `# Workflow: Adding Capabilities to Existing Project
+
+## Step-by-Step Process
+
+1. **Call extract_pattern()** for the capability you need:
+   \`\`\`
+   extract_pattern(capability: "database")  # or "queue", "auth", "events", "ai", "notifications"
+   \`\`\`
+
+2. **Review integration steps** - The tool provides step-by-step guidance
+
+3. **Get file contents** if needed:
+   \`\`\`
+   extract_pattern(capability: "database", include_files: true)
+   \`\`\`
+
+4. **Reference blueprint module files**:
+   - Use MCP resources: \`blueprints://aws/apigw-lambda-rds/modules/data/main.tf\`
+   - Or use: \`fetch_blueprint_file(blueprint: "apigw-lambda-rds", path: "modules/data/main.tf")\`
+
+5. **Copy and adapt modules**:
+   - Copy module code from blueprint
+   - Adapt variables to match your existing naming
+   - Update security groups for your VPC
+   - Ensure IAM roles follow existing patterns
+
+6. **Test integration**:
+   \`\`\`bash
+   terraform plan  # Review changes
+   terraform apply # Apply when ready
+   \`\`\`
+
+## Key Patterns to Follow
+
+- **Ephemeral Passwords**: Use \`password_wo\` and \`password_wo_version\` (never store in state)
+- **IAM Database Auth**: Always enable for RDS/Aurora
+- **VPC Endpoints**: Use for Lambda (not NAT Gateway)
+- **Official Modules**: Use terraform-aws-modules for VPC, Lambda, etc.
+- **Module Structure**: Follow blueprint module organization`,
+
+      migrate_cloud: `# Workflow: Cross-Cloud Migration
+
+## Step-by-Step Process
+
+1. **Find the current blueprint**:
+   \`\`\`
+   find_by_project(project_name: "Mavie")
+   \`\`\`
+
+2. **Get cross-cloud equivalent**:
+   \`\`\`
+   find_by_project(project_name: "Mavie", target_cloud: "aws")
+   \`\`\`
+
+3. **Compare blueprints**:
+   - Review differences between source and target cloud
+   - Understand architectural differences
+   - Note service equivalents (e.g., Cloud SQL → RDS)
+
+4. **Get target blueprint details**:
+   \`\`\`
+   recommend_blueprint(
+     database: "postgresql",
+     pattern: "sync",
+     cloud: "aws"  # target cloud
+   )
+   \`\`\`
+
+5. **Extract patterns** from target blueprint:
+   \`\`\`
+   extract_pattern(capability: "database")
+   \`\`\`
+
+6. **Reference target blueprint files**:
+   - \`blueprints://aws/alb-ecs-fargate-rds/README.md\`
+   - \`blueprints://aws/alb-ecs-fargate-rds/environments/dev/main.tf\`
+
+## Migration Considerations
+
+- Service equivalents (Cloud SQL ↔ RDS ↔ Azure PostgreSQL)
+- Networking differences (VPC vs VNet vs VPC)
+- Authentication methods (IAM vs Service Accounts)
+- Deployment models (App Engine vs Lambda vs Functions)`,
+
+      general: `# General Workflow: Infrastructure Blueprints
+
+## When to Use MCP Tools
+
+### ✅ Always Use MCP Tools When:
+- Starting a new infrastructure project
+- Adding capabilities (database, queue, auth, etc.)
+- Migrating between clouds
+- Making architectural decisions
+- Need production-tested patterns
+
+### ❌ Don't Use MCP Tools When:
+- Simple one-off resources (single S3 bucket)
+- Client-specific customizations (after extracting modules)
+- Non-standard requirements (no blueprint matches)
+
+## Available Tools
+
+1. **recommend_blueprint()** - Get blueprint recommendation for new projects
+2. **extract_pattern()** - Get guidance for adding capabilities
+3. **find_by_project()** - Find blueprints used by specific projects
+4. **get_workflow_guidance()** - Get workflow steps (this tool)
+5. **list_available_tools()** - List all available tools
+6. **fetch_blueprint_file()** - Get specific blueprint files
+7. **search_blueprints()** - Search blueprints by keywords
+
+## Quick Reference
+
+\`\`\`
+# New project
+recommend_blueprint(database: "postgresql", pattern: "sync")
+
+# Add capability
+extract_pattern(capability: "database")
+
+# Cross-cloud
+find_by_project(project_name: "Mavie", target_cloud: "aws")
+
+# Get workflow
+get_workflow_guidance(task: "new_project")
+\`\`\`
+
+## Best Practices
+
+1. **Always check blueprints first** - Before writing Terraform code
+2. **Reference blueprint files** - Use MCP resources for examples
+3. **Follow patterns** - Ephemeral passwords, IAM auth, official modules
+4. **Test incrementally** - Add capabilities one at a time
+5. **Use production-tested code** - Blueprints come from real projects`,
+    };
+
+    const workflow = workflows[task] || workflows.general;
+    const nextSteps = task !== "general"
+      ? `\n\n## Next Action\n\nCall \`list_available_tools()\` to see all available MCP tools, or start with the first step above.`
+      : `\n\n## Get Started\n\nCall \`get_workflow_guidance(task: "new_project")\` for new projects, or \`get_workflow_guidance(task: "add_capability")\` for adding features.`;
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: workflow + nextSteps,
+        },
+      ],
+    };
+  }
+);
+
+server.registerTool(
+  "list_available_tools",
+  {
+    description: "List all available MCP tools and when to use them. Call this to discover what tools are available.",
+    inputSchema: {},
+  },
+  async () => {
+    const tools = `# Available MCP Tools
+
+## Core Tools (Use These First)
+
+### 1. get_workflow_guidance(task: "new_project" | "add_capability" | "migrate_cloud" | "general")
+**When to use**: ALWAYS call this FIRST before writing Terraform code
+**Purpose**: Get step-by-step workflow guidance for your task
+**Example**: \`get_workflow_guidance(task: "new_project")\`
+
+### 2. recommend_blueprint(database?, pattern?, auth?, containers?, cloud?)
+**When to use**: Starting a new project or need infrastructure recommendations
+**Purpose**: Get blueprint recommendation based on requirements
+**Example**: \`recommend_blueprint(database: "postgresql", pattern: "sync")\`
+
+### 3. extract_pattern(capability: string, include_files?: boolean)
+**When to use**: Adding a capability (database, queue, auth, etc.) to existing Terraform
+**Purpose**: Get guidance on extracting patterns from blueprints
+**Example**: \`extract_pattern(capability: "database", include_files: true)\`
+
+### 4. find_by_project(project_name: string, target_cloud?: string)
+**When to use**: Finding blueprints used by specific projects or cross-cloud equivalents
+**Purpose**: Find blueprint for a project and optionally get cross-cloud equivalent
+**Example**: \`find_by_project(project_name: "Mavie", target_cloud: "aws")\`
+
+## Supporting Tools
+
+### 5. search_blueprints(query: string)
+**When to use**: Searching for blueprints by keywords or use case
+**Purpose**: Find blueprints matching search terms
+**Example**: \`search_blueprints(query: "serverless postgresql")\`
+
+### 6. fetch_blueprint_file(blueprint: string, path: string)
+**When to use**: Need specific blueprint files
+**Purpose**: Get contents of specific blueprint files
+**Example**: \`fetch_blueprint_file(blueprint: "apigw-lambda-rds", path: "modules/data/main.tf")\`
+
+### 7. get_integration_example(capability: string, existing_structure?: string)
+**When to use**: Need concrete code examples for integration
+**Purpose**: Get actual Terraform code snippets showing integration
+**Example**: \`get_integration_example(capability: "database", existing_structure: "modular")\`
+
+## Recommended Workflow
+
+1. **Start here**: \`get_workflow_guidance(task: "new_project")\` or \`get_workflow_guidance(task: "add_capability")\`
+2. **Get recommendation**: \`recommend_blueprint(...)\` or \`extract_pattern(...)\`
+3. **Reference files**: Use MCP resources or \`fetch_blueprint_file(...)\`
+4. **Follow patterns**: Use production-tested code from blueprints
+
+## Important Notes
+
+- ✅ **Always use MCP tools BEFORE writing Terraform code**
+- ✅ **Reference blueprint files via MCP resources**
+- ✅ **Follow blueprint patterns** (ephemeral passwords, IAM auth, official modules)
+- ❌ **Don't write generic code** without blueprint reference
+- ❌ **Don't skip workflow guidance** - it ensures correct patterns
+
+## Quick Start Examples
+
+\`\`\`
+# New serverless API with PostgreSQL
+get_workflow_guidance(task: "new_project")
+recommend_blueprint(database: "postgresql", pattern: "sync")
+
+# Add database to existing Lambda API
+get_workflow_guidance(task: "add_capability")
+extract_pattern(capability: "database", include_files: true)
+
+# Migrate from GCP to AWS
+get_workflow_guidance(task: "migrate_cloud")
+find_by_project(project_name: "Mavie", target_cloud: "aws")
+\`\`\``;
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: tools,
+        },
+      ],
+    };
   }
 );
 

@@ -23,9 +23,44 @@ This guide helps AI assistants properly reference blueprint patterns instead of 
 
 ## Using MCP Tools
 
-The repository provides MCP tools for blueprint discovery. Always use these tools before writing Terraform:
+The repository provides MCP tools for blueprint discovery. **ALWAYS use these tools before writing Terraform code.**
 
-### 1. `extract_pattern(capability: "database")`
+### Pre-Flight Checklist
+
+Before writing any Terraform code, check:
+- [ ] Are MCP tools available? (Look for `mcp_ustwo-infra_*` tools)
+- [ ] Have I called `get_workflow_guidance()` or `list_available_tools()`?
+- [ ] Have I called `recommend_blueprint()` for new projects?
+- [ ] Have I called `extract_pattern()` for adding capabilities?
+- [ ] Am I referencing blueprint files before writing code?
+
+### 0. `get_workflow_guidance(task: "new_project" | "add_capability" | "migrate_cloud" | "general")`
+
+**When to use**: **ALWAYS call this FIRST** before writing Terraform code to understand the correct workflow.
+
+**Example**:
+```
+User: "I need to add RDS PostgreSQL to my existing Lambda API"
+
+AI should:
+1. Call get_workflow_guidance(task: "add_capability")
+2. Follow the workflow steps provided
+3. Call extract_pattern(capability: "database")
+4. Reference blueprint files
+5. Provide code examples from the blueprint
+```
+
+### 1. `list_available_tools()`
+
+**When to use**: To discover what MCP tools are available and when to use them.
+
+**Example**:
+```
+AI should call list_available_tools() at the start of infrastructure tasks
+to understand what tools are available.
+```
+
+### 2. `extract_pattern(capability: "database")`
 
 **When to use**: User wants to add a capability (database, queue, auth, etc.) to existing Terraform.
 
@@ -310,8 +345,9 @@ resource "aws_db_instance" "main" {
 **✅ Correct Response**:
 
 ```
-I'll help you add RDS PostgreSQL using the blueprint pattern. Let me extract the database pattern:
+I'll help you add RDS PostgreSQL using the blueprint pattern. Let me get the workflow and extract the database pattern:
 
+[Call get_workflow_guidance(task: "add_capability")]
 [Call extract_pattern(capability: "database")]
 
 Based on the apigw-lambda-rds blueprint, here's how to add RDS:
@@ -362,8 +398,9 @@ Here's a generic serverless API setup:
 **✅ Correct Response**:
 ```
 
-Let me recommend the right blueprint for your needs:
+Let me get the workflow guidance and recommend the right blueprint:
 
+[Call get_workflow_guidance(task: "new_project")]
 [Call recommend_blueprint(database: "postgresql", pattern: "sync")]
 
 Based on your requirements, I recommend the **apigw-lambda-rds** blueprint:
@@ -402,13 +439,25 @@ terraform init && terraform apply
 
 Before providing Terraform code, ask:
 
+### MCP Tool Usage
+- [ ] Did I call `get_workflow_guidance()` or `list_available_tools()` FIRST?
 - [ ] Did I check for existing blueprints using MCP tools?
+- [ ] Did I call `recommend_blueprint()` for new projects?
+- [ ] Did I call `extract_pattern()` for adding capabilities?
+- [ ] Am I referencing specific blueprint files via MCP resources?
+
+### Code Patterns
 - [ ] Am I using ephemeral passwords (`password_wo`) for databases?
 - [ ] Is IAM Database Authentication enabled?
 - [ ] Am I using official Terraform modules (VPC, Lambda, etc.)?
-- [ ] Am I referencing specific blueprint files for examples?
+- [ ] Am I using VPC endpoints (not NAT Gateway) for Lambda?
 - [ ] Does the code follow blueprint module structure?
 - [ ] Is the code standalone (no blueprint repository dependency)?
+
+### Workflow
+- [ ] Did I follow the workflow guidance from `get_workflow_guidance()`?
+- [ ] Did I reference blueprint files before writing code?
+- [ ] Am I following production-tested patterns from blueprints?
 
 ## Additional Resources
 
