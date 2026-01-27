@@ -37,7 +37,7 @@ The repository formally supports five core consultant scenarios:
 ### Scenario 3: Client Brief Only
 **Situation:** Project kickoff with only requirements document. No code exists yet.
 
-**Workflow:** Analyze requirements, recommend blueprint, download via tiged, customize and deploy.
+**Workflow:** Analyze requirements, recommend blueprint, download blueprint (via git clone, GitHub CLI, etc.), customize and deploy.
 
 **Applicable blueprints:** All - decision tree guides selection.
 

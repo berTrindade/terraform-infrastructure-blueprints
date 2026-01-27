@@ -23,7 +23,7 @@ Expand the repository's purpose to support two use cases:
 
 1. **Copy whole blueprint** (original purpose)
    - Start new projects from scratch
-   - Download entire blueprint via tiged
+   - Download entire blueprint (via git clone, GitHub CLI, etc.)
    - Adapt and deploy
 
 2. **Extract patterns** (new purpose)

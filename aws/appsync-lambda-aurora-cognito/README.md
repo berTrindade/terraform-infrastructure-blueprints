@@ -45,11 +45,12 @@ flowchart TB
 ## Deployment
 
 ```bash
-# Download the blueprint
-npx tiged berTrindade/terraform-infrastructure-blueprints/aws/appsync-lambda-aurora-cognito ./infra
+# Download the blueprint (use your preferred method - git clone, GitHub CLI, etc.)
+git clone https://github.com/berTrindade/terraform-infrastructure-blueprints.git
+cd terraform-infrastructure-blueprints/aws/appsync-lambda-aurora-cognito
 
 # Navigate to environment
-cd infra/environments/dev
+cd environments/dev
 
 # Install Lambda dependencies
 cd ../../src/api && npm install && npm run build && cd ../../environments/dev

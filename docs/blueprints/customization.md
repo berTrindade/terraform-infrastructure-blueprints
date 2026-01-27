@@ -16,11 +16,12 @@ Common customizations, quick reference commands, and important constraints.
 ## Quick Reference Commands
 
 ```bash
-# Download a blueprint
-npx tiged berTrindade/terraform-infrastructure-blueprints/aws/{blueprint-name} ./infra
+# Download a blueprint (use your preferred method - git clone, GitHub CLI, etc.)
+git clone https://github.com/berTrindade/terraform-infrastructure-blueprints.git
+cd terraform-infrastructure-blueprints/aws/{blueprint-name}
 
 # Initialize and deploy
-cd infra/environments/dev
+cd environments/dev
 terraform init
 terraform plan
 terraform apply

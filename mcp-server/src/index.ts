@@ -570,11 +570,12 @@ ${blueprintTable}
 ## Quick Start
 
 \`\`\`bash
-# Download a blueprint
-npx tiged berTrindade/terraform-infrastructure-blueprints/aws/{blueprint-name} ./infra
+# Download a blueprint (use your preferred method - git clone, GitHub CLI, etc.)
+git clone https://github.com/berTrindade/terraform-infrastructure-blueprints.git
+cd terraform-infrastructure-blueprints/aws/{blueprint-name}
 
 # Deploy
-cd infra/environments/dev
+cd environments/dev
 terraform init && terraform apply
 \`\`\`
 
@@ -950,11 +951,12 @@ ${blueprint.description}
 ## Quick Start
 
 \`\`\`bash
-# Download this blueprint
-npx tiged berTrindade/terraform-infrastructure-blueprints/${cloudPath}/${blueprint.name} ./infra
+# Download this blueprint (use your preferred method - git clone, GitHub CLI, etc.)
+git clone https://github.com/berTrindade/terraform-infrastructure-blueprints.git
+cd terraform-infrastructure-blueprints/${cloudPath}/${blueprint.name}
 
 # Deploy
-cd infra/environments/dev
+cd environments/dev
 terraform init
 terraform plan
 terraform apply
@@ -1166,11 +1168,12 @@ ${top.description}
 ## Quick Start
 
 \`\`\`bash
-# Download this blueprint
-npx tiged berTrindade/terraform-infrastructure-blueprints/${cloudPath}/${top.name} ./infra
+# Download this blueprint (use your preferred method - git clone, GitHub CLI, etc.)
+git clone https://github.com/berTrindade/terraform-infrastructure-blueprints.git
+cd terraform-infrastructure-blueprints/${cloudPath}/${top.name}
 
 # Deploy
-cd infra/environments/dev
+cd environments/dev
 terraform init
 terraform plan
 terraform apply
@@ -1784,10 +1787,11 @@ server.registerTool(
           response += `- Pattern: ${equivalent.pattern}\n\n`;
           response += `## Quick Start\n\n`;
           response += `\`\`\`bash\n`;
-          response += `# Download ${targetCloudLower.toUpperCase()} equivalent\n`;
-          response += `npx tiged berTrindade/terraform-infrastructure-blueprints/${targetCloudLower}/${equivalent.name} ./infra\n\n`;
+          response += `# Download ${targetCloudLower.toUpperCase()} equivalent (use your preferred method - git clone, GitHub CLI, etc.)\n`;
+          response += `git clone https://github.com/berTrindade/terraform-infrastructure-blueprints.git\n`;
+          response += `cd terraform-infrastructure-blueprints/${targetCloudLower}/${equivalent.name}\n\n`;
           response += `# Deploy\n`;
-          response += `cd infra/environments/dev\n`;
+          response += `cd environments/dev\n`;
           response += `terraform init\n`;
           response += `terraform plan\n`;
           response += `terraform apply\n`;
@@ -1802,8 +1806,9 @@ server.registerTool(
     } else {
       response += `## Current Blueprint\n\n`;
       response += `\`\`\`bash\n`;
-      response += `# Download current blueprint\n`;
-      response += `npx tiged berTrindade/terraform-infrastructure-blueprints/${projectInfo.cloud}/${projectInfo.blueprint} ./infra\n`;
+      response += `# Download current blueprint (use your preferred method - git clone, GitHub CLI, etc.)\n`;
+      response += `git clone https://github.com/berTrindade/terraform-infrastructure-blueprints.git\n`;
+      response += `cd terraform-infrastructure-blueprints/${projectInfo.cloud}/${projectInfo.blueprint}\n`;
       response += `\`\`\`\n`;
     }
 

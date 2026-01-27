@@ -32,7 +32,7 @@ Consultants copy the example they need or extract patterns to add to existing pr
 
 ## Quick Start
 
-### Recommended: Using MCP Server (AI-Assisted)
+### Using MCP Server (AI-Assisted)
 
 If you have the MCP server configured (see [AI Assistant Integration](#ai-assistant-integration)):
 
@@ -40,24 +40,6 @@ If you have the MCP server configured (see [AI Assistant Integration](#ai-assist
 2. **Review the recommendation** - The AI will suggest the best blueprint and provide details
 3. **Download the blueprint** - The AI will provide the exact download command
 4. **Get guided setup** - The AI can help you configure and customize the blueprint
-
-### Direct Download (Alternative)
-
-If you know exactly which blueprint you need, you can download it directly:
-
-```bash
-# Download a blueprint
-npx tiged berTrindade/terraform-infrastructure-blueprints/aws/apigw-lambda-dynamodb my-api
-
-# Navigate and configure
-cd my-api/environments/dev
-# Edit terraform.tfvars with your project name and AWS region
-
-# Deploy
-terraform init
-terraform plan
-terraform apply
-```
 
 **Prerequisites:**
 
@@ -80,15 +62,11 @@ Each blueprint also includes a blueprint-specific README with detailed instructi
 
 Start new projects from scratch by copying an entire blueprint:
 
-#### Recommended: AI-assisted (with MCP server)
+#### AI-assisted (with MCP server)
 
 - Ask your AI assistant: "I need a serverless API with PostgreSQL"
 - The AI will recommend `apigw-lambda-rds` and provide download instructions
 - Follow the guided setup instructions
-
-#### Direct download (Alternative)
-
-If you know which blueprint you need, download it directly using the command provided by your AI assistant or from the blueprint catalog.
 
 Each blueprint is self-contained—copy it and you have everything needed to deploy.
 
@@ -96,13 +74,13 @@ Each blueprint is self-contained—copy it and you have everything needed to dep
 
 Add capabilities to existing Terraform projects by extracting modules from blueprints:
 
-#### Recommended: AI-assisted pattern extraction
+#### AI-assisted pattern extraction
 
 - Ask your AI assistant: "I need to add SQS queue processing to my existing Terraform"
 - The AI will use `extract_pattern()` to identify the right modules and provide adapted code
 - The AI can fetch specific blueprint files and adapt them to your project structure
 
-#### Manual extraction (Alternative)
+#### Manual extraction
 
 If you prefer to extract manually, common patterns include:
 

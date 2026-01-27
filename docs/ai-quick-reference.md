@@ -176,7 +176,9 @@ blueprints://aws/apigw-lambda-rds/modules/secrets/main.tf
 ### Download Blueprint
 
 ```bash
-npx tiged berTrindade/terraform-infrastructure-blueprints/aws/{blueprint-name} ./infra
+# Use your preferred method - git clone, GitHub CLI, etc.
+git clone https://github.com/berTrindade/terraform-infrastructure-blueprints.git
+cd terraform-infrastructure-blueprints/aws/{blueprint-name}
 ```
 
 ### Deploy

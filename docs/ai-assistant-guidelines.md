@@ -413,8 +413,9 @@ Based on your requirements, I recommend the **apigw-lambda-rds** blueprint:
 **Quick Start**:
 
 ```bash
-npx tiged berTrindade/terraform-infrastructure-blueprints/aws/apigw-lambda-rds ./infra
-cd infra/environments/dev
+# Download the blueprint (use your preferred method - git clone, GitHub CLI, etc.)
+git clone https://github.com/berTrindade/terraform-infrastructure-blueprints.git
+cd terraform-infrastructure-blueprints/aws/apigw-lambda-rds/environments/dev
 terraform init && terraform apply
 ```
 

@@ -16,7 +16,7 @@ This repository supports two core consultant scenarios. Understanding which scen
 1. Ask about the tech stack and whether they want to containerize or go serverless
 2. **For single-pattern needs**: Recommend `alb-ecs-fargate-rds` (containerize as-is) or `apigw-lambda-rds` (refactor to serverless)
 3. **For hybrid/composite needs**: Identify multiple infrastructure patterns required and recommend combining blueprints (e.g., serverless API + containerized CMS)
-4. Provide tiged command(s) to download the blueprint(s)
+4. Provide download instructions for the blueprint(s)
 5. Guide through configuration and deployment (or combining patterns if multiple blueprints)
 
 ### Scenario 2: Existing Terraform, Add Capability
@@ -87,11 +87,9 @@ This repository supports two core consultant scenarios. Understanding which scen
 
 3. **Provide setup instructions**:
    ```bash
-   # Download the blueprint
-   npx tiged berTrindade/terraform-infrastructure-blueprints/aws/apigw-lambda-rds ./infra
-   
-   # Navigate and configure
-   cd infra/environments/dev
+   # Download the blueprint (use your preferred method - git clone, GitHub CLI, etc.)
+   git clone https://github.com/berTrindade/terraform-infrastructure-blueprints.git
+   cd terraform-infrastructure-blueprints/aws/apigw-lambda-rds/environments/dev
    
    # Edit terraform.tfvars with project name and region
    # Configure AWS credentials
@@ -139,9 +137,11 @@ This repository supports two core consultant scenarios. Understanding which scen
 
 5. **Provide step-by-step guidance**:
    ```bash
-   # Download both blueprints
-   npx tiged berTrindade/terraform-infrastructure-blueprints/aws/apigw-lambda-dynamodb ./infra-api
-   npx tiged berTrindade/terraform-infrastructure-blueprints/aws/alb-ecs-fargate-rds ./infra-cms
+   # Download both blueprints (use your preferred method - git clone, GitHub CLI, etc.)
+   git clone https://github.com/berTrindade/terraform-infrastructure-blueprints.git
+   cd terraform-infrastructure-blueprints
+   # Copy aws/apigw-lambda-dynamodb to your project as infra-api
+   # Copy aws/alb-ecs-fargate-rds to your project as infra-cms
    
    # Merge into single project structure
    # - Combine modules/ directories
