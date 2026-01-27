@@ -49,7 +49,7 @@ Amazon EKS provides a managed Kubernetes control plane. This blueprint includes:
 - **EKS 1.29+** with managed control plane
 - **Managed Node Groups** with auto-scaling ready
 - **IRSA** (IAM Roles for Service Accounts)
-- **AWS Load Balancer Controller** for ALB/NLB ingress
+- **AWS Load Balancer Controller** for ALB/NLB Gateway API
 - **EBS CSI Driver** for persistent volumes
 - **VPC-CNI, CoreDNS, Kube-proxy** addons
 
@@ -63,7 +63,7 @@ aws eks update-kubeconfig --region us-east-1 --name $(terraform output -raw clus
 kubectl get nodes
 kubectl get pods -n kube-system
 
-# Deploy sample app with ALB
+# Deploy sample app with Gateway API
 kubectl apply -f - <<EOF
 apiVersion: apps/v1
 kind: Deployment
@@ -96,28 +96,36 @@ spec:
   selector:
     app: nginx
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
 metadata:
-  name: nginx
-  annotations:
-    kubernetes.io/ingress.class: alb
-    alb.ingress.kubernetes.io/scheme: internet-facing
-    alb.ingress.kubernetes.io/target-type: ip
+  name: nginx-gateway
 spec:
+  gatewayClassName: alb
+  listeners:
+  - name: http
+    protocol: HTTP
+    port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: nginx-route
+spec:
+  parentRefs:
+  - name: nginx-gateway
   rules:
-  - http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: nginx
-            port:
-              number: 80
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: nginx
+      port: 80
 EOF
 
-kubectl get ingress nginx -w
+kubectl get gateway nginx-gateway -w
+kubectl get httproute nginx-route -w
 ```
 
 ## Configuration
@@ -146,7 +154,8 @@ kubectl get ingress nginx -w
 
 ```bash
 # Delete workloads first
-kubectl delete ingress --all -A
+kubectl delete httproute --all -A
+kubectl delete gateway --all -A
 kubectl delete svc --all -A --field-selector="spec.type=LoadBalancer"
 
 # Wait for ALB/NLB cleanup

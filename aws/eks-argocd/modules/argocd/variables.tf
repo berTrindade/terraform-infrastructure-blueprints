@@ -23,13 +23,13 @@ variable "set_resources" {
 }
 
 variable "enable_ingress" {
-  description = "Create ALB ingress for ArgoCD UI"
+  description = "Create ALB Gateway API for ArgoCD UI"
   type        = bool
   default     = true
 }
 
 variable "ingress_scheme" {
-  description = "ALB scheme: internet-facing or internal"
+  description = "ALB scheme: internet-facing or internal (used for Gateway API)"
   type        = string
   default     = "internet-facing"
 }

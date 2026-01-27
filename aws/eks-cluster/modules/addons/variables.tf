@@ -55,7 +55,7 @@ variable "enable_lb_controller" {
 
 variable "lb_controller_chart_version" {
   type    = string
-  default = "1.7.1"
+  default = "1.8.0"
 }
 
 variable "tags" {

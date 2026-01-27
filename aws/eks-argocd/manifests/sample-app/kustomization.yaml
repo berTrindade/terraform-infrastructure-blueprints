@@ -5,7 +5,7 @@ resources:
   - namespace.yaml
   - deployment.yaml
   - service.yaml
-  - ingress.yaml
+  - gateway.yaml
 
 commonLabels:
   app.kubernetes.io/managed-by: argocd

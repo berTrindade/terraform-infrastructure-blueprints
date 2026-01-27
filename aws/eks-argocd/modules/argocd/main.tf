@@ -82,42 +82,64 @@ resource "helm_release" "argocd" {
   depends_on = [kubernetes_namespace.argocd]
 }
 
-# ALB Ingress for ArgoCD UI
-resource "kubernetes_ingress_v1" "argocd" {
+# Gateway API for ArgoCD UI
+# Gateway resource (infrastructure layer)
+resource "kubernetes_manifest" "argocd_gateway" {
   count = var.enable_ingress ? 1 : 0
 
-  metadata {
-    name      = "argocd-server"
-    namespace = kubernetes_namespace.argocd.metadata[0].name
-    annotations = {
-      "kubernetes.io/ingress.class"                    = "alb"
-      "alb.ingress.kubernetes.io/scheme"               = var.ingress_scheme
-      "alb.ingress.kubernetes.io/target-type"          = "ip"
-      "alb.ingress.kubernetes.io/backend-protocol"     = "HTTP"
-      "alb.ingress.kubernetes.io/healthcheck-protocol" = "HTTP"
-      "alb.ingress.kubernetes.io/healthcheck-path"     = "/healthz"
-      "alb.ingress.kubernetes.io/listen-ports"         = "[{\"HTTP\": 80}]"
-    }
-  }
-
-  spec {
-    rule {
-      http {
-        path {
-          path      = "/"
-          path_type = "Prefix"
-          backend {
-            service {
-              name = "argocd-server"
-              port {
-                number = 80
-              }
-            }
-          }
-        }
+  manifest = {
+    apiVersion = "gateway.networking.k8s.io/v1"
+    kind       = "Gateway"
+    metadata = {
+      name      = "argocd-gateway"
+      namespace = kubernetes_namespace.argocd.metadata[0].name
+      annotations = {
+        "alb.ingress.kubernetes.io/scheme" = var.ingress_scheme
       }
+    }
+    spec = {
+      gatewayClassName = "alb"
+      listeners = [{
+        name     = "http"
+        protocol = "HTTP"
+        port     = 80
+      }]
     }
   }
 
   depends_on = [helm_release.argocd]
+}
+
+# HTTPRoute resource (application routing layer)
+resource "kubernetes_manifest" "argocd_httproute" {
+  count = var.enable_ingress ? 1 : 0
+
+  manifest = {
+    apiVersion = "gateway.networking.k8s.io/v1"
+    kind       = "HTTPRoute"
+    metadata = {
+      name      = "argocd-route"
+      namespace = kubernetes_namespace.argocd.metadata[0].name
+    }
+    spec = {
+      parentRefs = [{
+        name      = "argocd-gateway"
+        namespace = kubernetes_namespace.argocd.metadata[0].name
+      }]
+      rules = [{
+        matches = [{
+          path = {
+            type  = "PathPrefix"
+            value = "/"
+          }
+        }]
+        backendRefs = [{
+          name = "argocd-server"
+          port = 80
+        }]
+      }]
+    }
+  }
+
+  depends_on = [kubernetes_manifest.argocd_gateway]
 }

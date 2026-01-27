@@ -25,4 +25,4 @@ node_max_size       = 5
 
 # Addons
 enable_lb_controller        = true
-lb_controller_chart_version = "1.7.1"
+lb_controller_chart_version = "1.8.0"

@@ -45,7 +45,7 @@ ArgoCD implements GitOps for Kubernetes - it watches a Git repository and automa
 
 - **EKS 1.29+** with managed node groups
 - **ArgoCD** for GitOps continuous deployment
-- **AWS Load Balancer Controller** for ALB ingress
+- **AWS Load Balancer Controller** for ALB Gateway API
 - **App of Apps** pattern ready
 - **Sample application** included
 - **IRSA** (IAM Roles for Service Accounts)
@@ -61,11 +61,14 @@ aws eks update-kubeconfig --region us-east-1 --name $(terraform output -raw clus
 ### Access ArgoCD UI
 
 ```bash
-# Get ArgoCD URL
-terraform output argocd_url
+# Get ArgoCD Gateway URL (wait for Gateway to be ready)
+kubectl get gateway argocd-gateway -n argocd -o jsonpath='{.status.addresses[0].value}'
+
+# Or use port-forward if Gateway is not ready yet
+terraform output argocd_port_forward
 
 # Get admin password
-kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d
+terraform output argocd_get_admin_password
 ```
 
 Login with username `admin` and the password from above.
@@ -118,7 +121,8 @@ Now edit manifests and push to Git - ArgoCD will automatically sync!
 kubectl delete applications --all -n argocd
 
 # Delete workloads
-kubectl delete ingress --all -A
+kubectl delete httproute --all -A
+kubectl delete gateway --all -A
 kubectl delete svc --all -A --field-selector="spec.type=LoadBalancer"
 
 # Wait for ALB cleanup

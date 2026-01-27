@@ -184,19 +184,8 @@ module "eks_blueprints_addons" {
         applicationSet = {
           replicas = 2
         }
-      })] : [],
-      var.argocd_enable_ingress ? [yamlencode({
-        server = {
-          ingress = {
-            enabled          = true
-            ingressClassName = "alb"
-            annotations = {
-              "alb.ingress.kubernetes.io/scheme"      = var.argocd_ingress_scheme
-              "alb.ingress.kubernetes.io/target-type" = "ip"
-            }
-          }
-        }
       })] : []
+      # Note: Gateway API resources are created via Terraform, not Helm ingress
     )
   }
 

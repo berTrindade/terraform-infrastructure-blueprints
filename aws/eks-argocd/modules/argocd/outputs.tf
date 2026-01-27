@@ -8,9 +8,9 @@ output "chart_version" {
   value = helm_release.argocd.version
 }
 
-output "ingress_hostname" {
-  description = "ArgoCD ALB hostname (if ingress enabled)"
-  value       = var.enable_ingress ? kubernetes_ingress_v1.argocd[0].status[0].load_balancer[0].ingress[0].hostname : null
+output "gateway_hostname_command" {
+  description = "Command to get ArgoCD Gateway ALB hostname (if Gateway API enabled)"
+  value       = var.enable_ingress ? "kubectl get gateway argocd-gateway -n ${var.namespace} -o jsonpath='{.status.addresses[0].value}'" : null
 }
 
 output "get_admin_password" {

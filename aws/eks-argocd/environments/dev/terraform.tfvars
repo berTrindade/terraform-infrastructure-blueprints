@@ -25,7 +25,7 @@ node_max_size       = 5
 
 # Addons
 enable_lb_controller        = true
-lb_controller_chart_version = "1.7.1"
+lb_controller_chart_version = "1.8.0"
 
 # ArgoCD
 argocd_chart_version  = "5.55.0"

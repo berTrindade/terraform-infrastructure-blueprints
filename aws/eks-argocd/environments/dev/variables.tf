@@ -126,7 +126,7 @@ variable "enable_lb_controller" {
 
 variable "lb_controller_chart_version" {
   type    = string
-  default = "1.7.1"
+  default = "1.8.0"
 }
 
 # ArgoCD
@@ -146,13 +146,15 @@ variable "argocd_set_resources" {
 }
 
 variable "argocd_enable_ingress" {
-  type    = bool
-  default = true
+  description = "Enable Gateway API for ArgoCD UI (creates Gateway + HTTPRoute resources)"
+  type        = bool
+  default     = true
 }
 
 variable "argocd_ingress_scheme" {
-  type    = string
-  default = "internet-facing"
+  description = "ALB scheme for Gateway API: internet-facing or internal"
+  type        = string
+  default     = "internet-facing"
 }
 
 variable "argocd_values" {
