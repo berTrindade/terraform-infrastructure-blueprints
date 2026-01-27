@@ -105,7 +105,7 @@ User: "I need what was done for Mavie but for AWS"
 
 AI should:
 1. Call find_by_project(project_name: "Mavie", target_cloud: "aws")
-2. Identify Mavie uses gcp-appengine-cloudsql-strapi
+2. Identify Mavie uses appengine-cloudsql-strapi
 3. Recommend AWS equivalent: alb-ecs-fargate-rds
 4. Explain the differences and migration path
 ```

@@ -133,7 +133,7 @@ terraform destroy
 
 | Blueprint | Relationship | Use Case |
 |-----------|--------------|----------|
-| `azure-functions-postgresql` | Azure equivalent | Prefer Azure over GCP |
+| `functions-postgresql` | Azure equivalent | Prefer Azure over GCP |
 | `alb-ecs-fargate-rds` | AWS equivalent | Prefer AWS over GCP |
 
 ## Origin

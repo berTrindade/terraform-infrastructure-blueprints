@@ -1,6 +1,6 @@
 terraform {
   backend "gcs" {
     bucket = "terraform-state-bucket"
-    prefix = "gcp-appengine-cloudsql-strapi/dev"
+    prefix = "appengine-cloudsql-strapi/dev"
   }
 }

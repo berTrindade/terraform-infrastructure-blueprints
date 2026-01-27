@@ -34,8 +34,8 @@ export const BLUEPRINTS = [
   { name: "eks-argocd", description: "EKS + GitOps with ArgoCD", database: "N/A", pattern: "N/A", useCase: "GitOps deployment workflow", origin: "RVO QuitBuddy - AI-powered smoking cessation platform with event-driven architecture (ustwo, 2025)" },
   { name: "apigw-lambda-bedrock-rag", description: "RAG API with Bedrock", database: "OpenSearch", pattern: "Sync", useCase: "AI/ML, document Q&A", origin: "Cancer Platform (Backend) - RAG API for document Q&A (ustwo, 2025)" },
   { name: "amplify-cognito-apigw-lambda", description: "Full-stack with Amplify + Auth", database: "DynamoDB", pattern: "Sync", useCase: "Frontend + backend + auth", origin: "Cancer Platform (Frontend) - Next.js app for document management (ustwo, 2024)" },
-  { name: "azure-functions-postgresql", description: "Serverless API with PostgreSQL", database: "PostgreSQL Flexible Server", pattern: "Sync", useCase: "Azure serverless, relational data", origin: "HM Impuls - WhatsApp-based pitch submission platform (ustwo, 2025)" },
-  { name: "gcp-appengine-cloudsql-strapi", description: "Containerized app with Cloud SQL", database: "Cloud SQL PostgreSQL", pattern: "Sync", useCase: "GCP serverless, CMS/Strapi", origin: "Mavie iOS - Mobile app backend with Strapi CMS (ustwo, 2025)" },
+  { name: "functions-postgresql", description: "Serverless API with PostgreSQL", database: "PostgreSQL Flexible Server", pattern: "Sync", useCase: "Azure serverless, relational data", origin: "HM Impuls - WhatsApp-based pitch submission platform (ustwo, 2025)" },
+  { name: "appengine-cloudsql-strapi", description: "Containerized app with Cloud SQL", database: "Cloud SQL PostgreSQL", pattern: "Sync", useCase: "GCP serverless, CMS/Strapi", origin: "Mavie iOS - Mobile app backend with Strapi CMS (ustwo, 2025)" },
 ];
 
 // Cross-cloud blueprint equivalents
@@ -47,13 +47,13 @@ export const CROSS_CLOUD_EQUIVALENTS: Record<string, {
 }> = {
   "containerized-postgresql": {
     aws: "alb-ecs-fargate-rds",
-    azure: "azure-functions-postgresql", // Note: Azure Functions is serverless, not containers
-    gcp: "gcp-appengine-cloudsql-strapi",
+    azure: "functions-postgresql", // Note: Azure Functions is serverless, not containers
+    gcp: "appengine-cloudsql-strapi",
     description: "Containerized application with PostgreSQL database"
   },
   "serverless-postgresql": {
     aws: "apigw-lambda-rds",
-    azure: "azure-functions-postgresql",
+    azure: "functions-postgresql",
     gcp: undefined, // No direct GCP equivalent (Cloud Functions + Cloud SQL exists but not in catalog)
     description: "Serverless API with PostgreSQL database"
   },
@@ -66,12 +66,12 @@ export const PROJECT_BLUEPRINTS: Record<string, {
   description: string;
 }> = {
   "mavie": {
-    blueprint: "gcp-appengine-cloudsql-strapi",
+    blueprint: "appengine-cloudsql-strapi",
     cloud: "gcp",
     description: "Mavie iOS - Mobile app backend with Strapi CMS"
   },
   "hm impuls": {
-    blueprint: "azure-functions-postgresql",
+    blueprint: "functions-postgresql",
     cloud: "azure",
     description: "HM Impuls - WhatsApp-based pitch submission platform"
   },
@@ -318,32 +318,32 @@ function findCrossCloudEquivalent(sourceBlueprint: string, targetCloud: string):
   const targetCloudLower = targetCloud.toLowerCase();
 
   // Map based on characteristics
-  if (sourceBlueprint === "gcp-appengine-cloudsql-strapi" && targetCloudLower === "aws") {
+  if (sourceBlueprint === "appengine-cloudsql-strapi" && targetCloudLower === "aws") {
     return BLUEPRINTS.find(b => b.name === "alb-ecs-fargate-rds") || null;
   }
 
-  if (sourceBlueprint === "azure-functions-postgresql" && targetCloudLower === "aws") {
+  if (sourceBlueprint === "functions-postgresql" && targetCloudLower === "aws") {
     return BLUEPRINTS.find(b => b.name === "apigw-lambda-rds") || null;
   }
 
-  if (sourceBlueprint === "azure-functions-postgresql" && targetCloudLower === "gcp") {
-    return BLUEPRINTS.find(b => b.name === "gcp-appengine-cloudsql-strapi") || null;
+  if (sourceBlueprint === "functions-postgresql" && targetCloudLower === "gcp") {
+    return BLUEPRINTS.find(b => b.name === "appengine-cloudsql-strapi") || null;
   }
 
   if (sourceBlueprint === "apigw-lambda-rds" && targetCloudLower === "azure") {
-    return BLUEPRINTS.find(b => b.name === "azure-functions-postgresql") || null;
+    return BLUEPRINTS.find(b => b.name === "functions-postgresql") || null;
   }
 
   if (sourceBlueprint === "apigw-lambda-rds" && targetCloudLower === "gcp") {
-    return BLUEPRINTS.find(b => b.name === "gcp-appengine-cloudsql-strapi") || null;
+    return BLUEPRINTS.find(b => b.name === "appengine-cloudsql-strapi") || null;
   }
 
   if (sourceBlueprint === "alb-ecs-fargate-rds" && targetCloudLower === "gcp") {
-    return BLUEPRINTS.find(b => b.name === "gcp-appengine-cloudsql-strapi") || null;
+    return BLUEPRINTS.find(b => b.name === "appengine-cloudsql-strapi") || null;
   }
 
   if (sourceBlueprint === "alb-ecs-fargate-rds" && targetCloudLower === "azure") {
-    return BLUEPRINTS.find(b => b.name === "azure-functions-postgresql") || null;
+    return BLUEPRINTS.find(b => b.name === "functions-postgresql") || null;
   }
 
   return null;
@@ -351,8 +351,11 @@ function findCrossCloudEquivalent(sourceBlueprint: string, targetCloud: string):
 
 // Helper function to get cloud provider from blueprint name
 function getCloudProvider(blueprintName: string): "aws" | "azure" | "gcp" | null {
-  if (blueprintName.startsWith("azure-")) return "azure";
-  if (blueprintName.startsWith("gcp-")) return "gcp";
+  // Azure blueprints: functions-*
+  if (blueprintName.startsWith("functions-")) return "azure";
+  // GCP blueprints: appengine-*
+  if (blueprintName.startsWith("appengine-")) return "gcp";
+  // AWS blueprints: apigw-*, alb-*, eks-*, amplify-*, appsync-*
   if (blueprintName.startsWith("apigw-") || blueprintName.startsWith("alb-") ||
     blueprintName.startsWith("eks-") || blueprintName.startsWith("amplify-") ||
     blueprintName.startsWith("appsync-")) return "aws";

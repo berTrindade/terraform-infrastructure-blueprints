@@ -21,8 +21,8 @@ Complete reference for all available blueprints, cross-cloud equivalents, decisi
 | `eks-argocd` | EKS + GitOps | N/A | N/A | GitOps deployment workflow | RVO QuitBuddy - AI-powered smoking cessation platform with event-driven architecture (ustwo, 2025) |
 | `apigw-lambda-bedrock-rag` | RAG API with Bedrock | OpenSearch | Sync | AI/ML, document Q&A | Cancer Platform (Backend) - RAG API for document Q&A (ustwo, 2025) |
 | `amplify-cognito-apigw-lambda` | Full-stack with Auth | DynamoDB | Sync | Frontend + backend + auth | Cancer Platform (Frontend) - Next.js app for document management (ustwo, 2024) |
-| `azure-functions-postgresql` | Serverless API with PostgreSQL | PostgreSQL Flexible Server | Sync | Azure serverless, relational data | HM Impuls - WhatsApp-based pitch submission platform (ustwo, 2025) |
-| `gcp-appengine-cloudsql-strapi` | Containerized app with Cloud SQL | Cloud SQL PostgreSQL | Sync | GCP serverless, CMS/Strapi | Mavie iOS - Mobile app backend with Strapi CMS (ustwo, 2025) |
+| `functions-postgresql` | Serverless API with PostgreSQL | PostgreSQL Flexible Server | Sync | Azure serverless, relational data | HM Impuls - WhatsApp-based pitch submission platform (ustwo, 2025) |
+| `appengine-cloudsql-strapi` | Containerized app with Cloud SQL | Cloud SQL PostgreSQL | Sync | GCP serverless, CMS/Strapi | Mavie iOS - Mobile app backend with Strapi CMS (ustwo, 2025) |
 
 ## Cross-Cloud Equivalents
 
@@ -32,20 +32,20 @@ When you need the same infrastructure pattern on a different cloud provider, use
 
 | GCP Blueprint | AWS Equivalent | Azure Equivalent | Notes |
 |---------------|----------------|------------------|-------|
-| `gcp-appengine-cloudsql-strapi` | `alb-ecs-fargate-rds` | `azure-functions-postgresql` | Containerized app → ECS Fargate (AWS) or Functions (Azure). Note: Azure Functions is serverless, not containers. |
+| `appengine-cloudsql-strapi` | `alb-ecs-fargate-rds` | `functions-postgresql` | Containerized app → ECS Fargate (AWS) or Functions (Azure). Note: Azure Functions is serverless, not containers. |
 
 ### Serverless API with PostgreSQL
 
 | Azure Blueprint | AWS Equivalent | GCP Equivalent | Notes |
 |-----------------|----------------|----------------|-------|
-| `azure-functions-postgresql` | `apigw-lambda-rds` | `gcp-appengine-cloudsql-strapi` | Serverless Functions → Lambda (AWS) or App Engine (GCP) |
+| `functions-postgresql` | `apigw-lambda-rds` | `appengine-cloudsql-strapi` | Serverless Functions → Lambda (AWS) or App Engine (GCP) |
 
 ### Project-Based Queries
 
 You can find blueprints by project name and get cross-cloud equivalents:
 
 **Example**: "I need what was done for Mavie but for AWS"
-- Mavie uses: `gcp-appengine-cloudsql-strapi` (GCP)
+- Mavie uses: `appengine-cloudsql-strapi` (GCP)
 - AWS equivalent: `alb-ecs-fargate-rds`
 
 **Usage**: Use the `find_by_project` tool:

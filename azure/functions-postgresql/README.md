@@ -101,7 +101,7 @@ terraform destroy
 
 | Blueprint | Relationship | Use Case |
 |-----------|--------------|----------|
-| `gcp-appengine-cloudsql-strapi` | GCP equivalent | Prefer GCP over Azure |
+| `appengine-cloudsql-strapi` | GCP equivalent | Prefer GCP over Azure |
 | `apigw-lambda-rds` | AWS equivalent | Prefer AWS over Azure |
 
 ## Origin

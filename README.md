@@ -108,11 +108,11 @@ See [ADR-0002](docs/adr/0002-expand-scope-pattern-extraction.md) for the rationa
 
 ### Azure (1 blueprint)
 
-- `azure-functions-postgresql` - Serverless API with PostgreSQL
+- `functions-postgresql` - Serverless API with PostgreSQL
 
 ### GCP (1 blueprint)
 
-- `gcp-appengine-cloudsql-strapi` - Containerized app with Cloud SQL
+- `appengine-cloudsql-strapi` - Containerized app with Cloud SQL
 
 **Full blueprint catalog with descriptions, use cases, and decision trees:** See [Blueprint Catalog](docs/blueprints/catalog.md) or [AGENTS.md](AGENTS.md) for AI assistant integration
 

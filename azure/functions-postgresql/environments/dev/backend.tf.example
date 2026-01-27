@@ -3,6 +3,6 @@ terraform {
     resource_group_name  = "terraform-state-rg"
     storage_account_name = "terraformstate12345" # Must be globally unique
     container_name       = "terraform-state"
-    key                  = "azure-functions-postgresql/dev/terraform.tfstate"
+    key                  = "functions-postgresql/dev/terraform.tfstate"
   }
 }

@@ -42,7 +42,7 @@ User: "I need a serverless API with PostgreSQL"
 User: "I need what was done for Mavie but for AWS"
 
 1. Call: find_by_project(project_name: "Mavie", target_cloud: "aws")
-2. Identify: Mavie uses gcp-appengine-cloudsql-strapi (GCP)
+2. Identify: Mavie uses appengine-cloudsql-strapi (GCP)
 3. Recommend: alb-ecs-fargate-rds (AWS equivalent)
 ```
 
