@@ -393,11 +393,11 @@ async function discoverBlueprintResources(): Promise<Array<{ uri: string; name: 
 
     try {
       const blueprintDirs = await readdir(cloudPath);
-      
+
       for (const blueprintName of blueprintDirs) {
         const blueprintPath = path.join(cloudPath, blueprintName);
         const blueprintStat = await stat(blueprintPath);
-        
+
         if (!blueprintStat.isDirectory()) continue;
 
         // Add README.md resource
@@ -438,7 +438,7 @@ async function discoverFilesInDirectory(
 ): Promise<void> {
   try {
     const entries = await readdir(dirPath);
-    
+
     for (const entry of entries) {
       const fullPath = path.join(dirPath, entry);
       const entryStat = await stat(fullPath);
@@ -454,7 +454,7 @@ async function discoverFilesInDirectory(
         // Only include relevant file types
         const ext = path.extname(entry);
         const relevantExtensions = [".tf", ".md", ".json", ".sh", ".sql", ".yaml", ".yml", ".js", ".ts", ".graphql", ".hcl"];
-        
+
         if (relevantExtensions.includes(ext) || entry === "Dockerfile" || entry.endsWith(".example")) {
           const mimeType = getMimeType(entry);
           resources.push({
@@ -615,9 +615,103 @@ server.resource(
   }
 );
 
+// Register module files for a blueprint
+async function registerModuleFiles(
+  blueprintPath: string,
+  cloud: string,
+  blueprintName: string,
+  moduleDir: string = "modules"
+): Promise<void> {
+  const modulesPath = path.join(blueprintPath, moduleDir);
+  if (!fs.existsSync(modulesPath)) return;
+
+  try {
+    const moduleEntries = await readdir(modulesPath);
+
+    for (const moduleEntry of moduleEntries) {
+      const modulePath = path.join(modulesPath, moduleEntry);
+      const moduleStat = await stat(modulePath);
+
+      if (!moduleStat.isDirectory()) continue;
+
+      // Recursively register all relevant files in the module directory
+      await registerModuleDirectoryFiles(
+        modulePath,
+        cloud,
+        blueprintName,
+        `${moduleDir}/${moduleEntry}`
+      );
+    }
+  } catch (error) {
+    // Silently skip if modules directory doesn't exist or can't be read
+  }
+}
+
+// Recursively register files in a module directory
+async function registerModuleDirectoryFiles(
+  dirPath: string,
+  cloud: string,
+  blueprintName: string,
+  relativePath: string
+): Promise<void> {
+  try {
+    const entries = await readdir(dirPath);
+
+    for (const entry of entries) {
+      const fullPath = path.join(dirPath, entry);
+      const entryStat = await stat(fullPath);
+      const entryRelativePath = `${relativePath}/${entry}`;
+
+      if (entryStat.isDirectory()) {
+        // Skip hidden/system directories
+        if (entry.startsWith(".") && entry !== "." && entry !== "..") {
+          continue;
+        }
+        await registerModuleDirectoryFiles(fullPath, cloud, blueprintName, entryRelativePath);
+      } else if (entryStat.isFile()) {
+        // Only register relevant file types
+        const ext = path.extname(entry);
+        const relevantExtensions = [".tf", ".md", ".json", ".hcl"];
+
+        if (relevantExtensions.includes(ext)) {
+          const fileUri = `blueprints://${cloud}/${blueprintName}/${entryRelativePath}`;
+          const resourceName = `blueprint-${cloud}-${blueprintName}-${entryRelativePath.replace(/[^a-zA-Z0-9-]/g, "-")}`;
+
+          server.resource(
+            resourceName,
+            fileUri,
+            {
+              description: `${entryRelativePath} from ${blueprintName} blueprint`,
+              mimeType: getMimeType(entry),
+            },
+            async () => {
+              try {
+                const { content, mimeType } = await readBlueprintFile(fileUri);
+                return {
+                  contents: [{ uri: fileUri, mimeType, text: content }],
+                };
+              } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                return {
+                  contents: [{
+                    uri: fileUri,
+                    mimeType: "text/plain",
+                    text: `Error reading file: ${errorMessage}`,
+                  }],
+                };
+              }
+            }
+          );
+        }
+      }
+    }
+  } catch (error) {
+    // Silently skip directories we can't read
+  }
+}
+
 // Register important blueprint file resources dynamically
-// We'll register READMEs and main environment files for each blueprint
-// Other files can be accessed by registering additional resources as needed
+// We'll register READMEs, main environment files, and module files for each blueprint
 async function registerImportantBlueprintResources() {
   const workspaceRoot = getWorkspaceRoot();
   const clouds = ["aws", "azure", "gcp"];
@@ -628,7 +722,7 @@ async function registerImportantBlueprintResources() {
 
     try {
       const blueprintDirs = await readdir(cloudPath);
-      
+
       for (const blueprintName of blueprintDirs) {
         const blueprintPath = path.join(cloudPath, blueprintName);
         try {
@@ -696,6 +790,10 @@ async function registerImportantBlueprintResources() {
               }
             );
           }
+
+          // Register module files
+          await registerModuleFiles(blueprintPath, cloud, blueprintName);
+
         } catch (error) {
           // Skip blueprints we can't access
           continue;
@@ -1018,7 +1116,7 @@ server.tool(
 async function main() {
   // Register important blueprint resources before connecting
   await registerImportantBlueprintResources();
-  
+
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("ustwo Infrastructure Blueprints MCP Server running");
