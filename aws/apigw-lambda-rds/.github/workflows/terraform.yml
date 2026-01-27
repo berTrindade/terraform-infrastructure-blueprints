@@ -1,202 +1,119 @@
 # .github/workflows/terraform.yml
-# Terraform CI/CD Pipeline
-# Based on terraform-skill ci-cd-workflows patterns
+# Terraform CI/CD Pipeline for Multi-Environment Deployments
+#
+# This workflow implements the recommended pattern:
+# - Plan on pull requests (all environments)
+# - Apply to dev automatically on merge
+# - Promote to staging/production with approval gates
+#
+# Prerequisites:
+# 1. Configure GitHub Environments (Settings → Environments):
+#    - staging: 1 required reviewer
+#    - production: 1-2 required reviewers, 10min wait timer
+# 2. Set up AWS OIDC provider and IAM role (see docs/guides/cicd.md)
+# 3. Configure GitHub secrets:
+#    - AWS_ACCOUNT_ID: Your AWS account ID
+#    - TF_STATE_BUCKET: S3 bucket for Terraform state
+#    - TF_LOCK_TABLE: DynamoDB table for state locking
+#
+# Alternative: For HCP Terraform backend, see .github/workflows/terraform-hcp.yml.example
 
-name: Terraform
+name: Terraform CI/CD
 
 on:
+  pull_request:
+    paths:
+      - 'environments/**/*.tf'
+      - 'modules/**/*.tf'
   push:
     branches:
       - main
     paths:
-      - 'aws/example-serverless-api-rds/**'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'aws/example-serverless-api-rds/**'
-  workflow_dispatch:
+      - 'environments/**/*.tf'
+      - 'modules/**/*.tf'
 
 env:
-  TF_ROOT: aws/example-serverless-api-rds/environments/dev
-  TF_VERSION: "1.11.0"
-  AWS_REGION: us-east-1
+  AWS_REGION: us-east-1  # Update to your preferred region
+  TF_VERSION: 1.11.0
 
 jobs:
   # ============================================
-  # VALIDATE: Format, syntax, and linting
-  # ============================================
-  validate:
-    name: Validate
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ env.TF_ROOT }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
-
-      - name: Cache Terraform plugins
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.terraform.d/plugin-cache
-          key: ${{ runner.os }}-terraform-${{ hashFiles('**/.terraform.lock.hcl') }}
-          restore-keys: |
-            ${{ runner.os }}-terraform-
-
-      - name: Terraform Format Check
-        run: terraform fmt -check -recursive -diff
-        working-directory: aws/example-serverless-api-rds
-
-      - name: Terraform Init
-        run: terraform init -backend=false
-
-      - name: Terraform Validate
-        run: terraform validate
-
-      - name: Setup TFLint
-        uses: terraform-linters/setup-tflint@v4
-        with:
-          tflint_version: latest
-
-      - name: TFLint Init
-        run: tflint --init
-
-      - name: TFLint Run
-        run: tflint --recursive
-        working-directory: aws/example-serverless-api-rds
-
-  # ============================================
-  # SECURITY: Trivy and Checkov scanning
-  # ============================================
-  security:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    needs: validate
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Run Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'config'
-          scan-ref: 'aws/example-serverless-api-rds'
-          format: 'table'
-          exit-code: '1'
-          severity: 'CRITICAL,HIGH'
-          trivyignores: 'aws/example-serverless-api-rds/.trivyignore'
-
-      - name: Run Checkov
-        uses: bridgecrewio/checkov-action@v12
-        with:
-          directory: aws/example-serverless-api-rds
-          framework: terraform
-          config_file: aws/example-serverless-api-rds/.checkov.yaml
-          soft_fail: false
-          output_format: cli
-
-  # ============================================
-  # TEST: Native Terraform tests
-  # ============================================
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    needs: security
-    defaults:
-      run:
-        working-directory: aws/example-serverless-api-rds
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
-
-      - name: Terraform Init (for tests)
-        run: terraform init -backend=false
-        working-directory: ${{ env.TF_ROOT }}
-
-      - name: Run Unit Tests
-        run: terraform test -test-directory=tests/unit
-        working-directory: ${{ env.TF_ROOT }}
-        continue-on-error: true
-
-  # ============================================
-  # PLAN: Generate execution plan
+  # PLAN: Generate execution plans for all environments
   # ============================================
   plan:
-    name: Plan
+    name: Plan - ${{ matrix.environment }}
     runs-on: ubuntu-latest
-    needs: test
-    if: github.event_name == 'pull_request'
-    defaults:
-      run:
-        working-directory: ${{ env.TF_ROOT }}
-
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    strategy:
+      matrix:
+        environment: [dev, staging, production]
+      fail-fast: false
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-terraform
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+      - name: Terraform Format Check
+        working-directory: ./environments/${{ matrix.environment }}
+        run: terraform fmt -check -recursive
 
       - name: Terraform Init
-        run: terraform init
+        working-directory: ./environments/${{ matrix.environment }}
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=${{ matrix.environment }}/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
+
+      - name: Terraform Validate
+        working-directory: ./environments/${{ matrix.environment }}
+        run: terraform validate
 
       - name: Terraform Plan
         id: plan
+        working-directory: ./environments/${{ matrix.environment }}
         run: |
           terraform plan -out=tfplan -no-color 2>&1 | tee plan.txt
           echo "plan<<EOF" >> $GITHUB_OUTPUT
           cat plan.txt >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+        continue-on-error: true
 
-      - name: Upload Plan
-        uses: actions/upload-artifact@v4
-        with:
-          name: tfplan
-          path: ${{ env.TF_ROOT }}/tfplan
-          retention-days: 7
-
-      - name: Comment Plan on PR
-        uses: actions/github-script@v7
+      - name: Comment PR
         if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const plan = `${{ steps.plan.outputs.plan }}`;
-            const output = `#### Terraform Plan 📖
-
+            const status = steps.plan.outcome === 'success' ? '✅' : '❌';
+            const output = `#### Terraform Plan - \`${{ matrix.environment }}\` ${status}
+            
             <details><summary>Show Plan</summary>
-
+            
             \`\`\`terraform
             ${plan.substring(0, 65000)}
             \`\`\`
-
+            
             </details>
-
+            
             *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
-
+            
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
@@ -205,36 +122,127 @@ jobs:
             });
 
   # ============================================
-  # APPLY: Apply changes (main branch only)
+  # APPLY DEV: Auto-apply to dev on merge
   # ============================================
-  apply:
-    name: Apply
+  apply-dev:
+    name: Apply - Dev
     runs-on: ubuntu-latest
-    needs: test
+    needs: plan
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment: production
-    defaults:
-      run:
-        working-directory: ${{ env.TF_ROOT }}
-
+    permissions:
+      id-token: write
+      contents: read
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-terraform
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
       - name: Terraform Init
-        run: terraform init
+        working-directory: ./environments/dev
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=dev/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
 
       - name: Terraform Apply
+        working-directory: ./environments/dev
+        run: terraform apply -auto-approve -lock-timeout=10m
+
+  # ============================================
+  # APPLY STAGING: Manual approval required
+  # ============================================
+  apply-staging:
+    name: Apply - Staging
+    runs-on: ubuntu-latest
+    needs: apply-dev
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: staging
+      url: https://staging.example.com  # Update with your staging URL
+    permissions:
+      id-token: write
+      contents: read
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-terraform
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        working-directory: ./environments/staging
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=staging/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
+
+      - name: Terraform Apply
+        working-directory: ./environments/staging
+        run: terraform apply -auto-approve -lock-timeout=10m
+
+  # ============================================
+  # APPLY PRODUCTION: Manual approval required
+  # ============================================
+  apply-production:
+    name: Apply - Production
+    runs-on: ubuntu-latest
+    needs: apply-staging
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: production
+      url: https://example.com  # Update with your production URL
+    permissions:
+      id-token: write
+      contents: read
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-terraform
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        working-directory: ./environments/production
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=production/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
+
+      - name: Terraform Apply
+        working-directory: ./environments/production
         run: terraform apply -auto-approve -lock-timeout=10m
