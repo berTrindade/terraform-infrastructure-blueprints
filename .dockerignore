@@ -19,3 +19,7 @@ mcp-server/tsconfig.json
 *.sh
 *.toml
 *.example
+# Exclude documentation
+docs/
+# Exclude mcp-test-scenarios
+mcp-test-scenarios/
