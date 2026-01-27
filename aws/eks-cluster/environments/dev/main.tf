@@ -55,8 +55,56 @@ module "vpc" {
     "kubernetes.io/cluster/${module.naming.cluster}" = "shared"
   }
 
+  # VPC Flow Logs
+  enable_flow_log                      = true
+  flow_log_destination_type            = "cloud-watch-logs"
+  flow_log_cloudwatch_log_group_name   = "/aws/vpc/${module.naming.vpc}/flow-logs"
+  flow_log_cloudwatch_log_group_retention_in_days = 7
+  flow_log_cloudwatch_iam_role_arn     = aws_iam_role.vpc_flow_logs.arn
+
   tags = module.tagging.tags
 }
+
+# IAM Role for VPC Flow Logs
+resource "aws_iam_role" "vpc_flow_logs" {
+  name = "${module.naming.vpc}-vpc-flow-logs-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "vpc-flow-logs.amazonaws.com"
+      }
+    }]
+  })
+
+  tags = module.tagging.tags
+}
+
+resource "aws_iam_role_policy" "vpc_flow_logs" {
+  name = "${module.naming.vpc}-vpc-flow-logs-policy"
+  role = aws_iam_role.vpc_flow_logs.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams"
+      ]
+      Resource = "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/vpc/${module.naming.vpc}/flow-logs*"
+    }]
+  })
+}
+
+data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
 
 # ============================================
 # EKS Cluster (Official Module)
@@ -137,6 +185,22 @@ module "eks" {
 
   tags = module.tagging.tags
 }
+
+# ============================================
+# CloudWatch Container Insights
+# ============================================
+
+resource "aws_cloudwatch_log_group" "container_insights" {
+  name              = "/aws/containerinsights/${module.eks.cluster_name}/performance"
+  retention_in_days = 7
+
+  tags = module.tagging.tags
+}
+
+# Enable Container Insights
+# Note: Container Insights requires manual setup via kubectl after cluster creation:
+# kubectl apply -f https://raw.githubusercontent.com/aws-samples/amazon-cloudwatch-container-insights/latest/k8s-deployment-manifest-templates/deployment-mode/daemonset/container-insights-monitoring/quickstart/cwagent-fluentd-quickstart.yaml
+# Or use AWS Console: EKS > Cluster > Observability > Add-ons > CloudWatch Observability
 
 # ============================================
 # IRSA for EBS CSI Driver

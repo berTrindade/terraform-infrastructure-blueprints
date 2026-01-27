@@ -10,6 +10,7 @@ flowchart TB
     ALB[Application<br/>Load Balancer]
     EKS[EKS<br/>Control Plane]
     NG[Managed<br/>Node Group]
+    CW[CloudWatch<br/>Logs & Metrics]
     
     subgraph vpc [VPC]
         subgraph pub [Public Subnets]
@@ -18,11 +19,14 @@ flowchart TB
         subgraph priv [Private Subnets]
             NG
         end
+        FL[VPC Flow Logs]
     end
     
     Internet --> ALB
     ALB --> NG
     EKS --> NG
+    NG --> CW
+    FL --> CW
 ```
 
 ## Requirements
@@ -52,6 +56,8 @@ Amazon EKS provides a managed Kubernetes control plane. This blueprint includes:
 - **AWS Load Balancer Controller** for ALB/NLB Gateway API
 - **EBS CSI Driver** for persistent volumes
 - **VPC-CNI, CoreDNS, Kube-proxy** addons
+- **VPC Flow Logs** enabled for network visibility
+- **CloudWatch Container Insights** ready (log group created)
 
 ## Testing
 
@@ -127,6 +133,34 @@ EOF
 kubectl get gateway nginx-gateway -w
 kubectl get httproute nginx-route -w
 ```
+
+### Enable Pod Security Standards
+
+Apply Pod Security Standards for baseline security:
+
+```bash
+kubectl label namespace default pod-security.kubernetes.io/enforce=baseline pod-security.kubernetes.io/audit=restricted pod-security.kubernetes.io/warn=restricted --overwrite
+```
+
+For production workloads, use `restricted` instead of `baseline`:
+
+```bash
+kubectl label namespace production pod-security.kubernetes.io/enforce=restricted pod-security.kubernetes.io/audit=restricted pod-security.kubernetes.io/warn=restricted --overwrite
+```
+
+### Enable CloudWatch Container Insights
+
+After cluster creation, enable Container Insights for observability:
+
+```bash
+# Option 1: Via kubectl
+kubectl apply -f https://raw.githubusercontent.com/aws-samples/amazon-cloudwatch-container-insights/latest/k8s-deployment-manifest-templates/deployment-mode/daemonset/container-insights-monitoring/quickstart/cwagent-fluentd-quickstart.yaml
+
+# Option 2: Via AWS Console
+# EKS > Cluster > Observability > Add-ons > CloudWatch Observability
+```
+
+View metrics in CloudWatch Console under Container Insights.
 
 ## Configuration
 

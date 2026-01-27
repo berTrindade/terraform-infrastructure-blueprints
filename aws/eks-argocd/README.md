@@ -12,6 +12,11 @@ flowchart TB
     EKS[EKS Cluster]
     Apps[Applications]
     ALB[Application<br/>Load Balancer]
+    CW[CloudWatch<br/>Logs & Metrics]
+    
+    subgraph vpc [VPC]
+        FL[VPC Flow Logs]
+    end
     
     Dev -->|Push| Git
     Git -->|Webhook/Poll| ArgoCD
@@ -19,6 +24,8 @@ flowchart TB
     EKS --> Apps
     ALB --> ArgoCD
     ALB --> Apps
+    EKS --> CW
+    FL --> CW
 ```
 
 ## Requirements
@@ -49,6 +56,8 @@ ArgoCD implements GitOps for Kubernetes - it watches a Git repository and automa
 - **App of Apps** pattern ready
 - **Sample application** included
 - **IRSA** (IAM Roles for Service Accounts)
+- **VPC Flow Logs** enabled for network visibility
+- **CloudWatch Container Insights** ready (log group created)
 
 ## Testing
 
@@ -84,13 +93,36 @@ spec:
     repoURL: https://github.com/YOUR-ORG/YOUR-REPO.git
 ```
 
-3. Register the app:
+1. Register the app:
 
 ```bash
 kubectl apply -f manifests/argocd-apps/sample-app.yaml
 ```
 
 Now edit manifests and push to Git - ArgoCD will automatically sync!
+
+### Enable Pod Security Standards
+
+Apply Pod Security Standards for baseline security:
+
+```bash
+kubectl label namespace default pod-security.kubernetes.io/enforce=baseline pod-security.kubernetes.io/audit=restricted pod-security.kubernetes.io/warn=restricted --overwrite
+kubectl label namespace argocd pod-security.kubernetes.io/enforce=baseline pod-security.kubernetes.io/audit=restricted pod-security.kubernetes.io/warn=restricted --overwrite
+```
+
+### Enable CloudWatch Container Insights
+
+After cluster creation, enable Container Insights for observability:
+
+```bash
+# Option 1: Via kubectl
+kubectl apply -f https://raw.githubusercontent.com/aws-samples/amazon-cloudwatch-container-insights/latest/k8s-deployment-manifest-templates/deployment-mode/daemonset/container-insights-monitoring/quickstart/cwagent-fluentd-quickstart.yaml
+
+# Option 2: Via AWS Console
+# EKS > Cluster > Observability > Add-ons > CloudWatch Observability
+```
+
+View metrics in CloudWatch Console under Container Insights.
 
 ## Configuration
 
