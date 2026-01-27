@@ -205,6 +205,111 @@ export const EXTRACTION_PATTERNS: Record<string, { blueprint: string; modules: s
   },
 };
 
+// Blueprint comparison data for architectural decision-making
+export const COMPARISONS: Record<string, {
+  optionA: { name: string; blueprints: string[] };
+  optionB: { name: string; blueprints: string[] };
+  factors: Array<{ factor: string; optionA?: string; optionB?: string; description?: string }>;
+}> = {
+  "serverless-vs-containers": {
+    optionA: {
+      name: "Serverless (Lambda)",
+      blueprints: [
+        "apigw-lambda-dynamodb",
+        "apigw-lambda-dynamodb-cognito",
+        "apigw-lambda-rds",
+        "apigw-lambda-rds-proxy",
+        "apigw-lambda-aurora",
+        "appsync-lambda-aurora-cognito",
+        "apigw-sqs-lambda-dynamodb",
+        "apigw-eventbridge-lambda",
+        "apigw-sns-lambda",
+        "apigw-lambda-bedrock-rag",
+        "amplify-cognito-apigw-lambda",
+      ],
+    },
+    optionB: {
+      name: "Containers (ECS Fargate)",
+      blueprints: [
+        "alb-ecs-fargate",
+        "alb-ecs-fargate-rds",
+        "eks-cluster",
+        "eks-argocd",
+      ],
+    },
+    factors: [
+      { factor: "Cold starts", optionA: "Yes (100ms-1s)", optionB: "No (always warm)", description: "Lambda has cold start latency; containers stay warm" },
+      { factor: "Cost model", optionA: "Pay per request", optionB: "Pay for running time", description: "Lambda charges per invocation; containers charge per hour" },
+      { factor: "Scaling", optionA: "Automatic, instant", optionB: "Automatic, gradual", description: "Lambda scales instantly; containers scale gradually" },
+      { factor: "Custom runtime", optionA: "Limited", optionB: "Full control", description: "Lambda supports limited runtimes; containers support any runtime" },
+      { factor: "State management", optionA: "Stateless only", optionB: "Can maintain state", description: "Lambda is stateless; containers can maintain state" },
+      { factor: "Long-running tasks", optionA: "15 min max", optionB: "Unlimited", description: "Lambda has 15-minute timeout; containers can run indefinitely" },
+    ],
+  },
+  "dynamodb-vs-rds": {
+    optionA: {
+      name: "DynamoDB",
+      blueprints: [
+        "apigw-lambda-dynamodb",
+        "apigw-lambda-dynamodb-cognito",
+        "apigw-sqs-lambda-dynamodb",
+        "amplify-cognito-apigw-lambda",
+      ],
+    },
+    optionB: {
+      name: "RDS (PostgreSQL)",
+      blueprints: [
+        "apigw-lambda-rds",
+        "apigw-lambda-rds-proxy",
+        "apigw-lambda-aurora",
+        "appsync-lambda-aurora-cognito",
+        "alb-ecs-fargate-rds",
+      ],
+    },
+    factors: [
+      { factor: "Data model", optionA: "NoSQL (key-value)", optionB: "Relational (SQL)", description: "DynamoDB is NoSQL; RDS supports relational data" },
+      { factor: "Query flexibility", optionA: "Limited (key-based)", optionB: "Full SQL", description: "DynamoDB queries by key; RDS supports complex SQL queries" },
+      { factor: "Scaling", optionA: "Automatic, unlimited", optionB: "Manual, vertical/horizontal", description: "DynamoDB scales automatically; RDS requires manual scaling" },
+      { factor: "Cost", optionA: "Pay per request", optionB: "Pay per instance", description: "DynamoDB charges per read/write; RDS charges per instance hour" },
+      { factor: "ACID transactions", optionA: "Limited (single table)", optionB: "Full ACID", description: "DynamoDB has limited transactions; RDS has full ACID compliance" },
+      { factor: "Complex joins", optionA: "Not supported", optionB: "Supported", description: "DynamoDB doesn't support joins; RDS supports complex joins" },
+    ],
+  },
+  "sync-vs-async": {
+    optionA: {
+      name: "Synchronous (Request/Response)",
+      blueprints: [
+        "apigw-lambda-dynamodb",
+        "apigw-lambda-dynamodb-cognito",
+        "apigw-lambda-rds",
+        "apigw-lambda-rds-proxy",
+        "apigw-lambda-aurora",
+        "appsync-lambda-aurora-cognito",
+        "alb-ecs-fargate",
+        "alb-ecs-fargate-rds",
+        "apigw-lambda-bedrock-rag",
+        "amplify-cognito-apigw-lambda",
+      ],
+    },
+    optionB: {
+      name: "Asynchronous (Event-driven)",
+      blueprints: [
+        "apigw-sqs-lambda-dynamodb",
+        "apigw-eventbridge-lambda",
+        "apigw-sns-lambda",
+      ],
+    },
+    factors: [
+      { factor: "Response time", optionA: "Immediate", optionB: "Delayed", description: "Sync returns immediately; async processes in background" },
+      { factor: "Reliability", optionA: "Depends on downstream", optionB: "Decoupled, resilient", description: "Sync fails if downstream fails; async can retry/queue" },
+      { factor: "User experience", optionA: "Wait for result", optionB: "Fire and forget", description: "Sync requires waiting; async provides immediate acknowledgment" },
+      { factor: "Error handling", optionA: "Immediate feedback", optionB: "Retry/Dead-letter queue", description: "Sync errors return immediately; async can retry failed messages" },
+      { factor: "Scalability", optionA: "Limited by slowest component", optionB: "Independent scaling", description: "Sync scales with slowest component; async scales independently" },
+      { factor: "Complexity", optionA: "Simpler", optionB: "More complex", description: "Sync is simpler to reason about; async requires queue/event management" },
+    ],
+  },
+};
+
 // Helper function to find cross-cloud equivalent blueprint
 function findCrossCloudEquivalent(sourceBlueprint: string, targetCloud: string): typeof BLUEPRINTS[0] | null {
   const source = BLUEPRINTS.find(b => b.name === sourceBlueprint);
