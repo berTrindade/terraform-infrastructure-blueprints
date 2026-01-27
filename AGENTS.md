@@ -11,3 +11,8 @@ For detailed documentation, see:
 - [Workflows](docs/blueprints/workflows.md) - Usage scenarios and step-by-step workflows
 - [Patterns](docs/blueprints/patterns.md) - Key patterns (secrets, naming, VPC, extractable patterns)
 - [Customization](docs/blueprints/customization.md) - Common customizations, commands, constraints
+
+**For AI Assistants**:
+- [AI Assistant Guidelines](docs/ai-assistant-guidelines.md) - Comprehensive guide for referencing blueprints instead of generic code
+- [AI Quick Reference](docs/ai-quick-reference.md) - One-page lookup for MCP tools and patterns
+- [Wrong vs Right Examples](docs/examples/wrong-vs-right-database.md) - Code comparison showing blueprint patterns vs generic Terraform
