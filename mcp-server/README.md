@@ -46,7 +46,7 @@ Create or edit `~/.cursor/mcp.json`:
 }
 ```
 
-**Note:** Remove `--pull always` for faster startup (updates only on Cursor restart).
+**Automatic Updates:** With `--pull always`, developers automatically get the latest version on every MCP server connection. No manual updates or restarts needed!
 
 ### Step 4: Restart Cursor
 
@@ -67,7 +67,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 }
 ```
 
-**Note:** Remove `--pull always` for faster startup (updates only on restart).
+**Automatic Updates:** With `--pull always`, developers automatically get the latest version. No manual updates needed!
 
 ## Available Tools
 
@@ -139,7 +139,16 @@ docker build -t infra-mcp .
 
 ## Publishing
 
-The Docker image is automatically published when you push a tag:
+The Docker image is automatically published when you push changes:
+
+### Automatic Publishing
+
+**On every push to `main` branch** (if `mcp-server/**` files change):
+
+- `ghcr.io/bertrindade/infra-mcp:latest` is automatically updated
+- Developers get the update automatically (no action needed)
+
+**When you push a version tag:**
 
 ```bash
 git tag mcp-v1.0.1
@@ -148,5 +157,15 @@ git push origin mcp-v1.0.1
 
 This creates:
 
-- `ghcr.io/bertrindade/infra-mcp:1.0.1`
-- `ghcr.io/bertrindade/infra-mcp:latest`
+- `ghcr.io/bertrindade/infra-mcp:1.0.1` (versioned tag)
+- `ghcr.io/bertrindade/infra-mcp:latest` (always points to newest)
+
+### How Developers Get Updates
+
+Developers configured with `--pull always` automatically receive updates:
+
+- ✅ **No manual pull needed** - Docker pulls latest on each connection
+- ✅ **No restart required** - Cursor reconnects with new image automatically
+- ✅ **Zero developer action** - Updates happen transparently
+
+The `:latest` tag is always updated to point to the most recent build, ensuring developers always get the newest version.
