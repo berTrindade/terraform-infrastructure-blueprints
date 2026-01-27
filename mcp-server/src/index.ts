@@ -126,11 +126,11 @@ export const PROJECT_BLUEPRINTS: Record<string, {
 export const EXTRACTION_PATTERNS: Record<string, { blueprint: string; modules: string[]; description: string; integrationSteps: string[] }> = {
   database: {
     blueprint: "apigw-lambda-rds",
-    modules: ["modules/data/", "modules/networking/"],
+    modules: ["modules/data/", "modules/vpc/"],
     description: "RDS PostgreSQL database with VPC integration",
     integrationSteps: [
       "Copy modules/data/ to your project's modules directory",
-      "Copy relevant security group rules from modules/networking/",
+      "Copy relevant security group rules from modules/vpc/",
       "Add database module call to your main.tf",
       "Configure VPC subnet IDs and security group references",
       "Add Secrets Manager for connection metadata",
@@ -1102,15 +1102,47 @@ server.registerTool(
     }
 
     if (recommendations.length === 0) {
+      // Find closest matches by scoring all blueprints
+      const allScored = BLUEPRINTS.map(b => {
+        let score = 0;
+        if (database && b.database.toLowerCase().includes(database.toLowerCase())) score += 3;
+        if (pattern && b.pattern.toLowerCase().includes(pattern.toLowerCase())) score += 2;
+        if (auth !== undefined && (b.name.includes("cognito") || b.name.includes("amplify")) === auth) score += 2;
+        if (containers !== undefined && (b.name.includes("ecs") || b.name.includes("eks")) === containers) score += 2;
+        if (cloud) {
+          const provider = getCloudProvider(b.name);
+          if ((cloud.toLowerCase() === "aws" && provider === "aws") ||
+              (cloud.toLowerCase() === "azure" && provider === "azure") ||
+              (cloud.toLowerCase() === "gcp" && provider === "gcp")) score += 2;
+        }
+        return { blueprint: b, score };
+      }).filter(item => item.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3);
+
+      const suggestions = allScored.length > 0
+        ? allScored.map(({ blueprint, score }) => 
+            `- **${blueprint.name}** (${score}% match): ${blueprint.description}`
+          ).join("\n")
+        : "- For serverless APIs: apigw-lambda-dynamodb or apigw-lambda-rds\n" +
+          "- For async processing: apigw-sqs-lambda-dynamodb\n" +
+          "- For containers: alb-ecs-fargate or eks-cluster\n" +
+          "- For auth: apigw-lambda-dynamodb-cognito";
+
+      const missingFeatures = [];
+      if (database) missingFeatures.push(`database: ${database}`);
+      if (pattern) missingFeatures.push(`pattern: ${pattern}`);
+      if (auth !== undefined) missingFeatures.push(`auth: ${auth}`);
+      if (containers !== undefined) missingFeatures.push(`containers: ${containers}`);
+      if (cloud) missingFeatures.push(`cloud: ${cloud}`);
+
       return {
         content: [
           {
             type: "text",
-            text: "No exact match found. Here are some suggestions:\n\n" +
-              "- For serverless APIs: apigw-lambda-dynamodb or apigw-lambda-rds\n" +
-              "- For async processing: apigw-sqs-lambda-dynamodb\n" +
-              "- For containers: alb-ecs-fargate or eks-cluster\n" +
-              "- For auth: apigw-lambda-dynamodb-cognito",
+            text: `No exact match found for: ${missingFeatures.join(", ")}\n\n` +
+              `## Closest Matches\n\n${suggestions}\n\n` +
+              `**Tip**: Use \`extract_pattern(capability: "${database || "database"}")\` to add missing capabilities to any blueprint.`,
           },
         ],
       };
@@ -1212,6 +1244,18 @@ server.registerTool(
       return `blueprints://${cloudProvider}/${pattern.blueprint}/${modulePath}main.tf`;
     });
 
+    // Always fetch at least the main module file for quick reference
+    let quickReference = "";
+    if (moduleResourceUris.length > 0) {
+      try {
+        const { content } = await readBlueprintFile(moduleResourceUris[0]);
+        const fileName = moduleResourceUris[0].split("/").pop() || "main.tf";
+        quickReference = `\n## Quick Reference (Main Module)\n\n\`\`\`hcl\n${content.substring(0, 2000)}${content.length > 2000 ? "\n... (truncated, use include_files: true for full content)" : ""}\n\`\`\`\n`;
+      } catch (error) {
+        // Silently fail - will be included in full fetch if include_files=true
+      }
+    }
+
     let fileContents = "";
     if (include_files) {
       try {
@@ -1285,10 +1329,317 @@ https://github.com/berTrindade/terraform-infrastructure-blueprints/tree/main/${c
 - Update security groups to allow access from your existing resources
 - Follow your project's existing patterns for outputs and state management
 - These are **reference examples** - you'll integrate them manually into your project
-${fileContents}`;
+${quickReference}${fileContents}`;
 
     return {
       content: [{ type: "text", text: output }],
+    };
+  }
+);
+
+server.registerTool(
+  "get_integration_example",
+  {
+    description: "Get a concrete code example showing how to integrate a pattern into existing Terraform. Returns actual Terraform code snippets.",
+    inputSchema: {
+      capability: z.string().describe("Capability to integrate: database, queue, auth, events, ai, notifications"),
+      existing_structure: z.enum(["monolithic", "modular", "simple"]).optional().describe("Structure of existing Terraform (default: simple)"),
+    },
+  },
+  async ({ capability, existing_structure = "simple" }) => {
+    const capLower = (capability || "").toLowerCase();
+    const pattern = EXTRACTION_PATTERNS[capLower];
+
+    if (!pattern) {
+      const available = Object.keys(EXTRACTION_PATTERNS).join(", ");
+      return {
+        content: [{
+          type: "text",
+          text: `Unknown capability "${capability}". Available capabilities: ${available}`
+        }]
+      };
+    }
+
+    const cloudProvider = getCloudProvider(pattern.blueprint) || "aws";
+    
+    // Fetch actual module files to generate examples
+    let moduleExample = "";
+    try {
+      const mainModuleUri = `blueprints://${cloudProvider}/${pattern.blueprint}/${pattern.modules[0]}main.tf`;
+      const { content } = await readBlueprintFile(mainModuleUri);
+      // Extract key parts for example
+      moduleExample = content.substring(0, 1500);
+    } catch (error) {
+      moduleExample = "*Module file not available*";
+    }
+
+    let integrationCode = "";
+    if (capLower === "database") {
+      integrationCode = `# Add to your main.tf
+
+# 1. Add VPC and subnets (if not already present)
+resource "aws_vpc" "main" {
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+}
+
+resource "aws_subnet" "private" {
+  count = 2
+  vpc_id     = aws_vpc.main.id
+  cidr_block = cidrsubnet(aws_vpc.main.cidr_block, 8, count.index)
+  # ... availability zone configuration
+}
+
+# 2. Add security groups
+resource "aws_security_group" "lambda" {
+  name        = "\${var.project_name}-lambda-sg"
+  vpc_id      = aws_vpc.main.id
+  # Allow outbound to RDS
+  egress {
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [aws_security_group.rds.id]
+  }
+}
+
+resource "aws_security_group" "rds" {
+  name   = "\${var.project_name}-rds-sg"
+  vpc_id = aws_vpc.main.id
+}
+
+resource "aws_security_group_rule" "rds_ingress" {
+  type                     = "ingress"
+  from_port                = 5432
+  to_port                  = 5432
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.lambda.id
+  security_group_id        = aws_security_group.rds.id
+}
+
+# 3. Add RDS instance
+resource "aws_db_instance" "main" {
+  identifier     = "\${var.project_name}-db"
+  engine         = "postgres"
+  engine_version = "15.4"
+  instance_class = var.db_instance_class
+  db_name        = var.db_name
+  username       = var.db_username
+  password       = var.db_password
+  
+  db_subnet_group_name   = aws_db_subnet_group.main.name
+  vpc_security_group_ids = [aws_security_group.rds.id]
+  publicly_accessible    = false
+  
+  # ... other configuration
+}
+
+# 4. Update Lambda to use VPC
+resource "aws_lambda_function" "api" {
+  # ... existing configuration
+  
+  vpc_config {
+    subnet_ids         = aws_subnet.private[*].id
+    security_group_ids = [aws_security_group.lambda.id]
+  }
+  
+  environment {
+    variables = {
+      DB_HOST = aws_db_instance.main.address
+      DB_PORT = tostring(aws_db_instance.main.port)
+      DB_NAME = var.db_name
+    }
+  }
+}
+
+# 5. Add IAM permissions
+resource "aws_iam_role_policy_attachment" "lambda_vpc" {
+  role       = aws_iam_role.lambda.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}`;
+    } else if (capLower === "queue") {
+      integrationCode = `# Add SQS queue and Lambda worker
+
+# 1. Add SQS queue
+resource "aws_sqs_queue" "main" {
+  name                      = "\${var.project_name}-queue"
+  visibility_timeout_seconds = 300
+  message_retention_seconds = 1209600
+}
+
+# 2. Add dead-letter queue
+resource "aws_sqs_queue" "dlq" {
+  name = "\${var.project_name}-dlq"
+}
+
+resource "aws_sqs_queue_redrive_policy" "main" {
+  queue_url = aws_sqs_queue.main.id
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.dlq.arn
+    maxReceiveCount     = 3
+  })
+}
+
+# 3. Add Lambda worker
+resource "aws_lambda_function" "worker" {
+  function_name = "\${var.project_name}-worker"
+  handler       = "index.handler"
+  runtime       = "nodejs20.x"
+  # ... other configuration
+}
+
+# 4. Add SQS trigger
+resource "aws_lambda_event_source_mapping" "sqs" {
+  event_source_arn = aws_sqs_queue.main.arn
+  function_name    = aws_lambda_function.worker.arn
+  batch_size       = 10
+}
+
+# 5. Add IAM permissions
+resource "aws_iam_policy" "sqs" {
+  name = "\${var.project_name}-sqs-policy"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = ["sqs:SendMessage", "sqs:ReceiveMessage", "sqs:DeleteMessage"]
+      Resource = aws_sqs_queue.main.arn
+    }]
+  })
+}`;
+    } else {
+      integrationCode = `# Integration example for ${capability}\n\nSee the blueprint module files for complete examples:\n${pattern.modules.map(m => `- ${m}`).join("\n")}`;
+    }
+
+    return {
+      content: [{
+        type: "text",
+        text: `# Integration Example: ${capability}\n\n**Source Blueprint**: \`${pattern.blueprint}\`\n**Target Structure**: ${existing_structure}\n\n## Step-by-Step Integration\n\n${integrationCode}\n\n## Module Reference\n\n\`\`\`hcl\n${moduleExample}\n\`\`\`\n\n## Next Steps\n\n1. Copy the module files from \`${pattern.blueprint}\` blueprint\n2. Adapt variable names to match your project\n3. Add required variables to your \`variables.tf\`\n4. Add outputs to your \`outputs.tf\`\n5. Run \`terraform plan\` to review changes\n\nUse \`extract_pattern(capability: "${capability}", include_files: true)\` for complete module files.`
+      }]
+    };
+  }
+);
+
+server.registerTool(
+  "get_related_patterns",
+  {
+    description: "Find patterns commonly used together. Returns complementary patterns that work well with the primary pattern.",
+    inputSchema: {
+      primary_pattern: z.string().describe("Primary pattern: database, queue, auth, events, ai, notifications"),
+    },
+  },
+  async ({ primary_pattern }) => {
+    const capLower = (primary_pattern || "").toLowerCase();
+    
+    const relatedPatterns: Record<string, Array<{ capability: string; reason: string; blueprint: string }>> = {
+      database: [
+        { capability: "secrets", reason: "Database credentials management", blueprint: "apigw-lambda-rds" },
+        { capability: "vpc", reason: "Network isolation for database", blueprint: "apigw-lambda-rds" },
+        { capability: "backup", reason: "Database backup and recovery", blueprint: "apigw-lambda-rds" },
+      ],
+      queue: [
+        { capability: "dead-letter-queue", reason: "Handle failed messages", blueprint: "apigw-sqs-lambda-dynamodb" },
+        { capability: "monitoring", reason: "Queue metrics and alarms", blueprint: "apigw-sqs-lambda-dynamodb" },
+      ],
+      auth: [
+        { capability: "api-gateway-authorizer", reason: "Protect API endpoints", blueprint: "apigw-lambda-dynamodb-cognito" },
+        { capability: "user-pool", reason: "User management", blueprint: "apigw-lambda-dynamodb-cognito" },
+      ],
+      events: [
+        { capability: "event-rules", reason: "Route events to targets", blueprint: "apigw-eventbridge-lambda" },
+        { capability: "multiple-consumers", reason: "Fanout to multiple services", blueprint: "apigw-eventbridge-lambda" },
+      ],
+    };
+
+    const related = relatedPatterns[capLower] || [];
+    
+    if (related.length === 0) {
+      return {
+        content: [{
+          type: "text",
+          text: `No specific related patterns found for "${primary_pattern}".\n\nCommon complementary patterns:\n- **Secrets Manager**: For any pattern requiring credentials\n- **VPC**: For database and container patterns\n- **Monitoring**: CloudWatch alarms and metrics for all patterns\n- **IAM**: Proper permissions for all AWS resources`
+        }]
+      };
+    }
+
+    const output = `# Related Patterns for: ${primary_pattern}\n\nWhen implementing **${primary_pattern}**, you'll typically also need:\n\n${related.map((r, i) => 
+      `${i + 1}. **${r.capability}**\n   - Reason: ${r.reason}\n   - See blueprint: \`${r.blueprint}\``
+    ).join("\n\n")}\n\n## Integration Order\n\n1. Start with the primary pattern (${primary_pattern})\n2. Add related patterns incrementally\n3. Test each addition before moving to the next\n\nUse \`extract_pattern(capability: "${related[0].capability}")\` to get integration details.`;
+
+    return {
+      content: [{ type: "text", text: output }]
+    };
+  }
+);
+
+server.registerTool(
+  "validate_integration",
+  {
+    description: "Validate that extracted pattern matches blueprint best practices. Checks for common mistakes and missing components.",
+    inputSchema: {
+      capability: z.string().describe("Capability being integrated: database, queue, auth, events, ai, notifications"),
+      checks: z.array(z.string()).optional().describe("Specific checks to perform (default: all)"),
+    },
+  },
+  async ({ capability, checks }) => {
+    const capLower = (capability || "").toLowerCase();
+    const pattern = EXTRACTION_PATTERNS[capLower];
+
+    if (!pattern) {
+      const available = Object.keys(EXTRACTION_PATTERNS).join(", ");
+      return {
+        content: [{
+          type: "text",
+          text: `Unknown capability "${capability}". Available capabilities: ${available}`
+        }]
+      };
+    }
+
+    const validationChecks: Record<string, Array<{ check: string; required: boolean; tip: string }>> = {
+      database: [
+        { check: "VPC configuration", required: true, tip: "Database should be in private subnets" },
+        { check: "Security groups", required: true, tip: "Lambda SG should allow egress to RDS SG on port 5432" },
+        { check: "Secrets Manager", required: true, tip: "Store connection metadata (consider IAM auth for passwords)" },
+        { check: "IAM permissions", required: true, tip: "Lambda needs VPC execution role and Secrets Manager read" },
+        { check: "Backup configuration", required: false, tip: "Set backup_retention_period for production" },
+        { check: "Encryption", required: true, tip: "Enable storage_encrypted for RDS" },
+      ],
+      queue: [
+        { check: "Dead-letter queue", required: true, tip: "Configure DLQ for failed messages" },
+        { check: "Visibility timeout", required: true, tip: "Set to 6x Lambda timeout" },
+        { check: "Batch size", required: false, tip: "Optimize batch_size for Lambda concurrency" },
+        { check: "IAM permissions", required: true, tip: "Lambda needs SQS send/receive/delete permissions" },
+      ],
+      auth: [
+        { check: "User pool configuration", required: true, tip: "Set password policy and MFA options" },
+        { check: "API Gateway authorizer", required: true, tip: "Configure authorizer on protected routes" },
+        { check: "Callback URLs", required: true, tip: "Add frontend callback URLs to user pool" },
+      ],
+    };
+
+    const checksToRun = validationChecks[capLower] || [];
+    
+    if (checksToRun.length === 0) {
+      return {
+        content: [{
+          type: "text",
+          text: `No validation checks available for "${capability}".\n\nGeneral best practices:\n- Use proper IAM permissions (least privilege)\n- Enable encryption at rest\n- Configure monitoring and alarms\n- Follow naming conventions\n- Add proper tags`
+        }]
+      };
+    }
+
+    const requiredChecks = checksToRun.filter(c => c.required);
+    const optionalChecks = checksToRun.filter(c => !c.required);
+
+    const output = `# Validation Checklist: ${capability}\n\n## Required Components\n\n${requiredChecks.map((c, i) => 
+      `${i + 1}. ✅ **${c.check}**\n   💡 ${c.tip}`
+    ).join("\n\n")}\n\n## Recommended Components\n\n${optionalChecks.map((c, i) => 
+      `${i + 1}. ⚠️ **${c.check}**\n   💡 ${c.tip}`
+    ).join("\n\n")}\n\n## Validation Steps\n\n1. Review your Terraform code against each check above\n2. Ensure all required components are present\n3. Add recommended components for production readiness\n4. Run \`terraform plan\` to verify configuration\n5. Test integration in dev environment first\n\n## Get Help\n\nUse \`get_integration_example(capability: "${capability}")\` for code examples.\nUse \`extract_pattern(capability: "${capability}", include_files: true)\` for complete module files.`;
+
+    return {
+      content: [{ type: "text", text: output }]
     };
   }
 );
