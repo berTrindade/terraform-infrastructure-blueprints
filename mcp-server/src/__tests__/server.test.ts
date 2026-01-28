@@ -361,36 +361,302 @@ describe("Extract Pattern Tool", () => {
 // =============================================================================
 
 describe("Scenario 1: App Exists, Need Infrastructure", () => {
-  it("finds container blueprints for existing containerized app", () => {
-    const results = recommendBlueprint({ containers: true, database: "postgresql" });
-    expect(results.some((b) => b.name === "alb-ecs-fargate-rds")).toBe(true);
+  describe("Search Phase", () => {
+    it("finds PostgreSQL blueprints when app uses PostgreSQL", () => {
+      const results = searchBlueprints("postgresql");
+      
+      expect(results.length).toBeGreaterThan(0);
+      expect(results.some((b) => b.database === "PostgreSQL" || b.database === "Aurora")).toBe(true);
+      expect(results.some((b) => b.name.includes("rds"))).toBe(true);
+    });
+
+    it("finds serverless blueprints when refactoring to serverless", () => {
+      const results = searchBlueprints("serverless");
+      
+      expect(results.length).toBeGreaterThan(0);
+      expect(results.some((b) => b.name.includes("lambda"))).toBe(true);
+      expect(results.every((b) => !b.name.includes("ecs") && !b.name.includes("eks"))).toBe(true);
+    });
+
+    it("finds container blueprints when containerizing existing app", () => {
+      const results = searchBlueprints("containers");
+      
+      expect(results.length).toBeGreaterThan(0);
+      expect(results.some((b) => b.name.includes("ecs") || b.name.includes("eks"))).toBe(true);
+    });
+
+    it("finds DynamoDB blueprints when app uses NoSQL", () => {
+      const results = searchBlueprints("dynamodb");
+      
+      expect(results.length).toBeGreaterThan(0);
+      expect(results.every((b) => b.database === "DynamoDB")).toBe(true);
+    });
+
+    it("finds auth blueprints when app needs authentication", () => {
+      const results = searchBlueprints("auth");
+      
+      expect(results.length).toBeGreaterThan(0);
+      expect(results.some((b) => b.name.includes("cognito") || b.name.includes("amplify"))).toBe(true);
+    });
   });
 
-  it("finds serverless blueprints for refactoring to serverless", () => {
-    const results = recommendBlueprint({ containers: false, database: "postgresql" });
-    expect(results.some((b) => b.name === "apigw-lambda-rds")).toBe(true);
+  describe("Recommendation Phase", () => {
+    it("recommends apigw-lambda-rds for Node.js + PostgreSQL app", () => {
+      const results = recommendBlueprint({
+        database: "postgresql",
+        pattern: "sync",
+        containers: false,
+      });
+
+      expect(results.length).toBeGreaterThan(0);
+      expect(results.some((b) => b.name === "apigw-lambda-rds")).toBe(true);
+    });
+
+    it("recommends alb-ecs-fargate-rds for containerized app with PostgreSQL", () => {
+      const results = recommendBlueprint({
+        containers: true,
+        database: "postgresql",
+      });
+
+      expect(results.length).toBeGreaterThan(0);
+      expect(results.some((b) => b.name === "alb-ecs-fargate-rds")).toBe(true);
+    });
+
+    it("recommends apigw-lambda-dynamodb for serverless refactor with DynamoDB", () => {
+      const results = recommendBlueprint({
+        database: "dynamodb",
+        pattern: "sync",
+        containers: false,
+      });
+
+      expect(results.length).toBeGreaterThan(0);
+      expect(results.some((b) => b.name === "apigw-lambda-dynamodb")).toBe(true);
+    });
+
+    it("recommends Cognito blueprints when app needs auth", () => {
+      const results = recommendBlueprint({
+        auth: true,
+      });
+
+      expect(results.length).toBeGreaterThan(0);
+      expect(results.some((b) => b.name.includes("cognito"))).toBe(true);
+      expect(results.every((b) => b.name.includes("cognito") || b.name.includes("amplify"))).toBe(true);
+    });
+
+    it("recommends async blueprints for async processing needs", () => {
+      const results = recommendBlueprint({
+        pattern: "async",
+      });
+
+      expect(results.length).toBeGreaterThan(0);
+      expect(results.every((b) => b.pattern === "Async")).toBe(true);
+      expect(results.some((b) => b.name.includes("sqs") || b.name.includes("eventbridge") || b.name.includes("sns"))).toBe(true);
+    });
+
+    it("filters out containers when containers flag is false", () => {
+      const results = recommendBlueprint({
+        containers: false,
+        database: "postgresql",
+      });
+
+      expect(results.length).toBeGreaterThan(0);
+      expect(results.every((b) => !b.name.includes("ecs") && !b.name.includes("eks"))).toBe(true);
+      expect(results.some((b) => b.name === "apigw-lambda-rds")).toBe(true);
+    });
   });
 
-  // Comparison feature not currently implemented
-  // it("comparison exists for serverless vs containers decision", () => {
-  //   expect(COMPARISONS["serverless-vs-containers"]).toBeDefined();
-  // });
+  describe("Blueprint Discovery", () => {
+    it("verifies recommended blueprints have required modules", () => {
+      const rdsBlueprint = BLUEPRINTS_LOCAL.find((b) => b.name === "apigw-lambda-rds");
+      expect(rdsBlueprint).toBeDefined();
+      expect(rdsBlueprint?.database).toBe("PostgreSQL");
+      expect(rdsBlueprint?.pattern).toBe("Sync");
+    });
+
+    it("verifies blueprint structure matches deployment needs", () => {
+      const containerBlueprint = BLUEPRINTS_LOCAL.find((b) => b.name === "alb-ecs-fargate-rds");
+      expect(containerBlueprint).toBeDefined();
+      expect(containerBlueprint?.database).toBe("PostgreSQL");
+      expect(containerBlueprint?.name).toContain("ecs");
+    });
+
+    it("verifies async blueprints have correct pattern", () => {
+      const asyncBlueprints = BLUEPRINTS_LOCAL.filter((b) => b.pattern === "Async");
+      expect(asyncBlueprints.length).toBeGreaterThan(0);
+      asyncBlueprints.forEach((b) => {
+        expect(b.pattern).toBe("Async");
+        expect(b.name.includes("sqs") || b.name.includes("eventbridge") || b.name.includes("sns")).toBe(true);
+      });
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("handles no matching blueprint found scenario", () => {
+      const results = searchBlueprints("nonexistent-technology-xyz");
+      expect(results).toEqual([]);
+    });
+
+    it("verifies best match is returned for multiple matching blueprints", () => {
+      const results = recommendBlueprint({
+        database: "postgresql",
+        pattern: "sync",
+      });
+
+      expect(results.length).toBeGreaterThan(1);
+      // Should include both serverless and container options
+      expect(results.some((b) => b.name === "apigw-lambda-rds")).toBe(true);
+      expect(results.some((b) => b.name === "alb-ecs-fargate-rds")).toBe(true);
+    });
+
+    it("handles invalid search queries gracefully", () => {
+      const emptyResults = searchBlueprints("");
+      const specialCharResults = searchBlueprints("!@#$%");
+      
+      // Empty query should return all or handle gracefully
+      expect(Array.isArray(emptyResults)).toBe(true);
+      // Special characters should not crash
+      expect(Array.isArray(specialCharResults)).toBe(true);
+    });
+  });
 });
 
 describe("Scenario 2: Existing Terraform, Add Capability", () => {
-  it("has database extraction pattern for adding RDS", () => {
-    expect(EXTRACTION_PATTERNS.database).toBeDefined();
-    expect(EXTRACTION_PATTERNS.database.integrationSteps.length).toBeGreaterThan(3);
+  describe("Pattern Extraction", () => {
+    it("extracts database pattern returning RDS pattern from apigw-lambda-rds", () => {
+      const pattern = EXTRACTION_PATTERNS.database;
+      
+      expect(pattern).toBeDefined();
+      expect(pattern.blueprint).toBe("apigw-lambda-rds");
+      expect(pattern.modules).toContain("modules/data/");
+      expect(pattern.modules).toContain("modules/vpc/");
+      expect(pattern.description).toContain("RDS");
+    });
+
+    it("extracts queue pattern returning SQS pattern from apigw-sqs-lambda-dynamodb", () => {
+      const pattern = EXTRACTION_PATTERNS.queue;
+      
+      expect(pattern).toBeDefined();
+      expect(pattern.blueprint).toBe("apigw-sqs-lambda-dynamodb");
+      expect(pattern.modules).toContain("modules/queue/");
+      expect(pattern.modules).toContain("modules/worker/");
+      expect(pattern.description).toContain("SQS");
+    });
+
+    it("extracts auth pattern returning Cognito pattern from apigw-lambda-dynamodb-cognito", () => {
+      const pattern = EXTRACTION_PATTERNS.auth;
+      
+      expect(pattern).toBeDefined();
+      expect(pattern.blueprint).toBe("apigw-lambda-dynamodb-cognito");
+      expect(pattern.modules).toContain("modules/auth/");
+      expect(pattern.description).toContain("Cognito");
+    });
+
+    it("extracts events pattern returning EventBridge pattern", () => {
+      const pattern = EXTRACTION_PATTERNS.events;
+      
+      expect(pattern).toBeDefined();
+      expect(pattern.blueprint).toBe("apigw-eventbridge-lambda");
+      expect(pattern.modules).toContain("modules/events/");
+      expect(pattern.description).toContain("EventBridge");
+    });
+
+    it("extracts AI pattern returning Bedrock RAG pattern", () => {
+      const pattern = EXTRACTION_PATTERNS.ai;
+      
+      expect(pattern).toBeDefined();
+      expect(pattern.blueprint).toBe("apigw-lambda-bedrock-rag");
+      expect(pattern.modules).toContain("modules/ai/");
+      expect(pattern.modules).toContain("modules/vectorstore/");
+      expect(pattern.description).toContain("Bedrock");
+    });
+
+    it("extracts notifications pattern returning SNS pattern", () => {
+      const pattern = EXTRACTION_PATTERNS.notifications;
+      
+      expect(pattern).toBeDefined();
+      expect(pattern.blueprint).toBe("apigw-sns-lambda");
+      expect(pattern.modules).toContain("modules/notifications/");
+      expect(pattern.description).toContain("SNS");
+    });
   });
 
-  it("has queue extraction pattern for adding SQS", () => {
-    expect(EXTRACTION_PATTERNS.queue).toBeDefined();
-    expect(EXTRACTION_PATTERNS.queue.modules).toContain("modules/queue/");
+  describe("Integration Guidance", () => {
+    it("verifies extraction patterns include integration steps", () => {
+      Object.values(EXTRACTION_PATTERNS).forEach((pattern) => {
+        expect(pattern.integrationSteps).toBeDefined();
+        expect(Array.isArray(pattern.integrationSteps)).toBe(true);
+        expect(pattern.integrationSteps.length).toBeGreaterThan(0);
+      });
+    });
+
+    it("verifies extraction patterns include module paths", () => {
+      Object.values(EXTRACTION_PATTERNS).forEach((pattern) => {
+        expect(pattern.modules).toBeDefined();
+        expect(Array.isArray(pattern.modules)).toBe(true);
+        expect(pattern.modules.length).toBeGreaterThan(0);
+        pattern.modules.forEach((module) => {
+          expect(module).toContain("modules/");
+        });
+      });
+    });
+
+    it("verifies extraction patterns reference correct blueprint", () => {
+      const blueprintNames = BLUEPRINTS_LOCAL.map((b) => b.name);
+      
+      Object.values(EXTRACTION_PATTERNS).forEach((pattern) => {
+        expect(pattern.blueprint).toBeDefined();
+        expect(blueprintNames).toContain(pattern.blueprint);
+      });
+    });
   });
 
-  it("has auth extraction pattern for adding Cognito", () => {
-    expect(EXTRACTION_PATTERNS.auth).toBeDefined();
-    expect(EXTRACTION_PATTERNS.auth.modules).toContain("modules/auth/");
+  describe("Module Validation", () => {
+    it("verifies database pattern includes modules/data/ and modules/vpc/", () => {
+      const pattern = EXTRACTION_PATTERNS.database;
+      
+      expect(pattern.modules).toContain("modules/data/");
+      expect(pattern.modules).toContain("modules/vpc/");
+    });
+
+    it("verifies queue pattern includes modules/queue/ and modules/worker/", () => {
+      const pattern = EXTRACTION_PATTERNS.queue;
+      
+      expect(pattern.modules).toContain("modules/queue/");
+      expect(pattern.modules).toContain("modules/worker/");
+    });
+
+    it("verifies auth pattern includes modules/auth/", () => {
+      const pattern = EXTRACTION_PATTERNS.auth;
+      
+      expect(pattern.modules).toContain("modules/auth/");
+    });
+
+    it("verifies AI pattern includes modules/ai/ and modules/vectorstore/", () => {
+      const pattern = EXTRACTION_PATTERNS.ai;
+      
+      expect(pattern.modules).toContain("modules/ai/");
+      expect(pattern.modules).toContain("modules/vectorstore/");
+    });
+  });
+
+  describe("Error Handling", () => {
+    it("handles invalid capability name gracefully", () => {
+      const invalidCapability = "invalid-capability-name";
+      const pattern = EXTRACTION_PATTERNS[invalidCapability];
+      
+      expect(pattern).toBeUndefined();
+    });
+
+    it("verifies all extraction patterns have required fields", () => {
+      Object.entries(EXTRACTION_PATTERNS).forEach(([capability, pattern]) => {
+        expect(pattern.blueprint).toBeDefined();
+        expect(pattern.modules).toBeDefined();
+        expect(Array.isArray(pattern.modules)).toBe(true);
+        expect(pattern.description).toBeDefined();
+        expect(pattern.integrationSteps).toBeDefined();
+        expect(Array.isArray(pattern.integrationSteps)).toBe(true);
+      });
+    });
   });
 });
 
