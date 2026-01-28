@@ -22,7 +22,7 @@ const stat = promisify(fs.stat);
  * @param uri - Resource URI
  * @returns Resource handler function
  */
-export function createResourceHandler(uri: string) {
+function createResourceHandler(uri: string) {
   return async () => {
     try {
       const { content, mimeType } = await readBlueprintFile(uri);
@@ -31,7 +31,15 @@ export function createResourceHandler(uri: string) {
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error("Error reading resource file", error, { uri });
+      logger.error({
+        operation: "read_resource_file",
+        uri,
+        outcome: "error",
+        error: {
+          type: error instanceof Error ? error.name : "UnknownError",
+          message: errorMessage,
+        },
+      });
       return {
         contents: [{
           uri,
@@ -52,7 +60,7 @@ export function createResourceHandler(uri: string) {
  * @param relativePath - Relative file path
  * @param mimeType - MIME type
  */
-export function registerBlueprintFile(
+function registerBlueprintFile(
   server: McpServer,
   cloud: CloudProvider,
   blueprintName: string,
@@ -72,7 +80,7 @@ export function registerBlueprintFile(
     createResourceHandler(uri)
   );
 
-  logger.debug("Registered blueprint resource", { uri, resourceName });
+  // Resource registration is logged at higher level during bulk registration
 }
 
 /**
@@ -121,7 +129,15 @@ async function registerModuleDirectoryFiles(
     }
   } catch (error) {
     if (error instanceof Error && !error.message.includes("ENOENT")) {
-      logger.error("Error registering module directory files", error, { dirPath });
+      logger.error({
+        operation: "register_module_directory_files",
+        dir_path: dirPath,
+        outcome: "error",
+        error: {
+          type: error.name,
+          message: error.message,
+        },
+      });
     }
   }
 }
@@ -135,7 +151,7 @@ async function registerModuleDirectoryFiles(
  * @param blueprintName - Blueprint name
  * @param moduleDir - Module directory name (default: "modules")
  */
-export async function registerModuleFiles(
+async function registerModuleFiles(
   server: McpServer,
   blueprintPath: string,
   cloud: CloudProvider,
@@ -166,7 +182,15 @@ export async function registerModuleFiles(
     }
   } catch (error) {
     if (error instanceof Error && !error.message.includes("ENOENT")) {
-      logger.error("Error reading modules directory", error, { blueprintName });
+      logger.error({
+        operation: "register_module_files",
+        blueprint_name: blueprintName,
+        outcome: "error",
+        error: {
+          type: error.name,
+          message: error.message,
+        },
+      });
     }
   }
 }
@@ -179,7 +203,7 @@ export async function registerModuleFiles(
  * @param cloud - Cloud provider
  * @param blueprintName - Blueprint name
  */
-export async function registerBlueprintResources(
+async function registerBlueprintResources(
   server: McpServer,
   blueprintPath: string,
   cloud: CloudProvider,
@@ -238,12 +262,29 @@ export async function registerImportantBlueprintResources(server: McpServer): Pr
           await registerBlueprintResources(server, blueprintPath, cloud, blueprintName);
         } catch (error) {
           if (error instanceof Error) {
-            logger.error("Error registering blueprint", error, { blueprintName, cloud });
+            logger.error({
+              operation: "register_blueprint_resources",
+              blueprint_name: blueprintName,
+              cloud,
+              outcome: "error",
+              error: {
+                type: error.name,
+                message: error.message,
+              },
+            });
           }
         }
       }
     } catch (error) {
-      logger.error("Error registering cloud blueprint resources", error, { cloud });
+      logger.error({
+        operation: "register_cloud_blueprint_resources",
+        cloud,
+        outcome: "error",
+        error: {
+          type: error instanceof Error ? error.name : "UnknownError",
+          message: error instanceof Error ? error.message : String(error),
+        },
+      });
     }
   }
 }

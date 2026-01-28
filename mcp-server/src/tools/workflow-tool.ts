@@ -3,6 +3,8 @@
  */
 
 import { z } from "zod";
+import { randomUUID } from "node:crypto";
+import { logger } from "../utils/logger.js";
 
 /**
  * Workflow guidance tool schema
@@ -21,7 +23,16 @@ export const getWorkflowGuidanceSchema = {
  * @returns Tool response
  */
 export async function handleGetWorkflowGuidance(args: { task: "new_project" | "add_capability" | "migrate_cloud" | "general" }) {
-  const workflows: Record<string, string> = {
+  const startTime = Date.now();
+  const requestId = randomUUID();
+  const wideEvent: Record<string, unknown> = {
+    tool: "get_workflow_guidance",
+    request_id: requestId,
+    task: args.task,
+  };
+
+  try {
+    const workflows: Record<string, string> = {
     new_project: `# New Project
 
 1. recommend_blueprint(database: "postgresql", pattern: "sync")
@@ -43,7 +54,7 @@ export async function handleGetWorkflowGuidance(args: { task: "new_project" | "a
 3. recommend_blueprint() for target cloud
 4. extract_pattern() from target`,
 
-    general: `# Available Tools
+      general: `# Available Tools
 
 1. recommend_blueprint() - Get recommendations
 2. extract_pattern() - Extract patterns
@@ -53,12 +64,28 @@ export async function handleGetWorkflowGuidance(args: { task: "new_project" | "a
 6. get_workflow_guidance() - This tool
 
 **Quick Start**: recommend_blueprint(database: "postgresql")`,
-  };
+    };
 
-  return {
-    content: [{
-      type: "text" as const,
-      text: workflows[args.task] || workflows.general
-    }]
-  };
+    wideEvent.status_code = 200;
+    wideEvent.outcome = "success";
+    wideEvent.duration_ms = Date.now() - startTime;
+    logger.info(wideEvent);
+
+    return {
+      content: [{
+        type: "text" as const,
+        text: workflows[args.task] || workflows.general
+      }]
+    };
+  } catch (error) {
+    wideEvent.status_code = 500;
+    wideEvent.outcome = "error";
+    wideEvent.error = {
+      type: error instanceof Error ? error.name : "UnknownError",
+      message: error instanceof Error ? error.message : String(error),
+    };
+    wideEvent.duration_ms = Date.now() - startTime;
+    logger.error(wideEvent);
+    throw error;
+  }
 }

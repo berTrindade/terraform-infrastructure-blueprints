@@ -9,6 +9,7 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { randomUUID } from "node:crypto";
 import { config } from "./config/config.js";
 import { BLUEPRINTS } from "./config/constants.js";
 import { logger } from "./utils/logger.js";
@@ -28,7 +29,7 @@ import { getWorkflowGuidanceSchema, handleGetWorkflowGuidance } from "./tools/wo
  *
  * @returns Configured MCP server instance
  */
-function createServer(): McpServer {
+export function createServer(): McpServer {
   const server = new McpServer({
     name: config.server.name,
     version: config.server.version,
@@ -80,22 +81,41 @@ function createServer(): McpServer {
  * Main server startup function
  */
 async function main(): Promise<void> {
-  try {
-    logger.info("Starting MCP server", { name: config.server.name, version: config.server.version });
+  const startTime = Date.now();
+  const requestId = randomUUID();
+  const wideEvent: Record<string, unknown> = {
+    operation: "server_startup",
+    request_id: requestId,
+    server_name: config.server.name,
+    server_version: config.server.version,
+  };
 
+  try {
     const server = createServer();
 
     // Register blueprint resources before connecting
-    logger.info("Registering blueprint resources");
+    const resourceStartTime = Date.now();
     await registerImportantBlueprintResources(server);
+    wideEvent.resource_registration_ms = Date.now() - resourceStartTime;
 
     // Connect to stdio transport
     const transport = new StdioServerTransport();
     await server.connect(transport);
 
-    logger.info("MCP server running", { name: config.server.name });
+    wideEvent.status_code = 200;
+    wideEvent.outcome = "success";
+    wideEvent.duration_ms = Date.now() - startTime;
+    logger.info(wideEvent);
   } catch (error) {
-    logger.error("Failed to start MCP server", error instanceof Error ? error : undefined);
+    wideEvent.status_code = 500;
+    wideEvent.outcome = "error";
+    wideEvent.error = {
+      type: error instanceof Error ? error.name : "UnknownError",
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    };
+    wideEvent.duration_ms = Date.now() - startTime;
+    logger.error(wideEvent);
     process.exit(1);
   }
 }
@@ -104,6 +124,16 @@ async function main(): Promise<void> {
 try {
   await main();
 } catch (error) {
-  logger.error("Unhandled error in main", error instanceof Error ? error : undefined);
+  const wideEvent: Record<string, unknown> = {
+    operation: "server_startup",
+    status_code: 500,
+    outcome: "error",
+    error: {
+      type: error instanceof Error ? error.name : "UnknownError",
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    },
+  };
+  logger.error(wideEvent);
   process.exit(1);
 }

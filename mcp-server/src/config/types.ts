@@ -51,12 +51,3 @@ export interface FileContent {
     mimeType: string;
 }
 
-/**
- * Resource metadata
- */
-export interface ResourceMetadata {
-    uri: string;
-    name: string;
-    description: string;
-    mimeType: string;
-}

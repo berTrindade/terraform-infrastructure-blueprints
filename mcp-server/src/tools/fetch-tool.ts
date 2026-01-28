@@ -3,6 +3,7 @@
  */
 
 import { z } from "zod";
+import { randomUUID } from "node:crypto";
 import { readBlueprintFile } from "../services/file-service.js";
 import { getBlueprint, findBlueprint } from "../services/blueprint-service.js";
 import { getCloudProvider } from "../utils/cloud-provider.js";
@@ -27,31 +28,54 @@ export const fetchBlueprintFileSchema = {
  * @returns Tool response
  */
 export async function handleFetchBlueprintFile(args: { blueprint: string; path: string }) {
-  logger.info("Fetching blueprint file", { blueprint: args.blueprint, path: args.path });
-
-  const blueprintData = findBlueprint(args.blueprint);
-
-  if (!blueprintData) {
-    const available = BLUEPRINTS.map(b => b.name).join(", ");
-    return {
-      content: [{
-        type: "text" as const,
-        text: `Blueprint "${args.blueprint}" not found.\n\nAvailable blueprints: ${available}`
-      }]
-    };
-  }
-
-  const cloudProvider = getCloudProvider(args.blueprint) || "aws";
-  const uri = `blueprints://${cloudProvider}/${args.blueprint}/${args.path}`;
+  const startTime = Date.now();
+  const requestId = randomUUID();
+  const wideEvent: Record<string, unknown> = {
+    tool: "fetch_blueprint_file",
+    request_id: requestId,
+    blueprint: args.blueprint,
+    path: args.path,
+  };
 
   try {
+    const blueprintData = findBlueprint(args.blueprint);
+
+    if (!blueprintData) {
+      const available = BLUEPRINTS.map(b => b.name).join(", ");
+      wideEvent.status_code = 404;
+      wideEvent.outcome = "not_found";
+      wideEvent.duration_ms = Date.now() - startTime;
+      logger.info(wideEvent);
+
+      return {
+        content: [{
+          type: "text" as const,
+          text: `Blueprint "${args.blueprint}" not found.\n\nAvailable blueprints: ${available}`
+        }]
+      };
+    }
+
+    const cloudProvider = getCloudProvider(args.blueprint) || "aws";
+    const uri = `blueprints://${cloudProvider}/${args.blueprint}/${args.path}`;
+    wideEvent.cloud_provider = cloudProvider;
+    wideEvent.uri = uri;
+
     const { content, mimeType } = await readBlueprintFile(uri);
+    wideEvent.file_size = content.length;
+    wideEvent.mime_type = mimeType;
+
     let codeLang = "text";
     if (mimeType.includes("hcl")) {
       codeLang = "hcl";
     } else if (mimeType.includes("markdown")) {
       codeLang = "markdown";
     }
+
+    wideEvent.status_code = 200;
+    wideEvent.outcome = "success";
+    wideEvent.duration_ms = Date.now() - startTime;
+    logger.info(wideEvent);
+
     return {
       content: [{
         type: "text" as const,
@@ -60,7 +84,15 @@ export async function handleFetchBlueprintFile(args: { blueprint: string; path: 
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error("Failed to fetch blueprint file", error, { blueprint: args.blueprint, path: args.path });
+    wideEvent.status_code = 500;
+    wideEvent.outcome = "error";
+    wideEvent.error = {
+      type: error instanceof Error ? error.name : "UnknownError",
+      message: errorMessage,
+    };
+    wideEvent.duration_ms = Date.now() - startTime;
+    logger.error(wideEvent);
+
     return {
       content: [{
         type: "text" as const,

@@ -64,11 +64,16 @@ export async function getAgentsMdContent(): Promise<string> {
   for (const localPath of localPaths) {
     try {
       if (fs.existsSync(localPath)) {
-        logger.debug("Found AGENTS.md locally", { path: localPath });
+        logger.info({
+          operation: "get_agents_md_content",
+          source: "local",
+          path: localPath,
+          outcome: "success",
+        });
         return fs.readFileSync(localPath, "utf-8");
       }
     } catch (error) {
-      logger.debug("Failed to read local AGENTS.md", error, { path: localPath });
+      // Continue to next path, don't log each failure
     }
   }
 
@@ -80,10 +85,23 @@ export async function getAgentsMdContent(): Promise<string> {
       encoding: "utf-8",
       timeout: config.github.timeout,
     });
-    logger.info("Fetched AGENTS.md from GitHub", { repo: sanitizedRepo });
+    logger.info({
+      operation: "get_agents_md_content",
+      source: "github",
+      repo: sanitizedRepo,
+      outcome: "success",
+    });
     return content;
   } catch (error) {
-    logger.warn("Failed to fetch AGENTS.md from GitHub, using fallback", error);
+    logger.info({
+      operation: "get_agents_md_content",
+      source: "fallback",
+      outcome: "success",
+      error: {
+        type: error instanceof Error ? error.name : "UnknownError",
+        message: error instanceof Error ? error.message : String(error),
+      },
+    });
     return generateFallbackContent();
   }
 }

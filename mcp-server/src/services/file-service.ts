@@ -59,14 +59,29 @@ export async function readBlueprintFile(uri: string): Promise<FileContent> {
         const content = await readFile(fullPath, "utf-8");
         const mimeType = getMimeType(filePath);
 
-        logger.debug("File read successfully", { uri, size: content.length });
+        // File read success - log as info with context
+        logger.info({
+            operation: "read_blueprint_file",
+            uri,
+            file_size: content.length,
+            mime_type: mimeType,
+            outcome: "success",
+        });
 
         return { content, mimeType };
     } catch (error) {
         if (error instanceof InvalidUriError || error instanceof FileNotFoundError) {
             throw error;
         }
-        logger.error("Failed to read blueprint file", error instanceof Error ? error : undefined, { uri });
+        logger.error({
+            operation: "read_blueprint_file",
+            uri,
+            outcome: "error",
+            error: {
+                type: error instanceof Error ? error.name : "UnknownError",
+                message: error instanceof Error ? error.message : String(error),
+            },
+        });
         throw new FileNotFoundError(uri);
     }
 }

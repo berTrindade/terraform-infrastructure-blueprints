@@ -3,6 +3,7 @@
  */
 
 import { z } from "zod";
+import { randomUUID } from "node:crypto";
 import { getProjectBlueprint, getBlueprint, findCrossCloudEquivalent } from "../services/blueprint-service.js";
 import { logger } from "../utils/logger.js";
 
@@ -27,20 +28,51 @@ export async function handleFindByProject(args: {
   project_name: string;
   target_cloud?: string;
 }) {
-  logger.info("Finding project blueprint", { project: args.project_name });
+  const startTime = Date.now();
+  const requestId = randomUUID();
+  const wideEvent: Record<string, unknown> = {
+    tool: "find_by_project",
+    request_id: requestId,
+    project_name: args.project_name,
+    target_cloud: args.target_cloud,
+  };
 
-  const { info } = getProjectBlueprint(args.project_name);
-  const blueprint = getBlueprint(info.blueprint);
+  try {
+    const { info } = getProjectBlueprint(args.project_name);
+    const blueprint = getBlueprint(info.blueprint);
 
-  let text = `# ${args.project_name}\n\n**Blueprint**: \`${info.blueprint}\` (${info.cloud.toUpperCase()})\n**Description**: ${info.description}\n\n**Details**: Database: ${blueprint.database} | Pattern: ${blueprint.pattern}\n`;
+    wideEvent.blueprint = info.blueprint;
+    wideEvent.cloud = info.cloud;
+    wideEvent.database = blueprint.database;
+    wideEvent.pattern = blueprint.pattern;
 
-  if (args.target_cloud && info.cloud !== args.target_cloud.toLowerCase()) {
-    const equivalent = findCrossCloudEquivalent(info.blueprint, args.target_cloud.toLowerCase());
-    if (equivalent) {
-      text += `\n**${args.target_cloud.toUpperCase()} Equivalent**: \`${equivalent.name}\`\n`;
-      text += `\`\`\`bash\ncd terraform-infrastructure-blueprints/${args.target_cloud}/${equivalent.name}/environments/dev\nterraform init && terraform apply\n\`\`\``;
+    let text = `# ${args.project_name}\n\n**Blueprint**: \`${info.blueprint}\` (${info.cloud.toUpperCase()})\n**Description**: ${info.description}\n\n**Details**: Database: ${blueprint.database} | Pattern: ${blueprint.pattern}\n`;
+
+    if (args.target_cloud && info.cloud !== args.target_cloud.toLowerCase()) {
+      const equivalent = findCrossCloudEquivalent(info.blueprint, args.target_cloud.toLowerCase());
+      if (equivalent) {
+        wideEvent.equivalent_blueprint = equivalent.name;
+        wideEvent.equivalent_cloud = args.target_cloud.toLowerCase();
+        text += `\n**${args.target_cloud.toUpperCase()} Equivalent**: \`${equivalent.name}\`\n`;
+        text += `\`\`\`bash\ncd terraform-infrastructure-blueprints/${args.target_cloud}/${equivalent.name}/environments/dev\nterraform init && terraform apply\n\`\`\``;
+      }
     }
-  }
 
-  return { content: [{ type: "text" as const, text }] };
+    wideEvent.status_code = 200;
+    wideEvent.outcome = "success";
+    wideEvent.duration_ms = Date.now() - startTime;
+    logger.info(wideEvent);
+
+    return { content: [{ type: "text" as const, text }] };
+  } catch (error) {
+    wideEvent.status_code = 500;
+    wideEvent.outcome = "error";
+    wideEvent.error = {
+      type: error instanceof Error ? error.name : "UnknownError",
+      message: error instanceof Error ? error.message : String(error),
+    };
+    wideEvent.duration_ms = Date.now() - startTime;
+    logger.error(wideEvent);
+    throw error;
+  }
 }

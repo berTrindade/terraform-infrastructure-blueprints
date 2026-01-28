@@ -1,62 +1,82 @@
 /**
  * Structured logging utility
+ * Implements wide events pattern: one context-rich event per operation
  */
 
 import { config } from "../config/config.js";
 
-type LogLevel = "debug" | "info" | "warn" | "error";
+type LogLevel = "info" | "error";
 
-interface LogContext {
+interface WideEvent {
     [key: string]: unknown;
 }
 
 /**
- * Simple structured logger
- * In production, replace with pino or winston
+ * Environment context captured once at startup
+ * Automatically included in all wide events
+ */
+const envContext: WideEvent = {
+    service: config.server.name,
+    version: config.server.version,
+    commit_hash: process.env.COMMIT_SHA || process.env.GIT_COMMIT || process.env.VERCEL_GIT_COMMIT_SHA || "unknown",
+    deployment_id: process.env.DEPLOYMENT_ID || process.env.VERCEL_DEPLOYMENT_ID,
+    deploy_time: process.env.DEPLOY_TIMESTAMP || process.env.VERCEL_DEPLOYMENT_CREATED_AT,
+    region: process.env.AWS_REGION || process.env.REGION || process.env.VERCEL_REGION || "local",
+    environment: process.env.NODE_ENV || process.env.ENVIRONMENT || "development",
+    node_version: process.version,
+    runtime: process.env.AWS_EXECUTION_ENV || "node",
+    memory_limit_mb: process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE,
+};
+
+/**
+ * Structured logger implementing wide events pattern
+ * Emits pure JSON logs with environment context automatically included
  */
 class Logger {
     private readonly logLevel: LogLevel;
 
     constructor() {
-        this.logLevel = (config.logging.level as LogLevel) || "info";
+        // Only support info and error levels per best practices
+        this.logLevel = (config.logging.level === "error" ? "error" : "info");
     }
 
-    private shouldLog(level: LogLevel): boolean {
-        const levels: LogLevel[] = ["debug", "info", "warn", "error"];
-        return levels.indexOf(level) >= levels.indexOf(this.logLevel);
-    }
+    /**
+     * Emit a wide event as pure JSON
+     * Environment context is automatically merged into every event
+     */
+    private emit(level: LogLevel, event: WideEvent): void {
+        if (level === "error" || this.logLevel === "info") {
+            const wideEvent: WideEvent = {
+                timestamp: new Date().toISOString(),
+                level,
+                ...envContext,
+                ...event,
+            };
 
-    private formatMessage(level: LogLevel, message: string, context?: LogContext): string {
-        const timestamp = new Date().toISOString();
-        const contextStr = context ? ` ${JSON.stringify(context)}` : "";
-        return `[${timestamp}] [${level.toUpperCase()}] ${message}${contextStr}`;
-    }
-
-    debug(message: string, context?: LogContext): void {
-        if (this.shouldLog("debug")) {
-            console.debug(this.formatMessage("debug", message, context));
+            // Emit as single-line JSON (no formatting)
+            const output = JSON.stringify(wideEvent);
+            if (level === "error") {
+                console.error(output);
+            } else {
+                console.info(output);
+            }
         }
     }
 
-    info(message: string, context?: LogContext): void {
-        if (this.shouldLog("info")) {
-            console.info(this.formatMessage("info", message, context));
-        }
+    /**
+     * Log an info-level wide event
+     * All context should be included in the event object
+     */
+    info(event: WideEvent): void {
+        this.emit("info", event);
     }
 
-    warn(message: string, context?: LogContext): void {
-        if (this.shouldLog("warn")) {
-            console.warn(this.formatMessage("warn", message, context));
-        }
-    }
-
-    error(message: string, error?: Error, context?: LogContext): void {
-        if (this.shouldLog("error")) {
-            const errorContext = error instanceof Error
-                ? { ...context, error: error.message, stack: error.stack }
-                : { ...context, error: String(error) };
-            console.error(this.formatMessage("error", message, errorContext));
-        }
+    /**
+     * Log an error-level wide event
+     * Error details should be included in the event object
+     */
+    error(event: WideEvent): void {
+        this.emit("error", event);
     }
 }
 

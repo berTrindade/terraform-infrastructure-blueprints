@@ -3,6 +3,7 @@
  */
 
 import { z } from "zod";
+import { randomUUID } from "node:crypto";
 import { filterBlueprints } from "../services/blueprint-service.js";
 import { getCloudProvider } from "../utils/cloud-provider.js";
 import { logger } from "../utils/logger.js";
@@ -34,33 +35,54 @@ export async function handleRecommendBlueprint(args: {
   containers?: boolean;
   cloud?: string;
 }) {
-  logger.info("Recommending blueprint", args);
+  const startTime = Date.now();
+  const requestId = randomUUID();
+  const wideEvent: Record<string, unknown> = {
+    tool: "recommend_blueprint",
+    request_id: requestId,
+    ...args,
+  };
 
-  const matches = filterBlueprints({
-    database: args.database,
-    pattern: args.pattern,
-    auth: args.auth,
-    containers: args.containers,
-    cloud: args.cloud,
-  });
+  try {
+    const matches = filterBlueprints({
+      database: args.database,
+      pattern: args.pattern,
+      auth: args.auth,
+      containers: args.containers,
+      cloud: args.cloud,
+    });
 
-  if (matches.length === 0) {
+    wideEvent.result_count = matches.length;
+
+    if (matches.length === 0) {
+      wideEvent.status_code = 200;
+      wideEvent.outcome = "success";
+      wideEvent.duration_ms = Date.now() - startTime;
+      logger.info(wideEvent);
+
+      return {
+        content: [{
+          type: "text" as const,
+          text: `No blueprint matches your requirements. Try recommend_blueprint() with fewer filters, or use search_blueprints() to browse.`
+        }]
+      };
+    }
+
+    const blueprint = matches[0];
+    const cloudProvider = getCloudProvider(blueprint.name) || "aws";
+    const cloudPath = cloudProvider === "aws" ? "aws" : cloudProvider;
+
+    wideEvent.recommended_blueprint = blueprint.name;
+    wideEvent.cloud_provider = cloudProvider;
+    wideEvent.status_code = 200;
+    wideEvent.outcome = "success";
+    wideEvent.duration_ms = Date.now() - startTime;
+    logger.info(wideEvent);
+
     return {
       content: [{
         type: "text" as const,
-        text: `No blueprint matches your requirements. Try recommend_blueprint() with fewer filters, or use search_blueprints() to browse.`
-      }]
-    };
-  }
-
-  const blueprint = matches[0];
-  const cloudProvider = getCloudProvider(blueprint.name) || "aws";
-  const cloudPath = cloudProvider === "aws" ? "aws" : cloudProvider;
-
-  return {
-    content: [{
-      type: "text" as const,
-      text: `# Recommended: ${blueprint.name}
+        text: `# Recommended: ${blueprint.name}
 
 ${blueprint.description}
 
@@ -80,6 +102,17 @@ terraform init && terraform apply
 - Main: \`blueprints://${cloudProvider}/${blueprint.name}/environments/dev/main.tf\`
 
 Use fetch_blueprint_file() to get file contents, or extract_pattern() to add capabilities.`
-    }]
-  };
+      }]
+    };
+  } catch (error) {
+    wideEvent.status_code = 500;
+    wideEvent.outcome = "error";
+    wideEvent.error = {
+      type: error instanceof Error ? error.name : "UnknownError",
+      message: error instanceof Error ? error.message : String(error),
+    };
+    wideEvent.duration_ms = Date.now() - startTime;
+    logger.error(wideEvent);
+    throw error;
+  }
 }

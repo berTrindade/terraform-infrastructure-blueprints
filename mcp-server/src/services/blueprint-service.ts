@@ -141,7 +141,7 @@ export function filterBlueprints(filters: {
  * @param projectName - Project name
  * @returns Project blueprint info or null
  */
-export function findProjectBlueprint(projectName: string): { key: string; info: typeof PROJECT_BLUEPRINTS[string] } | null {
+function findProjectBlueprint(projectName: string): { key: string; info: typeof PROJECT_BLUEPRINTS[string] } | null {
   const projectLower = projectName.toLowerCase();
   const match = Object.entries(PROJECT_BLUEPRINTS).find(
     ([key]) => key.toLowerCase().includes(projectLower)
@@ -190,7 +190,12 @@ export function findCrossCloudEquivalent(sourceBlueprint: string, targetCloud: s
   validateCloudProvider(targetCloud);
   const source = findBlueprint(sourceBlueprint);
   if (!source) {
-    logger.warn("Source blueprint not found", { sourceBlueprint });
+    logger.info({
+      operation: "find_cross_cloud_equivalent",
+      source_blueprint: sourceBlueprint,
+      target_cloud: targetCloud,
+      outcome: "not_found",
+    });
     return null;
   }
 

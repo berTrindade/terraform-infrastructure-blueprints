@@ -3,6 +3,7 @@
  */
 
 import { z } from "zod";
+import { randomUUID } from "node:crypto";
 import { getExtractionPattern } from "../services/blueprint-service.js";
 import { getCloudProvider } from "../utils/cloud-provider.js";
 import { readBlueprintFile } from "../services/file-service.js";
@@ -31,54 +32,74 @@ export async function handleExtractPattern(args: {
   include_files?: boolean;
   include_code_examples?: boolean;
 }) {
-  logger.info("Extracting pattern", { capability: args.capability });
+  const startTime = Date.now();
+  const requestId = randomUUID();
+  const wideEvent: Record<string, unknown> = {
+    tool: "extract_pattern",
+    request_id: requestId,
+    capability: args.capability,
+    include_files: args.include_files || false,
+    include_code_examples: args.include_code_examples || false,
+  };
 
-  const capLower = args.capability.toLowerCase();
-  const pattern = getExtractionPattern(capLower);
+  try {
+    const capLower = args.capability.toLowerCase();
+    const pattern = getExtractionPattern(capLower);
 
-  if (!pattern) {
-    const available = Object.keys({
-      database: true,
-      queue: true,
-      auth: true,
-      events: true,
-      ai: true,
-      notifications: true,
-    }).join(", ");
-    return {
-      content: [{
-        type: "text" as const,
-        text: `Unknown capability "${args.capability}". Available: ${available}`
-      }]
-    };
-  }
+    if (!pattern) {
+      const available = Object.keys({
+        database: true,
+        queue: true,
+        auth: true,
+        events: true,
+        ai: true,
+        notifications: true,
+      }).join(", ");
+      wideEvent.status_code = 400;
+      wideEvent.outcome = "invalid_capability";
+      wideEvent.duration_ms = Date.now() - startTime;
+      logger.info(wideEvent);
 
-  const cloud = getCloudProvider(pattern.blueprint) || "aws";
-  const moduleFiles = pattern.modules.map(m => `blueprints://${cloud}/${pattern.blueprint}/${m}main.tf`);
-
-  // Get file contents if requested
-  let fileContents = "";
-  if (args.include_files) {
-    try {
-      const files = [
-        `blueprints://${cloud}/${pattern.blueprint}/README.md`,
-        `blueprints://${cloud}/${pattern.blueprint}/environments/dev/main.tf`,
-        ...moduleFiles
-      ];
-      const contents = await Promise.all(files.map(async uri => {
-        try {
-          const { content } = await readBlueprintFile(uri);
-          const name = uri.split("/").pop() || "";
-          return `### ${name}\n\n\`\`\`${name.endsWith(".tf") ? "hcl" : "markdown"}\n${content}\n\`\`\``;
-        } catch {
-          return "";
-        }
-      }));
-      fileContents = `\n## Files\n\n${contents.filter(Boolean).join("\n\n")}`;
-    } catch {
-      fileContents = "\n## Files\n\n*Error loading files*";
+      return {
+        content: [{
+          type: "text" as const,
+          text: `Unknown capability "${args.capability}". Available: ${available}`
+        }]
+      };
     }
-  }
+
+    wideEvent.blueprint = pattern.blueprint;
+    wideEvent.module_count = pattern.modules.length;
+
+    const cloud = getCloudProvider(pattern.blueprint) || "aws";
+    const moduleFiles = pattern.modules.map(m => `blueprints://${cloud}/${pattern.blueprint}/${m}main.tf`);
+    wideEvent.cloud_provider = cloud;
+
+    // Get file contents if requested
+    let fileContents = "";
+    if (args.include_files) {
+      try {
+        const files = [
+          `blueprints://${cloud}/${pattern.blueprint}/README.md`,
+          `blueprints://${cloud}/${pattern.blueprint}/environments/dev/main.tf`,
+          ...moduleFiles
+        ];
+        const contents = await Promise.all(files.map(async uri => {
+          try {
+            const { content } = await readBlueprintFile(uri);
+            const name = uri.split("/").pop() || "";
+            return `### ${name}\n\n\`\`\`${name.endsWith(".tf") ? "hcl" : "markdown"}\n${content}\n\`\`\``;
+          } catch {
+            return "";
+          }
+        }));
+        fileContents = `\n## Files\n\n${contents.filter(Boolean).join("\n\n")}`;
+        wideEvent.files_loaded = contents.filter(Boolean).length;
+      } catch (error) {
+        fileContents = "\n## Files\n\n*Error loading files*";
+        wideEvent.file_load_error = error instanceof Error ? error.message : String(error);
+      }
+    }
 
   // Get code examples if requested
   let codeExamples = "";
@@ -86,18 +107,23 @@ export async function handleExtractPattern(args: {
     codeExamples = `\n## Code Example\n\n\`\`\`hcl\n# Add RDS to Lambda\nresource "aws_db_instance" "main" {\n  identifier = "\${var.project_name}-db"\n  engine = "postgres"\n  engine_version = "15.4"\n  # ... VPC config, security groups\n}\n\n# Update Lambda\nresource "aws_lambda_function" "api" {\n  vpc_config {\n    subnet_ids = aws_subnet.private[*].id\n    security_group_ids = [aws_security_group.lambda.id]\n  }\n}\n\`\`\``;
   }
 
-  // Simple validation checklist
-  const checks: Record<string, string[]> = {
-    database: ["✅ VPC in private subnets", "✅ Security groups configured", "✅ IAM permissions", "✅ Encryption enabled"],
-    queue: ["✅ Dead-letter queue", "✅ Visibility timeout set", "✅ IAM permissions"],
-    auth: ["✅ User pool configured", "✅ API Gateway authorizer", "✅ Callback URLs"],
-  };
-  const checklist = checks[capLower] ? `\n## Checklist\n\n${checks[capLower].join("\n")}` : "";
+    // Simple validation checklist
+    const checks: Record<string, string[]> = {
+      database: ["✅ VPC in private subnets", "✅ Security groups configured", "✅ IAM permissions", "✅ Encryption enabled"],
+      queue: ["✅ Dead-letter queue", "✅ Visibility timeout set", "✅ IAM permissions"],
+      auth: ["✅ User pool configured", "✅ API Gateway authorizer", "✅ Callback URLs"],
+    };
+    const checklist = checks[capLower] ? `\n## Checklist\n\n${checks[capLower].join("\n")}` : "";
 
-  return {
-    content: [{
-      type: "text" as const,
-      text: `# Extract: ${args.capability}
+    wideEvent.status_code = 200;
+    wideEvent.outcome = "success";
+    wideEvent.duration_ms = Date.now() - startTime;
+    logger.info(wideEvent);
+
+    return {
+      content: [{
+        type: "text" as const,
+        text: `# Extract: ${args.capability}
 
 **Blueprint**: \`${pattern.blueprint}\`
 
@@ -117,6 +143,17 @@ ${moduleFiles.map(f => `- Module: \`${f}\``).join("\n")}
 ${fileContents}
 
 Use fetch_blueprint_file() to get specific files.`
-    }]
-  };
+      }]
+    };
+  } catch (error) {
+    wideEvent.status_code = 500;
+    wideEvent.outcome = "error";
+    wideEvent.error = {
+      type: error instanceof Error ? error.name : "UnknownError",
+      message: error instanceof Error ? error.message : String(error),
+    };
+    wideEvent.duration_ms = Date.now() - startTime;
+    logger.error(wideEvent);
+    throw error;
+  }
 }

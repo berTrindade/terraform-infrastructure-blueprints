@@ -3,6 +3,7 @@
  */
 
 import { z } from "zod";
+import { randomUUID } from "node:crypto";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { searchBlueprints } from "../services/blueprint-service.js";
 import { getCloudProvider } from "../utils/cloud-provider.js";
@@ -25,29 +26,63 @@ export const searchBlueprintsSchema = {
  * @returns Tool response
  */
 export async function handleSearchBlueprints(args: { query: string }) {
-  logger.info("Searching blueprints", { query: args.query });
+  const startTime = Date.now();
+  const requestId = randomUUID();
+  const wideEvent: Record<string, unknown> = {
+    tool: "search_blueprints",
+    request_id: requestId,
+    query: args.query,
+  };
 
-  const queryLower = args.query.toLowerCase();
-  const matches = searchBlueprints(queryLower, 10);
+  try {
+    const queryLower = args.query.toLowerCase();
+    const matches = searchBlueprints(queryLower, 10);
 
-  if (matches.length === 0) {
+    wideEvent.result_count = matches.length;
+    wideEvent.matches = matches.map(b => ({
+      name: b.name,
+      cloud: getCloudProvider(b.name) || "aws",
+    }));
+
+    if (matches.length === 0) {
+      wideEvent.status_code = 200;
+      wideEvent.outcome = "success";
+      wideEvent.duration_ms = Date.now() - startTime;
+      logger.info(wideEvent);
+
+      return {
+        content: [{
+          type: "text" as const,
+          text: `No blueprints found for "${args.query}". Try: 'serverless', 'postgresql', 'queue', 'containers', or use recommend_blueprint().`
+        }]
+      };
+    }
+
+    const results = matches.map(b => {
+      const cloud = getCloudProvider(b.name) || "aws";
+      return `- **${b.name}** (${cloud.toUpperCase()}) - ${b.description}`;
+    }).join("\n");
+
+    wideEvent.status_code = 200;
+    wideEvent.outcome = "success";
+    wideEvent.duration_ms = Date.now() - startTime;
+    logger.info(wideEvent);
+
     return {
       content: [{
         type: "text" as const,
-        text: `No blueprints found for "${args.query}". Try: 'serverless', 'postgresql', 'queue', 'containers', or use recommend_blueprint().`
+        text: `Found ${matches.length} blueprint(s):\n\n${results}\n\nUse recommend_blueprint() for detailed recommendations.`
       }]
     };
+  } catch (error) {
+    wideEvent.status_code = 500;
+    wideEvent.outcome = "error";
+    wideEvent.error = {
+      type: error instanceof Error ? error.name : "UnknownError",
+      message: error instanceof Error ? error.message : String(error),
+    };
+    wideEvent.duration_ms = Date.now() - startTime;
+    logger.error(wideEvent);
+    throw error;
   }
-
-  const results = matches.map(b => {
-    const cloud = getCloudProvider(b.name) || "aws";
-    return `- **${b.name}** (${cloud.toUpperCase()}) - ${b.description}`;
-  }).join("\n");
-
-  return {
-    content: [{
-      type: "text" as const,
-      text: `Found ${matches.length} blueprint(s):\n\n${results}\n\nUse recommend_blueprint() for detailed recommendations.`
-    }]
-  };
 }
