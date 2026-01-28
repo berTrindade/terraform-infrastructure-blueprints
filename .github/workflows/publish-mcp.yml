@@ -7,8 +7,7 @@ on:
     paths:
       - 'mcp-server/**'
     tags:
-      - 'v*.*.*'
-      - '*.*.*'
+      - 'v*'
   workflow_dispatch:
     inputs:
       version:
@@ -74,10 +73,9 @@ jobs:
           # Extract version from tag or input
           if [ "${{ github.event.inputs.version }}" != "" ]; then
             echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.ref }}" == refs/tags/v*.*.* ]] || [[ "${{ github.ref }}" == refs/tags/*.*.* ]]; then
-            # Extract semantic version (remove refs/tags/ prefix, handle v prefix)
-            VERSION=${GITHUB_REF#refs/tags/}
-            VERSION=${VERSION#v}  # Remove 'v' prefix if present
+          elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            # Extract semantic version (remove refs/tags/v prefix)
+            VERSION=${GITHUB_REF#refs/tags/v}
             echo "version=$VERSION" >> $GITHUB_OUTPUT
           else
             echo "version=latest" >> $GITHUB_OUTPUT
