@@ -8,7 +8,7 @@ COPY mcp-server/package*.json ./
 # Install all dependencies (including dev for build)
 RUN npm ci
 
-# Copy source code
+# Copy source code and type declarations
 COPY mcp-server/tsconfig.json ./
 COPY mcp-server/src/ ./src/
 
