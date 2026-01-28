@@ -16,3 +16,4 @@ scripts/
 *.sh
 *.toml
 *.example
+# Note: mcp-server source files (src/, tsconfig.json) are needed for Docker build
