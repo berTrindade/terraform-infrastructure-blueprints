@@ -12,9 +12,6 @@ __tests__
 # Exclude test directories
 tests/
 scripts/
-# Exclude source code directories (only needed in mcp-server)
-mcp-server/src/
-mcp-server/tsconfig.json
 # Exclude other top-level files
 *.sh
 *.toml
