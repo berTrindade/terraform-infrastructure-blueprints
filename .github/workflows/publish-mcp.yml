@@ -6,8 +6,8 @@ on:
       - main
     paths:
       - 'mcp-server/**'
-    tags:
-      - 'mcp-v*'
+  tags:
+    - 'mcp-v*'
   workflow_dispatch:
     inputs:
       version:
