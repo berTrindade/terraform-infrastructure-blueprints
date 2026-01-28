@@ -139,7 +139,7 @@ docker build -t infra-mcp .
 
 ## Publishing
 
-The Docker image is automatically published when you push changes:
+The Docker image is automatically published when you push changes to `mcp-server/**`:
 
 ### Automatic Publishing
 
