@@ -3,11 +3,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { execSync } from "child_process";
-import * as fs from "fs";
-import * as path from "path";
-import { fileURLToPath } from "url";
-import { promisify } from "util";
+import { execSync } from "node:child_process";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
 
 const readdir = promisify(fs.readdir);
 const stat = promisify(fs.stat);
@@ -280,7 +280,8 @@ function getMimeType(filename: string): string {
 // Read a blueprint file from a resource URI
 async function readBlueprintFile(uri: string): Promise<{ content: string; mimeType: string }> {
   // Parse URI: blueprints://aws/apigw-lambda-rds/README.md
-  const match = uri.match(/^blueprints:\/\/([^/]+)\/([^/]+)\/(.+)$/);
+  const uriRegex = /^blueprints:\/\/([^/]+)\/([^/]+)\/(.+)$/;
+  const match = uriRegex.exec(uri);
   if (!match) {
     throw new Error(`Invalid blueprint URI: ${uri}`);
   }
@@ -467,7 +468,7 @@ async function registerModuleDirectoryFiles(
 
         if (relevantExtensions.includes(ext)) {
           const fileUri = `blueprints://${cloud}/${blueprintName}/${entryRelativePath}`;
-          const resourceName = `blueprint-${cloud}-${blueprintName}-${entryRelativePath.replace(/[^a-zA-Z0-9-]/g, "-")}`;
+          const resourceName = `blueprint-${cloud}-${blueprintName}-${entryRelativePath.replaceAll(/[^a-zA-Z0-9-]/g, "-")}`;
 
           server.registerResource(
             resourceName,
@@ -505,6 +506,66 @@ async function registerModuleDirectoryFiles(
   }
 }
 
+// Helper to create resource handler
+function createResourceHandler(uri: string) {
+  return async () => {
+    try {
+      const { content, mimeType } = await readBlueprintFile(uri);
+      return {
+        contents: [{ uri, mimeType, text: content }],
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return {
+        contents: [{
+          uri,
+          mimeType: "text/plain",
+          text: `Error reading file: ${errorMessage}`,
+        }],
+      };
+    }
+  };
+}
+
+// Register a single blueprint's resources
+async function registerBlueprintResources(blueprintPath: string, cloud: string, blueprintName: string): Promise<void> {
+  const blueprintStat = await stat(blueprintPath);
+  if (!blueprintStat.isDirectory()) return;
+
+  // Register README.md
+  const readmePath = path.join(blueprintPath, "README.md");
+  if (fs.existsSync(readmePath)) {
+    const readmeUri = `blueprints://${cloud}/${blueprintName}/README.md`;
+    server.registerResource(
+      `blueprint-${cloud}-${blueprintName}-readme`.replaceAll(/[^a-zA-Z0-9-]/g, "-"),
+      readmeUri,
+      {
+        description: `README documentation for ${blueprintName} blueprint`,
+        mimeType: "text/markdown",
+      },
+      createResourceHandler(readmeUri)
+    );
+  }
+
+  // Register main environment file
+  const mainTfPath = path.join(blueprintPath, "environments", "dev", "main.tf");
+  if (fs.existsSync(mainTfPath)) {
+    const mainTfUri = `blueprints://${cloud}/${blueprintName}/environments/dev/main.tf`;
+    server.registerResource(
+      `blueprint-${cloud}-${blueprintName}-main-tf`.replaceAll(/[^a-zA-Z0-9-]/g, "-"),
+      mainTfUri,
+      {
+        description: `Main Terraform configuration for ${blueprintName} blueprint`,
+        mimeType: "text/x-hcl",
+      },
+      createResourceHandler(mainTfUri)
+    );
+  }
+
+  // Register module files
+  await registerModuleFiles(blueprintPath, cloud, blueprintName);
+}
+
 // Register important blueprint file resources dynamically
 // We'll register READMEs, main environment files, and module files for each blueprint
 async function registerImportantBlueprintResources() {
@@ -521,80 +582,12 @@ async function registerImportantBlueprintResources() {
       for (const blueprintName of blueprintDirs) {
         const blueprintPath = path.join(cloudPath, blueprintName);
         try {
-          const blueprintStat = await stat(blueprintPath);
-          if (!blueprintStat.isDirectory()) continue;
-
-          // Register README.md
-          const readmePath = path.join(blueprintPath, "README.md");
-          if (fs.existsSync(readmePath)) {
-            const readmeUri = `blueprints://${cloud}/${blueprintName}/README.md`;
-            server.registerResource(
-              `blueprint-${cloud}-${blueprintName}-readme`.replace(/[^a-zA-Z0-9-]/g, "-"),
-              readmeUri,
-              {
-                description: `README documentation for ${blueprintName} blueprint`,
-                mimeType: "text/markdown",
-              },
-              async () => {
-                try {
-                  const { content, mimeType } = await readBlueprintFile(readmeUri);
-                  return {
-                    contents: [{ uri: readmeUri, mimeType, text: content }],
-                  };
-                } catch (error) {
-                  const errorMessage = error instanceof Error ? error.message : String(error);
-                  return {
-                    contents: [{
-                      uri: readmeUri,
-                      mimeType: "text/plain",
-                      text: `Error reading file: ${errorMessage}`,
-                    }],
-                  };
-                }
-              }
-            );
-          }
-
-          // Register main environment file
-          const mainTfPath = path.join(blueprintPath, "environments", "dev", "main.tf");
-          if (fs.existsSync(mainTfPath)) {
-            const mainTfUri = `blueprints://${cloud}/${blueprintName}/environments/dev/main.tf`;
-            server.registerResource(
-              `blueprint-${cloud}-${blueprintName}-main-tf`.replace(/[^a-zA-Z0-9-]/g, "-"),
-              mainTfUri,
-              {
-                description: `Main Terraform configuration for ${blueprintName} blueprint`,
-                mimeType: "text/x-hcl",
-              },
-              async () => {
-                try {
-                  const { content, mimeType } = await readBlueprintFile(mainTfUri);
-                  return {
-                    contents: [{ uri: mainTfUri, mimeType, text: content }],
-                  };
-                } catch (error) {
-                  const errorMessage = error instanceof Error ? error.message : String(error);
-                  return {
-                    contents: [{
-                      uri: mainTfUri,
-                      mimeType: "text/plain",
-                      text: `Error reading file: ${errorMessage}`,
-                    }],
-                  };
-                }
-              }
-            );
-          }
-
-          // Register module files
-          await registerModuleFiles(blueprintPath, cloud, blueprintName);
-
+          await registerBlueprintResources(blueprintPath, cloud, blueprintName);
         } catch (error) {
           // Skip blueprints we can't access
           if (error instanceof Error) {
             console.error(`Error registering blueprint ${blueprintName}:`, error.message);
           }
-          continue;
         }
       }
     } catch (error) {
@@ -672,10 +665,16 @@ server.registerTool(
 
     try {
       const { content, mimeType } = await readBlueprintFile(uri);
+      let codeLang = "text";
+      if (mimeType.includes("hcl")) {
+        codeLang = "hcl";
+      } else if (mimeType.includes("markdown")) {
+        codeLang = "markdown";
+      }
       return {
         content: [{
           type: "text",
-          text: `# ${blueprint}/${path}\n\n\`\`\`${mimeType.includes("hcl") ? "hcl" : mimeType.includes("markdown") ? "markdown" : "text"}\n${content}\n\`\`\``
+          text: `# ${blueprint}/${path}\n\n\`\`\`${codeLang}\n${content}\n\`\`\``
         }]
       };
     } catch (error) {
@@ -801,7 +800,7 @@ server.registerTool(
             return "";
           }
         }));
-        fileContents = `\n## Files\n\n${contents.filter(c => c).join("\n\n")}`;
+        fileContents = `\n## Files\n\n${contents.filter(Boolean).join("\n\n")}`;
       } catch {
         fileContents = "\n## Files\n\n*Error loading files*";
       }
@@ -963,7 +962,10 @@ async function main() {
   console.error("ustwo Infrastructure Blueprints MCP Server running");
 }
 
-main().catch((error) => {
+// Use top-level await
+try {
+  await main();
+} catch (error) {
   console.error("Failed to start MCP server:", error);
   process.exit(1);
-});
+}
