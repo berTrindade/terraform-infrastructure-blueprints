@@ -2,7 +2,7 @@
 
 [![CI/CD](https://github.com/berTrindade/terraform-infrastructure-blueprints/actions/workflows/release.yml/badge.svg)](https://github.com/berTrindade/terraform-infrastructure-blueprints/actions/workflows/release.yml)
 [![Docker Image](https://img.shields.io/badge/docker-ghcr.io%2Fbertrindade%2Finfra--mcp-blue)](https://github.com/berTrindade/terraform-infrastructure-blueprints/pkgs/container/infra-mcp)
-[![npm version](https://img.shields.io/badge/npm-%40bertrindade%2Finfra--mcp-1.1.0-blue)](https://github.com/berTrindade/terraform-infrastructure-blueprints)
+[![GitHub release](https://img.shields.io/github/v/release/berTrindade/terraform-infrastructure-blueprints?label=version)](https://github.com/berTrindade/terraform-infrastructure-blueprints/releases)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22-brightgreen)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
