@@ -137,3 +137,4 @@ try {
   logger.error(wideEvent);
   process.exit(1);
 }
+// test
