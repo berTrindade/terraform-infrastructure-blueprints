@@ -1,3 +1,9 @@
+## [1.2.1](https://github.com/berTrindade/terraform-infrastructure-blueprints/compare/mcp-v1.2.0...mcp-v1.2.1) (2026-01-29)
+
+### Bug Fixes
+
+* disable npm publish to allow GitHub releases to be created ([e6a48fe](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/e6a48feff733d06b4dceb688d95c42769ebe971f))
+
 ## [1.2.0](https://github.com/berTrindade/terraform-infrastructure-blueprints/compare/mcp-v1.1.0...mcp-v1.2.0) (2026-01-29)
 
 ### Features
