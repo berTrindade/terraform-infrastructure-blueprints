@@ -4,11 +4,46 @@
  */
 
 import { config } from "../config/config.js";
+import { sanitizeErrorPath } from "./errors.js";
 
 type LogLevel = "info" | "error";
 
 interface WideEvent {
     [key: string]: unknown;
+}
+
+/**
+ * Redacts sensitive data from log events
+ * Removes or sanitizes paths, URIs, and other potentially sensitive information
+ *
+ * @param event - Log event to redact
+ * @returns Redacted event
+ */
+function redactSensitiveData(event: WideEvent): WideEvent {
+    const redacted = { ...event };
+    
+    // Sanitize URI fields
+    if (redacted.uri && typeof redacted.uri === "string") {
+        redacted.uri = sanitizeErrorPath(redacted.uri);
+    }
+    
+    // Sanitize path fields
+    if (redacted.path && typeof redacted.path === "string") {
+        redacted.path = sanitizeErrorPath(redacted.path);
+    }
+    
+    // Remove potential secrets from error messages
+    if (redacted.error && typeof redacted.error === "object" && redacted.error !== null) {
+        const errorObj = redacted.error as Record<string, unknown>;
+        if (errorObj.message && typeof errorObj.message === "string") {
+            // Remove absolute paths from error messages
+            errorObj.message = errorObj.message.replace(/\/[^\s]+/g, (match) => {
+                return sanitizeErrorPath(match);
+            });
+        }
+    }
+    
+    return redacted;
 }
 
 /**
@@ -43,14 +78,18 @@ class Logger {
     /**
      * Emit a wide event as pure JSON
      * Environment context is automatically merged into every event
+     * Sensitive data is redacted before logging
      */
     private emit(level: LogLevel, event: WideEvent): void {
         if (level === "error" || this.logLevel === "info") {
+            // Redact sensitive data before logging
+            const redactedEvent = redactSensitiveData(event);
+            
             const wideEvent: WideEvent = {
                 timestamp: new Date().toISOString(),
                 level,
                 ...envContext,
-                ...event,
+                ...redactedEvent,
             };
 
             // Emit as single-line JSON (no formatting)

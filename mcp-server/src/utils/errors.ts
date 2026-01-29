@@ -3,6 +3,52 @@
  */
 
 /**
+ * Sanitizes file paths in error messages to prevent information disclosure
+ * Shows only the last 3 path segments to avoid exposing full filesystem structure
+ *
+ * @param path - File path to sanitize
+ * @returns Sanitized path showing only last 3 segments
+ */
+export function sanitizeErrorPath(path: string): string {
+  if (!path || typeof path !== "string") {
+    return "[invalid path]";
+  }
+  
+  // Remove absolute paths, show only relative portion
+  const parts = path.split(/[/\\]/).filter(p => p.length > 0);
+  
+  // Show only last 3 segments to avoid exposing full structure
+  if (parts.length <= 3) {
+    return parts.join("/");
+  }
+  
+  return "..." + parts.slice(-3).join("/");
+}
+
+/**
+ * Sanitizes error messages to remove sensitive information
+ * Removes stack traces, full paths, and internal details
+ *
+ * @param error - Error object or message string
+ * @returns Sanitized error message
+ */
+export function sanitizeErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    // Don't expose stack traces to clients
+    let message = error.message;
+    
+    // Remove absolute paths
+    message = message.replace(/\/[^\s]+/g, (match) => {
+      return sanitizeErrorPath(match);
+    });
+    
+    return message;
+  }
+  
+  return String(error);
+}
+
+/**
  * Base error class for blueprint-related errors
  */
 export class BlueprintError extends Error {
@@ -36,7 +82,9 @@ export class ProjectNotFoundError extends BlueprintError {
  */
 export class FileNotFoundError extends BlueprintError {
     constructor(uri: string) {
-        super(`File not found: ${uri}`, "FILE_NOT_FOUND");
+        // Sanitize URI to prevent exposing full paths
+        const sanitizedUri = sanitizeErrorPath(uri);
+        super(`File not found: ${sanitizedUri}`, "FILE_NOT_FOUND");
     }
 }
 
@@ -45,7 +93,9 @@ export class FileNotFoundError extends BlueprintError {
  */
 export class InvalidUriError extends BlueprintError {
     constructor(uri: string) {
-        super(`Invalid blueprint URI: ${uri}`, "INVALID_URI");
+        // Sanitize URI to prevent exposing full paths
+        const sanitizedUri = sanitizeErrorPath(uri);
+        super(`Invalid blueprint URI: ${sanitizedUri}`, "INVALID_URI");
     }
 }
 

@@ -6,7 +6,7 @@ import * as path from "node:path";
 import * as fs from "node:fs";
 import { promisify } from "node:util";
 import type { FileContent } from "../config/types.js";
-import { InvalidUriError, FileNotFoundError } from "../utils/errors.js";
+import { InvalidUriError, FileNotFoundError, sanitizeErrorMessage } from "../utils/errors.js";
 import { resolveWorkspacePath, getMimeType } from "../utils/path-utils.js";
 import { config } from "../config/config.js";
 import { logger } from "../utils/logger.js";
@@ -73,13 +73,15 @@ export async function readBlueprintFile(uri: string): Promise<FileContent> {
         if (error instanceof InvalidUriError || error instanceof FileNotFoundError) {
             throw error;
         }
+        // Sanitize error message before logging
+        const sanitizedMessage = sanitizeErrorMessage(error);
         logger.error({
             operation: "read_blueprint_file",
-            uri,
+            uri: sanitizeErrorMessage(uri), // Sanitize URI in logs
             outcome: "error",
             error: {
                 type: error instanceof Error ? error.name : "UnknownError",
-                message: error instanceof Error ? error.message : String(error),
+                message: sanitizedMessage,
             },
         });
         throw new FileNotFoundError(uri);

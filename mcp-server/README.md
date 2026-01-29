@@ -138,6 +138,28 @@ The MCP server implements **Dynamic Context Discovery** patterns to minimize tok
 
 See [ADR 0007](../../docs/adr/0007-dynamic-context-discovery-mcp.md) for detailed documentation of these patterns.
 
+## Security
+
+The MCP server implements comprehensive security measures including:
+
+- **Input Validation**: All inputs validated for format, length, and dangerous patterns
+- **Path Traversal Protection**: Comprehensive validation prevents directory traversal attacks
+- **Command Injection Prevention**: Secure command execution using `execFile` with array arguments
+- **Error Sanitization**: Error messages sanitized to prevent information disclosure
+- **Container Security**: Docker containers run as non-root users
+- **Security Testing**: Comprehensive test suite covering security controls
+
+### Security Documentation
+
+- **[SECURITY.md](./SECURITY.md)**: Complete security policy, threat model, and best practices
+- **[ADR 0008](../../docs/adr/0008-mcp-server-security-hardening.md)**: Architecture decision record for security hardening
+
+### Running Security Tests
+
+```bash
+npm test -- --grep "security"
+```
+
 ## Development
 
 ```bash

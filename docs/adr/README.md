@@ -92,3 +92,4 @@ In most cases storing in the same repository as the code allows for easy access 
 | [0005](0005-secrets-management-pattern.md) | Secrets Management Pattern | Approved | 2026-01-24 |
 | [0006](0006-progressive-disclosure-agents.md) | Progressive Disclosure for AGENTS.md | Approved | 2026-01-24 |
 | [0007](0007-dynamic-context-discovery-mcp.md) | Dynamic Context Discovery Patterns for MCP Server | Approved | 2026-01-29 |
+| [0008](0008-mcp-server-security-hardening.md) | MCP Server Security Hardening | Approved | 2026-01-29 |

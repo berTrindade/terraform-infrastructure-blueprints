@@ -18,6 +18,10 @@ RUN npm run build
 # Production stage
 FROM node:20-alpine
 
+# Create non-root user for security
+RUN addgroup -g 1001 -S mcpuser && \
+    adduser -S mcpuser -u 1001
+
 WORKDIR /app
 
 # Copy package files
@@ -36,6 +40,12 @@ COPY gcp/ ./gcp/
 
 # Copy AGENTS.md if needed for catalog resource
 COPY AGENTS.md ./AGENTS.md
+
+# Change ownership to non-root user
+RUN chown -R mcpuser:mcpuser /app
+
+# Switch to non-root user
+USER mcpuser
 
 # MCP servers communicate via stdio
 ENTRYPOINT ["node", "dist/index.js"]

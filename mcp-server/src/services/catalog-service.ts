@@ -2,13 +2,16 @@
  * Catalog service for generating blueprint catalog content
  */
 
-import { execSync } from "node:child_process";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import * as path from "node:path";
 import * as fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import { BLUEPRINTS } from "../config/constants.js";
 import { config } from "../config/config.js";
 import { logger } from "../utils/logger.js";
+
+const execFileAsync = promisify(execFile);
 
 // ESM __dirname equivalent
 const __filename = fileURLToPath(import.meta.url);
@@ -80,11 +83,21 @@ export async function getAgentsMdContent(): Promise<string> {
   // Try fetching from GitHub using gh CLI
   try {
     const sanitizedRepo = config.github.repo.replace(/[^a-zA-Z0-9\/-]/g, "");
-    const command = `gh api repos/${sanitizedRepo}/contents/AGENTS.md --jq ".content" | base64 -d`;
-    const content = execSync(command, {
-      encoding: "utf-8",
+    
+    // Use execFile with array arguments to prevent command injection
+    const { stdout: apiOutput } = await execFileAsync("gh", [
+      "api",
+      `repos/${sanitizedRepo}/contents/AGENTS.md`,
+      "--jq",
+      ".content"
+    ], { 
       timeout: config.github.timeout,
+      encoding: "utf-8",
     });
+
+    // Decode base64 content using Node.js Buffer (more secure than shell command)
+    const content = Buffer.from(apiOutput.trim(), "base64").toString("utf-8");
+
     logger.info({
       operation: "get_agents_md_content",
       source: "github",

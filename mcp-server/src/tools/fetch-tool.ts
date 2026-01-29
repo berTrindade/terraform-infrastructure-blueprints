@@ -9,6 +9,7 @@ import { getBlueprint, findBlueprint } from "../services/blueprint-service.js";
 import { getCloudProvider } from "../utils/cloud-provider.js";
 import { BLUEPRINTS } from "../config/constants.js";
 import { logger } from "../utils/logger.js";
+import { sanitizeErrorMessage } from "../utils/errors.js";
 
 /**
  * Fetch blueprint file tool schema
@@ -83,12 +84,13 @@ export async function handleFetchBlueprintFile(args: { blueprint: string; path: 
       }]
     };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    // Sanitize error message to prevent information disclosure
+    const sanitizedMessage = sanitizeErrorMessage(error);
     wideEvent.status_code = 500;
     wideEvent.outcome = "error";
     wideEvent.error = {
       type: error instanceof Error ? error.name : "UnknownError",
-      message: errorMessage,
+      message: sanitizedMessage,
     };
     wideEvent.duration_ms = Date.now() - startTime;
     logger.error(wideEvent);
@@ -96,7 +98,7 @@ export async function handleFetchBlueprintFile(args: { blueprint: string; path: 
     return {
       content: [{
         type: "text" as const,
-        text: `Error fetching file: ${errorMessage}\n\nMake sure the path is correct. Common paths:\n- README.md\n- environments/dev/main.tf\n- modules/data/main.tf\n- modules/vpc/main.tf`
+        text: `Error fetching file: ${sanitizedMessage}\n\nMake sure the path is correct. Common paths:\n- README.md\n- environments/dev/main.tf\n- modules/data/main.tf\n- modules/vpc/main.tf`
       }]
     };
   }
