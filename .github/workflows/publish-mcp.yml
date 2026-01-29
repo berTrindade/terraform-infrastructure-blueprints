@@ -18,9 +18,15 @@ on:
 env:
   REGISTRY: ghcr.io
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: mcp-server
@@ -31,7 +37,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '20.6.0'  # Match package.json engines requirement
 
       - name: Install dependencies
         run: npm ci
@@ -45,9 +51,7 @@ jobs:
   publish:
     needs: test
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
+    # Permissions inherited from workflow level
 
     steps:
       - name: Checkout
