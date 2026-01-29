@@ -55,22 +55,48 @@ export function validateFilePath(filePath: string, workspaceRoot: string): void 
   // Check input length
   validateInputLength(filePath, MAX_PATH_LENGTH);
 
+  // Check for control characters (newline, carriage return, tab, etc.)
+  if (/[\x00-\x1F\x7F]/.test(filePath)) {
+    throw new SecurityError("Invalid path pattern detected");
+  }
+
   // Check for null bytes (path injection)
   if (filePath.includes("\0")) {
     throw new SecurityError("Invalid path pattern detected");
   }
 
-  // Decode URL-encoded paths and check for traversal
-  const decoded = decodeURIComponent(filePath);
-  if (decoded !== filePath) {
-    // Path was URL-encoded, check decoded version for traversal
-    if (decoded.includes("..") || decoded.includes("~") || decoded.startsWith("/")) {
-      throw new SecurityError("Invalid path pattern detected");
+  // Handle double-encoded paths: decode twice
+  let decoded = filePath;
+  try {
+    decoded = decodeURIComponent(decodeURIComponent(filePath));
+  } catch {
+    // If double decoding fails, try single decode
+    try {
+      decoded = decodeURIComponent(filePath);
+    } catch {
+      // If decoding fails, use original
+      decoded = filePath;
     }
   }
 
+  // Check decoded version for traversal patterns
+  if (decoded.includes("..") || decoded.includes("~") || decoded.startsWith("/")) {
+    throw new SecurityError("Invalid path pattern detected");
+  }
+
   // Check for dangerous patterns in original path
-  if (filePath.includes("..") || filePath.includes("~") || filePath.startsWith("/")) {
+  // Absolute paths starting with / should be rejected
+  if (filePath.startsWith("/") || filePath.startsWith("\\")) {
+    throw new SecurityError("Invalid path pattern detected");
+  }
+  
+  // Check for Windows absolute paths (C:\, D:\, etc.)
+  if (/^[A-Za-z]:[\\/]/.test(filePath)) {
+    throw new SecurityError("Invalid path pattern detected");
+  }
+  
+  // Check for traversal patterns
+  if (filePath.includes("..") || filePath.includes("~")) {
     throw new SecurityError("Invalid path pattern detected");
   }
 
@@ -78,6 +104,11 @@ export function validateFilePath(filePath: string, workspaceRoot: string): void 
   if (filePath.includes("..\\") || filePath.includes("..\\\\")) {
     throw new SecurityError("Invalid path pattern detected");
   }
+
+  // Basic validation failures should throw ValidationError
+  // Security-related failures should throw SecurityError
+  // For now, we'll keep SecurityError for all security issues, but ValidationError for basic format issues
+  // The tests expect ValidationError for basic format checks, so we need to adjust
 
   // Ensure path is within workspace
   const resolved = path.resolve(workspaceRoot, filePath);

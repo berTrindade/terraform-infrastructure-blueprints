@@ -50,7 +50,7 @@ describe("Error Security", () => {
     it("removes leading slashes from sanitized output", () => {
       const path = "/etc/passwd";
       const sanitized = sanitizeErrorPath(path);
-      expect(sanitized).not.toStartWith("/");
+      expect(sanitized).not.toMatch(/^\//);
     });
   });
 
