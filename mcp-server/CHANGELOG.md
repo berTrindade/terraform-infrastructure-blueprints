@@ -1,3 +1,15 @@
+## [1.1.0](https://github.com/berTrindade/terraform-infrastructure-blueprints/compare/v1.0.0...v1.1.0) (2026-01-29)
+
+### Features
+
+* trigger release workflow test ([2d53797](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/2d5379744e0a43ccdf3f851fc77dfae2f85472e2))
+
+### Bug Fixes
+
+* configure semantic-release to use mcp-v tag prefix and fix Docker tag casing ([99464a8](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/99464a87d3dff172f62fff9b33cfebaa7014e075))
+* disable npm publish to allow GitHub releases to be created ([e6a48fe](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/e6a48feff733d06b4dceb688d95c42769ebe971f))
+* use lowercase repository owner in Docker tags ([17bfdaa](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/17bfdaa60cc2dac4070498097ac6e2c568d8fb7e))
+
 ## [1.2.1](https://github.com/berTrindade/terraform-infrastructure-blueprints/compare/mcp-v1.2.0...mcp-v1.2.1) (2026-01-29)
 
 ### Bug Fixes
