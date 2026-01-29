@@ -1,3 +1,9 @@
+## [1.2.0](https://github.com/berTrindade/terraform-infrastructure-blueprints/compare/mcp-v1.1.0...mcp-v1.2.0) (2026-01-29)
+
+### Features
+
+* trigger release workflow test ([2d53797](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/2d5379744e0a43ccdf3f851fc77dfae2f85472e2))
+
 ## [1.1.0](https://github.com/berTrindade/terraform-infrastructure-blueprints/compare/mcp-v1.0.2...mcp-v1.1.0) (2026-01-29)
 
 ### Features
