@@ -1,3 +1,36 @@
+## [1.1.0](https://github.com/berTrindade/terraform-infrastructure-blueprints/compare/mcp-v1.0.2...mcp-v1.1.0) (2026-01-29)
+
+### Features
+
+* add onboarding and testing commands for new developers ([c0dc2d6](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/c0dc2d62e88af08c266c9cb56aae253b0f7c6af3))
+* add Terraform CI/CD workflows for HCP and S3 backends ([d5a81f3](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/d5a81f330438b3323d1e303bda289b62e0779969))
+* add VPC Flow Logs and CloudWatch Container Insights support ([1fc2d53](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/1fc2d5365386822706c331edba6c6306075a68c7))
+* add VPC Flow Logs and CloudWatch Log Group resources ([76a092a](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/76a092abd94c5bfa62d73b6673ee5fd4171a5694))
+* enhance AI assistant guidelines and MCP server tools ([145d4ae](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/145d4aea4975180c459c5d0bb9d226ddd29099c8))
+* enhance blueprint resource registration and error handling ([11ff774](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/11ff774def7157f66931973976f8b10a9be46ca7))
+* implement comprehensive blueprint management and tooling ([abaad26](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/abaad26f625ad3c5f068f642571cf2a04e7efec6))
+* implement module file registration for blueprints ([0f6cfa1](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/0f6cfa11616c4955b43ff3bf3541f8d4f785d9ea))
+* introduce Azure Functions + PostgreSQL blueprint ([dd7921b](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/dd7921b71fe148c69016f0f3b5cae23edda913c4))
+* **mcp-server:** improve AI assistant usability ([33ba5dd](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/33ba5dd52b3af79d16a3d4129facefa0920a1c1b))
+* migrate to Gateway API for ArgoCD and sample applications ([a5c6f0e](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/a5c6f0e03a92dadc089fdf0b1bb0bd7d26c817a2))
+* test release flow ([7cd4386](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/7cd4386b2cca28452ae56230cb9ed376a79a5a79))
+* update Docker configurations and add .dockerignore files ([30aedd0](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/30aedd02ebceaf3b6ca24e6e4897b418adfa5de1))
+* use semantic versioning tags instead of mcp-v* prefix ([be07396](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/be0739667c76aa41e01d344e019b25f4d6118a32))
+
+### Bug Fixes
+
+* add missing conventional-changelog-conventionalcommits dependency ([b9edd15](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/b9edd15d9c1602176f19059b34e32ba65c00e1a3))
+* **ci:** update dockerfile parameter to file for build-push-action@v6 ([0aed94b](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/0aed94bc05e581728cae307458301e832317fe41))
+* configure semantic-release to use mcp-v tag prefix and fix Docker tag casing ([99464a8](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/99464a87d3dff172f62fff9b33cfebaa7014e075))
+* correct workflow YAML syntax - move tags to top level ([186e4bc](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/186e4bc31a66dcb3dcf3cc00c0d530588ff39239))
+* **mcp-server:** resolve TypeScript type declarations for SDK imports ([bb81ddf](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/bb81ddf3b2112b72e7504700cfbaa481837415c3))
+* nest tags under push in workflow trigger ([39f9cf1](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/39f9cf1e48ffa78825a24e9aa26fa0fd8dbaf3e9))
+* remove mcp-server source exclusions from mcp-server/.dockerignore ([6bb2410](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/6bb2410d742d6ee52c26fd1ef541f8dfd5489186))
+* resolve test failures in validation, errors, and logger tests ([a1d1148](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/a1d11483fdbc0a9a7fc69ab64d9cc442adc1a5be))
+* update Node.js version to 22 for semantic-release compatibility ([c6c0ee1](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/c6c0ee11ac6b6a7feef0185c9008f6aa9ca81214))
+* update vitest configuration and enhance logging for server operations ([c5f4177](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/c5f417719a94f141e0293349d4f1e881786c2b1a))
+* use lowercase repository owner in Docker tags ([17bfdaa](https://github.com/berTrindade/terraform-infrastructure-blueprints/commit/17bfdaa60cc2dac4070498097ac6e2c568d8fb7e))
+
 ## 1.0.0 (2026-01-29)
 
 ### Features
