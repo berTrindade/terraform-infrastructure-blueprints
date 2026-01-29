@@ -127,6 +127,17 @@ Then configure Cursor:
 }
 ```
 
+## Architecture
+
+The MCP server implements **Dynamic Context Discovery** patterns to minimize token consumption and startup overhead:
+
+- **On-Demand Tool Execution**: Tools execute only when called
+- **Progressive Disclosure**: Optional parameters for requesting full content
+- **Lazy Resource Loading**: Resources registered at startup, content loaded when accessed
+- **Sequential Workflow Guidance**: Step-by-step guidance for common tasks
+
+See [ADR 0007](../../docs/adr/0007-dynamic-context-discovery-mcp.md) for detailed documentation of these patterns.
+
 ## Development
 
 ```bash
