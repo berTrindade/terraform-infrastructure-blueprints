@@ -11,7 +11,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Scenario 1: Node.js App
-echo "📦 Scenario 1: Node.js Express App"
+echo "Scenario 1: Node.js Express App"
 echo "-----------------------------------"
 cd scenario-1-app-exists
 
@@ -51,7 +51,7 @@ echo ""
 cd ..
 
 # Scenario 2: Terraform
-echo "🏗️  Scenario 2: Terraform Configuration"
+echo "Scenario 2: Terraform Configuration"
 echo "-----------------------------------"
 cd scenario-2-existing-terraform
 
@@ -81,7 +81,7 @@ fi
 echo ""
 cd ..
 
-echo -e "${GREEN}✅ All validations passed!${NC}"
+echo -e "${GREEN}All validations passed!${NC}"
 echo ""
 echo "Note: Full Terraform validation requires AWS credentials and 'terraform init'"
 echo "Note: Full Node.js app testing requires a PostgreSQL database"

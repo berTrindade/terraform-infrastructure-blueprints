@@ -11,24 +11,24 @@ When you have access to branch protection, configure these settings via:
 
 | Setting | Value | Purpose |
 |---------|-------|---------|
-| **Require a pull request before merging** | ✅ Enabled | Prevent direct pushes to main |
+| **Require a pull request before merging** | Enabled | Prevent direct pushes to main |
 | **Required approving reviews** | 1 | Ensure code review |
-| **Dismiss stale pull request approvals** | ✅ Enabled | Re-review after changes |
-| **Require review from Code Owners** | ✅ Enabled | Ensure proper ownership |
-| **Require status checks to pass** | ✅ Enabled | Ensure CI passes |
+| **Dismiss stale pull request approvals** | Enabled | Re-review after changes |
+| **Require review from Code Owners** | Enabled | Ensure proper ownership |
+| **Require status checks to pass** | Enabled | Ensure CI passes |
 | **Required status checks** | `CI Summary` | Main CI workflow |
-| **Require branches to be up to date** | ✅ Enabled | Prevent merge conflicts |
-| **Require conversation resolution** | ✅ Enabled | Address all feedback |
-| **Do not allow bypassing settings** | ✅ Enabled | Apply to admins too |
+| **Require branches to be up to date** | Enabled | Prevent merge conflicts |
+| **Require conversation resolution** | Enabled | Address all feedback |
+| **Do not allow bypassing settings** | Enabled | Apply to admins too |
 
 ### Optional (Recommended) Settings
 
 | Setting | Value | Purpose |
 |---------|-------|---------|
-| **Require signed commits** | ✅ Enabled | Verify commit authenticity |
+| **Require signed commits** | Enabled | Verify commit authenticity |
 | **Require linear history** | Optional | Cleaner git history |
-| **Allow force pushes** | ❌ Disabled | Prevent history rewriting |
-| **Allow deletions** | ❌ Disabled | Protect branch |
+| **Allow force pushes** | Disabled | Prevent history rewriting |
+| **Allow deletions** | Disabled | Protect branch |
 
 ## Applying via GitHub CLI
 
@@ -77,7 +77,7 @@ Additional protection rules require GitHub Pro for private repositories:
 |---------|-----|---------|------------|
 | Required reviewers | - | 1 reviewer | 2 reviewers |
 | Wait timer | - | - | 10 minutes |
-| Branch restrictions | - | ✅ | ✅ |
+| Branch restrictions | - | Enabled | Enabled |
 
 ### Applying Protection Rules (When Available)
 

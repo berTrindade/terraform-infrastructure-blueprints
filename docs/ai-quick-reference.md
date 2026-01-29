@@ -135,7 +135,7 @@ resource "aws_vpc_endpoint" "secretsmanager" {
 
 ## Common Mistakes
 
-| ❌ Wrong | ✅ Right |
+| Wrong | Right |
 |---------|---------|
 | `password = random_password.db.result` | `password_wo = ephemeral.random_password.db.result` |
 | Store password in Secrets Manager | Store metadata only, use IAM auth |

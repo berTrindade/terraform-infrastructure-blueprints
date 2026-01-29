@@ -165,9 +165,9 @@ jobs:
           # Required directories
           for dir in "environments/dev" "modules"; do
             if [ -d "$BLUEPRINT/$dir" ]; then
-              echo "✅ $dir/ exists" >> $GITHUB_STEP_SUMMARY
+              echo "PASS: $dir/ exists" >> $GITHUB_STEP_SUMMARY
             else
-              echo "❌ $dir/ missing" >> $GITHUB_STEP_SUMMARY
+              echo "FAIL: $dir/ missing" >> $GITHUB_STEP_SUMMARY
               ERRORS=$((ERRORS + 1))
             fi
           done
@@ -175,9 +175,9 @@ jobs:
           # Required files
           for file in "README.md" "scripts/create-environment.sh" ".github/workflows/deploy.yml"; do
             if [ -f "$BLUEPRINT/$file" ]; then
-              echo "✅ $file exists" >> $GITHUB_STEP_SUMMARY
+              echo "PASS: $file exists" >> $GITHUB_STEP_SUMMARY
             else
-              echo "❌ $file missing" >> $GITHUB_STEP_SUMMARY
+              echo "FAIL: $file missing" >> $GITHUB_STEP_SUMMARY
               ERRORS=$((ERRORS + 1))
             fi
           done
@@ -185,9 +185,9 @@ jobs:
           # Required Terraform files
           for file in "main.tf" "variables.tf" "outputs.tf" "versions.tf" "terraform.tfvars"; do
             if [ -f "$BLUEPRINT/environments/dev/$file" ]; then
-              echo "✅ environments/dev/$file exists" >> $GITHUB_STEP_SUMMARY
+              echo "PASS: environments/dev/$file exists" >> $GITHUB_STEP_SUMMARY
             else
-              echo "❌ environments/dev/$file missing" >> $GITHUB_STEP_SUMMARY
+              echo "FAIL: environments/dev/$file missing" >> $GITHUB_STEP_SUMMARY
               ERRORS=$((ERRORS + 1))
             fi
           done
@@ -211,7 +211,7 @@ jobs:
         if: steps.fmt.outcome == 'failure'
         run: |
           echo "## Format Check" >> $GITHUB_STEP_SUMMARY
-          echo "❌ Terraform formatting issues found" >> $GITHUB_STEP_SUMMARY
+          echo "FAIL: Terraform formatting issues found" >> $GITHUB_STEP_SUMMARY
           echo "Run: \`terraform fmt -recursive\`" >> $GITHUB_STEP_SUMMARY
           exit 1
 
@@ -234,7 +234,7 @@ jobs:
         if: steps.validate.outcome == 'failure'
         run: |
           echo "## Validation Check" >> $GITHUB_STEP_SUMMARY
-          echo "❌ Terraform validation failed" >> $GITHUB_STEP_SUMMARY
+          echo "FAIL: Terraform validation failed" >> $GITHUB_STEP_SUMMARY
           exit 1
 
       # ----------------------------------------
@@ -252,9 +252,9 @@ jobs:
         run: |
           echo "## TFLint" >> $GITHUB_STEP_SUMMARY
           if [ "${{ steps.tflint.outcome }}" = "failure" ]; then
-            echo "⚠️ TFLint found issues (non-blocking)" >> $GITHUB_STEP_SUMMARY
+            echo "WARNING: TFLint found issues (non-blocking)" >> $GITHUB_STEP_SUMMARY
           else
-            echo "✅ TFLint passed" >> $GITHUB_STEP_SUMMARY
+            echo "PASS: TFLint passed" >> $GITHUB_STEP_SUMMARY
           fi
 
       # ----------------------------------------
@@ -277,7 +277,7 @@ jobs:
       - name: Security scan result
         run: |
           echo "## Security Scan" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Security scan completed (review warnings in logs)" >> $GITHUB_STEP_SUMMARY
+          echo "PASS: Security scan completed (review warnings in logs)" >> $GITHUB_STEP_SUMMARY
 
       # ----------------------------------------
       # README validation
@@ -291,17 +291,17 @@ jobs:
           
           for section in "Architecture" "Quick Start" "Estimated Costs" "Cleanup"; do
             if grep -qi "^##.*$section" "$README"; then
-              echo "✅ Has '$section' section" >> $GITHUB_STEP_SUMMARY
+              echo "PASS: Has '$section' section" >> $GITHUB_STEP_SUMMARY
             else
-              echo "❌ Missing '$section' section" >> $GITHUB_STEP_SUMMARY
+              echo "FAIL: Missing '$section' section" >> $GITHUB_STEP_SUMMARY
               ERRORS=$((ERRORS + 1))
             fi
           done
           
           if grep -q '```mermaid' "$README"; then
-            echo "✅ Has Mermaid diagram" >> $GITHUB_STEP_SUMMARY
+            echo "PASS: Has Mermaid diagram" >> $GITHUB_STEP_SUMMARY
           else
-            echo "⚠️ Missing Mermaid diagram (recommended)" >> $GITHUB_STEP_SUMMARY
+            echo "WARNING: Missing Mermaid diagram (recommended)" >> $GITHUB_STEP_SUMMARY
           fi
           
           if [ $ERRORS -gt 0 ]; then
@@ -338,9 +338,9 @@ jobs:
           fi
           
           if [ "${{ needs.validate.result }}" = "success" ]; then
-            echo "✅ All blueprint validations passed!"
-            exit 0
-          else
-            echo "❌ Some blueprint validations failed"
+                  echo "PASS: All blueprint validations passed!"
+                  exit 0
+                else
+                  echo "FAIL: Some blueprint validations failed"
             exit 1
           fi

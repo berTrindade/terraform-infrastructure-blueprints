@@ -61,9 +61,9 @@ run "validate_project_name" {
 
 Before submitting a PR, ensure:
 
-- ✅ `terraform fmt -check` passes
-- ✅ `terraform validate` passes
-- ✅ `tflint` passes (or warnings are documented)
-- ✅ `terraform test` passes
-- ✅ Manual `terraform plan` review shows expected changes
-- ✅ Security scans pass (Trivy, Checkov)
+- `terraform fmt -check` passes
+- `terraform validate` passes
+- `tflint` passes (or warnings are documented)
+- `terraform test` passes
+- Manual `terraform plan` review shows expected changes
+- Security scans pass (Trivy, Checkov)

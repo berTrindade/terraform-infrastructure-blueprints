@@ -42,10 +42,10 @@ Implement defense-in-depth security model with multiple layers of protection:
 **Example**: GitHub API fetching and base64 decoding
 
 ```typescript
-// ❌ INSECURE (shell command string)
+// INSECURE (shell command string)
 execSync(`gh api repos/${repo}/contents/file.md | base64 -d`, { shell: true });
 
-// ✅ SECURE (execFile with array arguments)
+// SECURE (execFile with array arguments)
 const { stdout: apiOutput } = await execFileAsync("gh", [
   "api",
   `repos/${repo}/contents/AGENTS.md`,
@@ -53,7 +53,7 @@ const { stdout: apiOutput } = await execFileAsync("gh", [
   ".content"
 ], { timeout, encoding: "utf-8" });
 
-// ✅ SECURE (Node.js built-in, no shell command)
+// SECURE (Node.js built-in, no shell command)
 const content = Buffer.from(apiOutput.trim(), "base64").toString("utf-8");
 ```
 

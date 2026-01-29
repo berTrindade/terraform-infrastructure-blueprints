@@ -108,13 +108,22 @@ Use [Conventional Commits](https://www.conventionalcommits.org/) format:
 
 **Types:**
 
-- `feat`: New feature
-- `fix`: Bug fix
+- `feat`: New feature (triggers minor version bump for MCP server)
+- `fix`: Bug fix (triggers patch version bump for MCP server)
 - `docs`: Documentation changes
 - `style`: Code style changes (formatting, etc.)
 - `refactor`: Code refactoring
 - `test`: Adding or updating tests
 - `chore`: Maintenance tasks
+
+**Breaking Changes:**
+
+Add `!` after the type to indicate a breaking change (triggers major version bump):
+
+```
+feat!: remove deprecated API endpoint
+fix!: change authentication method
+```
 
 **Examples:**
 
@@ -122,7 +131,10 @@ Use [Conventional Commits](https://www.conventionalcommits.org/) format:
 feat(apigw-lambda-rds): add RDS Proxy support
 fix(alb-ecs-fargate): correct security group rules
 docs(readme): update quick start guide
+feat(mcp-server)!: change API response format
 ```
+
+**Note**: For MCP server changes (`mcp-server/**`), conventional commits automatically trigger releases via `semantic-release`. Commits with `feat:` trigger minor version bumps, `fix:` triggers patch bumps, and `feat!:` triggers major version bumps.
 
 ### Terraform Code Style
 
@@ -170,10 +182,10 @@ docs(readme): update quick start guide
 
 **Critical**: All blueprints must be self-contained:
 
-- ✅ Include all modules within the blueprint folder
-- ✅ No references to shared modules or external dependencies
-- ✅ No ustwo-specific references or secrets
-- ✅ All code must work independently after copying
+- Include all modules within the blueprint folder
+- No references to shared modules or external dependencies
+- No ustwo-specific references or secrets
+- All code must work independently after copying
 
 ## Testing Requirements
 
@@ -191,12 +203,12 @@ terraform test
 
 Before submitting a PR, ensure:
 
-- ✅ `terraform fmt -check` passes
-- ✅ `terraform validate` passes
-- ✅ `tflint` passes (or warnings are documented)
-- ✅ `terraform test` passes
-- ✅ Manual `terraform plan` review shows expected changes
-- ✅ Security scans pass (Trivy, Checkov)
+- `terraform fmt -check` passes
+- `terraform validate` passes
+- `tflint` passes (or warnings are documented)
+- `terraform test` passes
+- Manual `terraform plan` review shows expected changes
+- Security scans pass (Trivy, Checkov)
 
 ### Testing New Blueprints
 
@@ -239,17 +251,20 @@ For significant architectural decisions:
 The root `AGENTS.md` file uses progressive disclosure to minimize token consumption for AI assistants. See [ADR-0006](docs/adr/0006-progressive-disclosure-agents.md) for the rationale.
 
 **Rules for root `AGENTS.md`:**
+
 - Keep it minimal (~10-15 lines)
 - Include only: project description, key principle, consultancy model, and references to detailed docs
 - Do NOT add detailed content (blueprint catalogs, workflows, patterns, etc.)
 
 **Where to add new content:**
+
 - **Blueprint catalog updates** → `docs/blueprints/catalog.md`
 - **New workflows or scenarios** → `docs/blueprints/workflows.md`
 - **New patterns** → `docs/blueprints/patterns.md`
 - **Customization examples** → `docs/blueprints/customization.md`
 
 **Why this matters:**
+
 - AI assistants load `AGENTS.md` on every request
 - Detailed content should be in referenced files that are loaded only when needed
 - This reduces token consumption and improves response efficiency
@@ -332,10 +347,10 @@ All code must pass:
 
 ### Secrets Management
 
-- ❌ **Never commit secrets** (passwords, API keys, etc.)
-- ✅ Use ephemeral secrets for database passwords (Flow A)
-- ✅ Use Secrets Manager for third-party API keys (Flow B)
-- ✅ Follow the [Secrets Management](README.md#secrets-management) patterns
+- **Never commit secrets** (passwords, API keys, etc.)
+- Use ephemeral secrets for database passwords (Flow A)
+- Use Secrets Manager for third-party API keys (Flow B)
+- Follow the [Secrets Management](README.md#secrets-management) patterns
 
 ### IAM Policies
 
@@ -369,4 +384,4 @@ For questions or clarifications:
 - **GitHub Issues**: [Open an issue](https://github.com/berTrindade/terraform-infrastructure-blueprints/issues)
 - **Pull Requests**: [Submit a PR](https://github.com/berTrindade/terraform-infrastructure-blueprints/pulls)
 
-Thank you for contributing! 🎉
+Thank you for contributing!

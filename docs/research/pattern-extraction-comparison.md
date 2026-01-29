@@ -35,7 +35,7 @@ After extensive GitHub searches, **no projects were found that implement pattern
 
 - **URL**: <https://github.com/udayrealm/Azure-Terraform-MCP-Server>
 - **Description**: MCP server for Azure Terraform infrastructure
-- **Pattern Extraction**: ❌ No pattern extraction capabilities found
+- **Pattern Extraction**: No pattern extraction capabilities found
 - **Focus**: Provides MCP tools for Azure Terraform operations, but does not extract patterns from blueprints
 - **Key Difference**: This project focuses on Azure-specific operations, not pattern extraction
 
@@ -43,7 +43,7 @@ After extensive GitHub searches, **no projects were found that implement pattern
 
 - **URL**: <https://github.com/wheeleruniverse/infrastructure-registry>
 - **Description**: Curated collection of reusable AWS Infrastructure as Code templates
-- **Pattern Extraction**: ❌ No automated extraction tool
+- **Pattern Extraction**: No automated extraction tool
 - **Focus**: Reference library of templates, not extraction guidance
 - **Key Difference**: Static template collection without AI-assisted extraction
 
@@ -51,7 +51,7 @@ After extensive GitHub searches, **no projects were found that implement pattern
 
 - **URL**: <https://github.com/D-Stap/terraform-modules>
 - **Description**: Reusable Terraform modules for AWS infrastructure
-- **Pattern Extraction**: ❌ No extraction tool
+- **Pattern Extraction**: No extraction tool
 - **Focus**: Collection of reusable modules
 - **Key Difference**: Module library without extraction guidance
 
@@ -111,13 +111,13 @@ Integration with AI assistants (Cursor, Claude Desktop) provides:
 
 | Feature | This Project | Azure Terraform MCP | Infrastructure Registry | Terraform Modules |
 |---------|-------------|---------------------|------------------------|-------------------|
-| MCP Server | ✅ | ✅ | ❌ | ❌ |
-| Pattern Extraction | ✅ | ❌ | ❌ | ❌ |
-| Integration Guidance | ✅ | ❌ | ❌ | ❌ |
-| Cross-Cloud Support | ✅ | ❌ | ❌ | ❌ |
-| AI-Assisted Discovery | ✅ | Partial | ❌ | ❌ |
-| Capability Mapping | ✅ | ❌ | ❌ | ❌ |
-| Step-by-Step Instructions | ✅ | ❌ | ❌ | ❌ |
+| MCP Server | Yes | Yes | No | No |
+| Pattern Extraction | Yes | No | No | No |
+| Integration Guidance | Yes | No | No | No |
+| Cross-Cloud Support | Yes | No | No | No |
+| AI-Assisted Discovery | Yes | Partial | No | No |
+| Capability Mapping | Yes | No | No | No |
+| Step-by-Step Instructions | Yes | No | No | No |
 
 ## Implementation Strategy Comparison
 

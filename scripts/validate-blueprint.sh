@@ -44,7 +44,7 @@ check_fail() {
 }
 
 check_warn() {
-    echo -e "  ${YELLOW}⚠${NC} $1"
+    echo -e "  ${YELLOW}WARNING:${NC} $1"
     ((WARN++))
 }
 

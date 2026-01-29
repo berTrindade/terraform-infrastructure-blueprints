@@ -66,10 +66,10 @@ The server implements comprehensive path traversal protection:
 
 ### Example
 ```typescript
-// ❌ INSECURE (shell command string)
+// INSECURE (shell command string)
 execSync(`gh api repos/${repo}/contents/file.md`, { shell: true });
 
-// ✅ SECURE (execFile with array arguments)
+// SECURE (execFile with array arguments)
 execFileAsync("gh", ["api", `repos/${repo}/contents/file.md`], { timeout });
 ```
 
@@ -87,10 +87,10 @@ execFileAsync("gh", ["api", `repos/${repo}/contents/file.md`], { timeout });
 
 ### Example
 ```typescript
-// ❌ INSECURE (full path exposed)
+// INSECURE (full path exposed)
 throw new Error(`File not found: /home/user/secret/file.txt`);
 
-// ✅ SECURE (sanitized path)
+// SECURE (sanitized path)
 throw new FileNotFoundError(uri); // Shows only "...secret/file.txt"
 ```
 

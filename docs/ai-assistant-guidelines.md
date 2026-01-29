@@ -8,14 +8,14 @@ This guide helps AI assistants properly reference blueprint patterns instead of 
 
 ## When to Reference Blueprints
 
-### ✅ Use Blueprints When
+### Use Blueprints When
 
 1. **Adding capabilities to existing projects** - Extract modules from blueprints
 2. **Starting new projects** - Recommend and reference complete blueprints
 3. **Cross-cloud migrations** - Use `find_by_project` to find equivalents
 4. **Architectural decisions** - Use `compare_blueprints` for trade-offs
 
-### ❌ Don't Use Blueprints When
+### Don't Use Blueprints When
 
 1. **Simple one-off resources** - Single S3 bucket, IAM role without patterns
 2. **Client-specific customizations** - After extracting blueprint modules
@@ -131,7 +131,7 @@ When referencing blueprints, ensure code follows these patterns:
 
 ### 1. Ephemeral Passwords (Flow A)
 
-**❌ Wrong**: Store password in Secrets Manager
+**Wrong**: Store password in Secrets Manager
 
 ```hcl
 resource "aws_secretsmanager_secret" "db" {
@@ -139,11 +139,11 @@ resource "aws_secretsmanager_secret" "db" {
 }
 
 resource "aws_secretsmanager_secret_version" "db" {
-  secret_string = random_password.db.result  # ❌ Password in state!
+  secret_string = random_password.db.result  # Password in state!
 }
 ```
 
-**✅ Right**: Use ephemeral password with `password_wo`
+**Right**: Use ephemeral password with `password_wo`
 
 ```hcl
 ephemeral "random_password" "db" {
@@ -162,7 +162,7 @@ resource "aws_db_instance" "main" {
 
 ### 2. IAM Database Authentication
 
-**❌ Wrong**: Applications use password authentication
+**Wrong**: Applications use password authentication
 
 ```hcl
 # Missing IAM auth configuration
@@ -171,7 +171,7 @@ resource "aws_db_instance" "main" {
 }
 ```
 
-**✅ Right**: Enable IAM Database Authentication
+**Right**: Enable IAM Database Authentication
 
 ```hcl
 resource "aws_db_instance" "main" {
@@ -194,7 +194,7 @@ resource "aws_iam_policy" "rds_auth" {
 
 ### 3. Official Terraform Modules
 
-**❌ Wrong**: Raw VPC resources
+**Wrong**: Raw VPC resources
 
 ```hcl
 resource "aws_vpc" "main" {
@@ -206,7 +206,7 @@ resource "aws_subnet" "private" {
 }
 ```
 
-**✅ Right**: Use official Terraform AWS modules
+**Right**: Use official Terraform AWS modules
 
 ```hcl
 module "vpc" {
@@ -226,15 +226,15 @@ module "vpc" {
 
 ### 4. VPC Endpoints vs NAT Gateway
 
-**❌ Wrong**: NAT Gateway for Lambda (expensive, unnecessary)
+**Wrong**: NAT Gateway for Lambda (expensive, unnecessary)
 
 ```hcl
 module "vpc" {
-  enable_nat_gateway = true  # ❌ Expensive for Lambda
+  enable_nat_gateway = true  # Expensive for Lambda
 }
 ```
 
-**✅ Right**: VPC Endpoints for Lambda (cost-effective)
+**Right**: VPC Endpoints for Lambda (cost-effective)
 
 ```hcl
 module "vpc" {
@@ -253,7 +253,7 @@ resource "aws_vpc_endpoint" "secretsmanager" {
 
 ### 5. Module Structure
 
-**❌ Wrong**: Flat Terraform files with everything in one place
+**Wrong**: Flat Terraform files with everything in one place
 
 ```hcl
 # main.tf - everything mixed together
@@ -262,7 +262,7 @@ resource "aws_lambda_function" "api" { }
 resource "aws_api_gateway" "api" { }
 ```
 
-**✅ Right**: Organized module structure
+**Right**: Organized module structure
 
 ```hcl
 # environments/dev/main.tf - composition only
@@ -331,18 +331,18 @@ blueprints://aws/apigw-lambda-rds/environments/dev/main.tf
 
 ### Example 1: Adding RDS to Existing Project
 
-**❌ Incorrect Response**:
+**Incorrect Response**:
 
 ```hcl
 # Generic Terraform - doesn't reference blueprints
 resource "aws_db_instance" "main" {
   engine    = "postgres"
-  password  = random_password.db.result  # ❌ Wrong pattern
+  password  = random_password.db.result  # Wrong pattern
   # Missing IAM auth, wrong password handling
 }
 ```
 
-**✅ Correct Response**:
+**Correct Response**:
 
 ```
 I'll help you add RDS PostgreSQL using the blueprint pattern. Let me get the workflow and extract the database pattern:
@@ -387,7 +387,7 @@ resource "aws_db_instance" "main" {
 
 ### Example 2: Starting New Project
 
-**❌ Incorrect Response**:
+**Incorrect Response**:
 ```
 
 Here's a generic serverless API setup:
@@ -395,7 +395,7 @@ Here's a generic serverless API setup:
 
 ```
 
-**✅ Correct Response**:
+**Correct Response**:
 ```
 
 Let me get the workflow guidance and recommend the right blueprint:
@@ -429,12 +429,12 @@ terraform init && terraform apply
 
 ## Common Mistakes to Avoid
 
-1. **❌ Storing passwords in Secrets Manager** - Use ephemeral `password_wo` pattern
-2. **❌ Missing IAM Database Authentication** - Always enable for RDS/Aurora
-3. **❌ Using NAT Gateway for Lambda** - Use VPC endpoints instead
-4. **❌ Raw Terraform resources** - Use official modules (VPC, Lambda, API Gateway)
-5. **❌ Not referencing blueprints** - Always check for existing patterns first
-6. **❌ Generic code without context** - Reference specific blueprint files
+1. **Storing passwords in Secrets Manager** - Use ephemeral `password_wo` pattern
+2. **Missing IAM Database Authentication** - Always enable for RDS/Aurora
+3. **Using NAT Gateway for Lambda** - Use VPC endpoints instead
+4. **Raw Terraform resources** - Use official modules (VPC, Lambda, API Gateway)
+5. **Not referencing blueprints** - Always check for existing patterns first
+6. **Generic code without context** - Reference specific blueprint files
 
 ## Quick Checklist
 

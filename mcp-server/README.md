@@ -1,6 +1,6 @@
 # ustwo Infrastructure Blueprints MCP Server
 
-[![CI/CD](https://github.com/berTrindade/terraform-infrastructure-blueprints/actions/workflows/publish-mcp.yml/badge.svg)](https://github.com/berTrindade/terraform-infrastructure-blueprints/actions/workflows/publish-mcp.yml)
+[![CI/CD](https://github.com/berTrindade/terraform-infrastructure-blueprints/actions/workflows/release.yml/badge.svg)](https://github.com/berTrindade/terraform-infrastructure-blueprints/actions/workflows/release.yml)
 [![Docker Image](https://img.shields.io/badge/docker-ghcr.io%2Fbertrindade%2Finfra--mcp-blue)](https://github.com/berTrindade/terraform-infrastructure-blueprints/pkgs/container/infra-mcp)
 [![npm version](https://img.shields.io/badge/npm-%40bertrindade%2Finfra--mcp-1.0.2-blue)](https://github.com/berTrindade/terraform-infrastructure-blueprints)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20.6.0-brightgreen)](https://nodejs.org/)
@@ -178,33 +178,51 @@ docker build -t infra-mcp .
 
 ## Publishing
 
-The Docker image is automatically published when you push changes to `mcp-server/**`:
+Releases are **fully automated** using [semantic-release](https://github.com/semantic-release/semantic-release). No manual versioning or publishing needed!
 
-### Automatic Publishing
+### How It Works
 
 **On every push to `main` branch** (if `mcp-server/**` files change):
 
-- `ghcr.io/bertrindade/infra-mcp:latest` is automatically updated
-- Developers get the update automatically (no action needed)
+1. **Tests run** - Ensures code quality
+2. **semantic-release analyzes commits** - Checks for conventional commit format
+3. **If release needed** (based on commit types):
+   - Version bumped automatically (`feat:` → minor, `fix:` → patch, `feat!:` → major)
+   - `CHANGELOG.md` generated
+   - Git tag created (`v1.2.3`)
+   - GitHub Release created
+   - npm package published to GitHub Packages
+   - Docker image built and pushed to GHCR with version tag and `latest`
+4. **If no release needed** - Workflow completes (no version change)
 
-**When you push a version tag:**
+### Commit Format
+
+Use conventional commits for automatic versioning:
 
 ```bash
-git tag mcp-v1.0.1
-git push origin mcp-v1.0.1
+feat: add new feature      # Minor version bump (1.0.0 → 1.1.0)
+fix: resolve bug           # Patch version bump (1.0.0 → 1.0.1)
+feat!: breaking change     # Major version bump (1.0.0 → 2.0.0)
+chore: update deps         # No release
 ```
 
-This creates:
+### Release Artifacts
 
-- `ghcr.io/bertrindade/infra-mcp:1.0.1` (versioned tag)
-- `ghcr.io/bertrindade/infra-mcp:latest` (always points to newest)
+Each release automatically creates:
+
+- **Git tag**: `v1.2.3`
+- **GitHub Release**: With auto-generated changelog
+- **npm package**: `@bertrindade/infra-mcp@1.2.3`
+- **Docker images**:
+  - `ghcr.io/bertrindade/infra-mcp:1.2.3` (versioned)
+  - `ghcr.io/bertrindade/infra-mcp:latest` (always latest)
 
 ### How Developers Get Updates
 
 Developers configured with `--pull always` automatically receive updates:
 
-- ✅ **No manual pull needed** - Docker pulls latest on each connection
-- ✅ **No restart required** - Cursor reconnects with new image automatically
-- ✅ **Zero developer action** - Updates happen transparently
+- **No manual pull needed** - Docker pulls latest on each connection
+- **No restart required** - Cursor reconnects with new image automatically
+- **Zero developer action** - Updates happen transparently
 
-The `:latest` tag is always updated to point to the most recent build, ensuring developers always get the newest version.
+Releases are fully automated - just commit with conventional format and push to `main`.

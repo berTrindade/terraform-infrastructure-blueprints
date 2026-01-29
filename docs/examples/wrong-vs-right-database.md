@@ -6,7 +6,7 @@ This document shows side-by-side comparisons of incorrect (generic) Terraform co
 
 **User Request**: "I have an existing Terraform project with API Gateway and Lambda. I need to add RDS PostgreSQL."
 
-## ❌ Wrong Approach: Generic Terraform
+## Wrong Approach: Generic Terraform
 
 ### Problems with This Approach
 
@@ -19,7 +19,7 @@ This document shows side-by-side comparisons of incorrect (generic) Terraform co
 ### Wrong Code Example
 
 ```hcl
-# ❌ WRONG: Generic Terraform without blueprint patterns
+# WRONG: Generic Terraform without blueprint patterns
 
 # Password stored in Secrets Manager (appears in state!)
 resource "random_password" "db_password" {
@@ -33,7 +33,7 @@ resource "aws_secretsmanager_secret" "db" {
 
 resource "aws_secretsmanager_secret_version" "db" {
   secret_id     = aws_secretsmanager_secret.db.id
-  secret_string = random_password.db_password.result  # ❌ Password in state!
+  secret_string = random_password.db_password.result  # Password in state!
 }
 
 # Raw VPC resources (should use official module)
@@ -70,10 +70,10 @@ resource "aws_db_instance" "main" {
 
   db_name  = "myapp"
   username = "postgres"
-  password = random_password.db_password.result  # ❌ Password-based auth
+  password = random_password.db_password.result  # Password-based auth
 
   # Missing IAM Database Authentication
-  # iam_database_authentication_enabled = false  # ❌ Not enabled
+  # iam_database_authentication_enabled = false  # Not enabled
 
   vpc_security_group_ids = [aws_security_group.rds.id]
   db_subnet_group_name   = aws_db_subnet_group.main.name
@@ -92,7 +92,7 @@ resource "aws_security_group" "rds" {
     from_port   = 5432
     to_port     = 5432
     protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/16"]  # ❌ Too permissive
+    cidr_blocks = ["10.0.0.0/16"]  # Too permissive
   }
 }
 
@@ -112,7 +112,7 @@ resource "aws_iam_role" "lambda" {
   })
 }
 
-# ❌ Missing IAM policy for RDS Database Authentication
+# Missing IAM policy for RDS Database Authentication
 # Applications must use password from Secrets Manager
 ```
 
@@ -127,7 +127,7 @@ resource "aws_iam_role" "lambda" {
 | Manual security groups | Error-prone, not following patterns | Reference blueprint security group patterns |
 | No blueprint reference | Missing production-tested patterns | Use `extract_pattern(capability: "database")` |
 
-## ✅ Right Approach: Blueprint Pattern
+## Right Approach: Blueprint Pattern
 
 ### Benefits of This Approach
 
@@ -140,7 +140,7 @@ resource "aws_iam_role" "lambda" {
 ### Right Code Example
 
 ```hcl
-# ✅ RIGHT: Blueprint pattern from apigw-lambda-rds
+# RIGHT: Blueprint pattern from apigw-lambda-rds
 
 # Step 1: Use extract_pattern(capability: "database") tool
 # Reference: blueprints://aws/apigw-lambda-rds/modules/data/main.tf
@@ -164,7 +164,7 @@ module "vpc" {
   private_subnets  = [for i, az in local.azs : cidrsubnet(var.vpc_cidr, 8, i)]
   database_subnets = [for i, az in local.azs : cidrsubnet(var.vpc_cidr, 8, i + var.az_count)]
 
-  enable_nat_gateway = false  # ✅ Lambda uses VPC endpoints
+  enable_nat_gateway = false  # Lambda uses VPC endpoints
 
   enable_dns_hostnames = true
   enable_dns_support   = true
@@ -190,7 +190,7 @@ module "data" {
   db_identifier            = "${var.project}-${var.environment}-db"
   db_name                  = var.db_name
   db_username              = var.db_username
-  db_password              = ephemeral.random_password.db.result  # ✅ Ephemeral
+  db_password              = ephemeral.random_password.db.result  # Ephemeral
   db_password_version      = 1
   db_subnet_group_name     = module.vpc.database_subnet_group_name
   security_group_id        = aws_security_group.rds.id
@@ -208,14 +208,14 @@ resource "aws_db_instance" "this" {
   db_name  = var.db_name
   username = var.db_username
 
-  # ✅ Flow A: Write-only password (never in state)
+  # Flow A: Write-only password (never in state)
   password_wo         = var.db_password
   password_wo_version = var.db_password_version
 
   vpc_security_group_ids = [var.security_group_id]
   db_subnet_group_name   = var.db_subnet_group_name
 
-  # ✅ IAM Database Authentication enabled
+  # IAM Database Authentication enabled
   iam_database_authentication_enabled = true
 
   publicly_accessible = false
@@ -234,7 +234,7 @@ resource "aws_security_group_rule" "rds_ingress" {
   from_port                = 5432
   to_port                  = 5432
   protocol                 = "tcp"
-  source_security_group_id = aws_security_group.lambda.id  # ✅ From Lambda SG
+  source_security_group_id = aws_security_group.lambda.id  # From Lambda SG
   security_group_id        = aws_security_group.rds.id
   description              = "PostgreSQL from Lambda"
 }
@@ -249,14 +249,14 @@ module "secrets" {
   db_name       = var.db_name
   db_host       = module.data.db_host
   db_port       = module.data.db_port
-  # ✅ NO password stored - only metadata
+  # NO password stored - only metadata
 }
 
 # Inside modules/secrets/main.tf (from blueprint):
 resource "aws_secretsmanager_secret_version" "db" {
   secret_id = aws_secretsmanager_secret.db.id
 
-  # ✅ Connection metadata only - NO PASSWORD
+  # Connection metadata only - NO PASSWORD
   secret_string = jsonencode({
     username = var.db_username
     host     = var.db_host
@@ -283,7 +283,7 @@ resource "aws_iam_role" "lambda" {
   })
 }
 
-# ✅ IAM policy for RDS Database Authentication
+# IAM policy for RDS Database Authentication
 resource "aws_iam_policy" "rds_auth" {
   name        = "${var.project}-${var.environment}-lambda-rds-auth"
   description = "Allow Lambda to authenticate to RDS using IAM"
@@ -310,7 +310,7 @@ resource "aws_iam_role_policy_attachment" "lambda_rds" {
 
 ### Key Differences Summary
 
-| Aspect | ❌ Wrong | ✅ Right |
+| Aspect | Wrong | Right |
 |--------|---------|---------|
 | **Password Storage** | Secrets Manager (in state) | Ephemeral `password_wo` (never in state) |
 | **Authentication** | Password-based | IAM Database Authentication |
@@ -353,11 +353,11 @@ Access actual code via MCP resources:
 ### Step 4: Verify Patterns
 
 Check that extracted code follows:
-- ✅ Ephemeral passwords (`password_wo`)
-- ✅ IAM Database Authentication enabled
-- ✅ Official Terraform modules used
-- ✅ VPC endpoints (not NAT Gateway)
-- ✅ Security groups follow blueprint patterns
+- Ephemeral passwords (`password_wo`)
+- IAM Database Authentication enabled
+- Official Terraform modules used
+- VPC endpoints (not NAT Gateway)
+- Security groups follow blueprint patterns
 
 ## Cost Comparison
 
@@ -376,16 +376,16 @@ Check that extracted code follows:
 ## Security Comparison
 
 ### Wrong Approach
-- ❌ Password in Terraform state
-- ❌ Password in Secrets Manager
-- ❌ Password-based authentication
-- ❌ Manual security group rules (error-prone)
+- Password in Terraform state
+- Password in Secrets Manager
+- Password-based authentication
+- Manual security group rules (error-prone)
 
 ### Right Approach
-- ✅ Password never in Terraform state
-- ✅ Only metadata in Secrets Manager
-- ✅ IAM Database Authentication (token-based)
-- ✅ Blueprint-tested security group patterns
+- Password never in Terraform state
+- Only metadata in Secrets Manager
+- IAM Database Authentication (token-based)
+- Blueprint-tested security group patterns
 
 ## Summary
 

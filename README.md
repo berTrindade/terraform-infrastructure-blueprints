@@ -220,6 +220,12 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for:
 - Include comprehensive tests and documentation
 - Use conventional commits for all changes
 
+**Automated Releases:**
+
+- MCP server releases are fully automated using `semantic-release`
+- Commits to `mcp-server/**` automatically trigger version bumps, changelog generation, npm publishing, and Docker builds
+- Use conventional commits (`feat:`, `fix:`, `feat!:`) for automatic versioning
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).

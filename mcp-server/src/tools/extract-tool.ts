@@ -109,9 +109,9 @@ export async function handleExtractPattern(args: {
 
     // Simple validation checklist
     const checks: Record<string, string[]> = {
-      database: ["✅ VPC in private subnets", "✅ Security groups configured", "✅ IAM permissions", "✅ Encryption enabled"],
-      queue: ["✅ Dead-letter queue", "✅ Visibility timeout set", "✅ IAM permissions"],
-      auth: ["✅ User pool configured", "✅ API Gateway authorizer", "✅ Callback URLs"],
+      database: ["VPC in private subnets", "Security groups configured", "IAM permissions", "Encryption enabled"],
+      queue: ["Dead-letter queue", "Visibility timeout set", "IAM permissions"],
+      auth: ["User pool configured", "API Gateway authorizer", "Callback URLs"],
     };
     const checklist = checks[capLower] ? `\n## Checklist\n\n${checks[capLower].join("\n")}` : "";
 
