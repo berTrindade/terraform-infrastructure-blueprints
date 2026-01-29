@@ -1,5 +1,10 @@
 # Terraform Infrastructure Blueprints
 
+[![CI/CD](https://github.com/berTrindade/terraform-infrastructure-blueprints/actions/workflows/validate.yml/badge.svg)](https://github.com/berTrindade/terraform-infrastructure-blueprints/actions/workflows/validate.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Docker Image](https://img.shields.io/badge/docker-ghcr.io%2Fbertrindade%2Finfra--mcp-blue)](https://github.com/berTrindade/terraform-infrastructure-blueprints/pkgs/container/infra-mcp)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D20.6.0-brightgreen)](https://nodejs.org/)
+
 Opinionated, repeatable Infrastructure-as-Code blueprints for bootstrapping cloud foundations across AWS, Azure, and GCP. Each blueprint is a fully self-contained IaC package that includes everything needed to deploy that pattern: modules, configurations, and conventions all in one place.
 
 Consultants copy the example they need or extract patterns to add to existing projects, adapt it, and hand over clean, client-owned infrastructure code. No dependencies. No shared modules. No vendor lock-in.

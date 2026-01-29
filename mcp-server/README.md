@@ -1,5 +1,11 @@
 # ustwo Infrastructure Blueprints MCP Server
 
+[![CI/CD](https://github.com/berTrindade/terraform-infrastructure-blueprints/actions/workflows/publish-mcp.yml/badge.svg)](https://github.com/berTrindade/terraform-infrastructure-blueprints/actions/workflows/publish-mcp.yml)
+[![Docker Image](https://img.shields.io/badge/docker-ghcr.io%2Fbertrindade%2Finfra--mcp-blue)](https://github.com/berTrindade/terraform-infrastructure-blueprints/pkgs/container/infra-mcp)
+[![npm version](https://img.shields.io/badge/npm-%40bertrindade%2Finfra--mcp-1.0.2-blue)](https://github.com/berTrindade/terraform-infrastructure-blueprints)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D20.6.0-brightgreen)](https://nodejs.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 MCP (Model Context Protocol) server that makes AI assistants aware of ustwo's Terraform infrastructure blueprints.
 
 ## What It Does

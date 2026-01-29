@@ -4,18 +4,21 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
+import { execa } from "execa";
 import { getAgentsMdContent } from "../catalog-service.js";
 
-const execFileAsync = promisify(execFile);
+// Mock execa to verify it's used for secure command execution
+vi.mock("execa", () => ({
+  execa: vi.fn(),
+}));
 
-// Mock execFile to verify it's used instead of execSync
-vi.mock("node:child_process", async () => {
-  const actual = await vi.importActual("node:child_process");
+// Mock fs to prevent local file reads
+vi.mock("node:fs", async () => {
+  const actual = await vi.importActual("node:fs");
   return {
     ...actual,
-    execFile: vi.fn(),
+    existsSync: vi.fn(() => false), // No local files found
+    readFileSync: vi.fn(),
   };
 });
 
@@ -37,53 +40,65 @@ describe("Catalog Service Security", () => {
   });
 
   describe("Command Injection Prevention", () => {
-    it("uses execFile with array arguments instead of shell command", async () => {
-      const mockExecFile = vi.mocked(execFile);
+    it("uses execa with array arguments instead of shell command", async () => {
+      const mockExeca = vi.mocked(execa);
       
       // Mock successful gh api call returning base64 content
-      mockExecFile.mockImplementationOnce((command, args, options, callback) => {
-        const base64Content = Buffer.from("test content").toString("base64");
-        if (typeof options === "function") {
-          options(null, { stdout: base64Content }, "");
-        } else if (callback) {
-          callback(null, { stdout: base64Content }, "");
-        }
-        return {} as any;
-      });
+      const base64Content = Buffer.from("test content").toString("base64");
+      mockExeca.mockResolvedValueOnce({
+        stdout: base64Content,
+        stderr: "",
+        exitCode: 0,
+        command: "gh",
+        escapedCommand: "gh",
+        failed: false,
+        killed: false,
+        signal: null,
+        timedOut: false,
+        isCanceled: false,
+        isMaxBuffer: false,
+      } as any);
 
       try {
         await getAgentsMdContent();
       } catch {
-        // Expected to fail in test environment, but we're checking execFile usage
+        // Expected to fail in test environment, but we're checking execa usage
       }
 
-      // Verify execFile was called (not execSync)
-      expect(mockExecFile).toHaveBeenCalled();
+      // Verify execa was called (not execSync or execFile)
+      expect(mockExeca).toHaveBeenCalled();
       
       // Verify first call uses array arguments for gh command
-      const firstCall = mockExecFile.mock.calls[0];
+      const firstCall = mockExeca.mock.calls[0];
       expect(firstCall[0]).toBe("gh");
       expect(Array.isArray(firstCall[1])).toBe(true);
       expect(firstCall[1]).toContain("api");
-      expect(firstCall[1]).toContain("repos/");
+      // Check that repos path is in one of the arguments (as a single string)
+      const argsString = firstCall[1].join(" ");
+      expect(argsString).toContain("repos/");
       
-      // Verify base64 decoding uses Buffer.from (not execFile for base64)
-      // Only one execFile call should be made (for gh command)
-      expect(mockExecFile).toHaveBeenCalledTimes(1);
+      // Verify base64 decoding uses Buffer.from (not execa for base64)
+      // Only one execa call should be made (for gh command)
+      expect(mockExeca).toHaveBeenCalledTimes(1);
     });
 
     it("prevents command injection via repo name", async () => {
-      const mockExecFile = vi.mocked(execFile);
+      const mockExeca = vi.mocked(execa);
       
       const base64Content = Buffer.from("test content").toString("base64");
-      mockExecFile.mockImplementationOnce((command, args, options, callback) => {
-        if (typeof options === "function") {
-          options(null, { stdout: base64Content }, "");
-        } else if (callback) {
-          callback(null, { stdout: base64Content }, "");
-        }
-        return {} as any;
-      });
+      mockExeca.mockResolvedValueOnce({
+        stdout: base64Content,
+        stderr: "",
+        exitCode: 0,
+        command: "gh",
+        escapedCommand: "gh",
+        failed: false,
+        killed: false,
+        signal: null,
+        timedOut: false,
+        isCanceled: false,
+        isMaxBuffer: false,
+      } as any);
 
       try {
         await getAgentsMdContent();
@@ -91,8 +106,15 @@ describe("Catalog Service Security", () => {
         // Expected to fail in test environment
       }
 
+      // Verify execa was called
+      expect(mockExeca).toHaveBeenCalled();
+      
       // Verify arguments are passed as array, preventing shell injection
-      const firstCall = mockExecFile.mock.calls[0];
+      const firstCall = mockExeca.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      expect(firstCall[0]).toBe("gh");
+      expect(Array.isArray(firstCall[1])).toBe(true);
+      
       const args = firstCall[1] as string[];
       
       // Even if repo name contains special characters, they're in array elements, not shell command
@@ -102,29 +124,34 @@ describe("Catalog Service Security", () => {
       });
       
       // Verify base64 decoding uses Buffer.from (secure, no shell command)
-      expect(mockExecFile).toHaveBeenCalledTimes(1);
+      expect(mockExeca).toHaveBeenCalledTimes(1);
     });
 
     it("handles timeout correctly", async () => {
-      const mockExecFile = vi.mocked(execFile);
+      const mockExeca = vi.mocked(execa);
       
       const base64Content = Buffer.from("test content").toString("base64");
-      mockExecFile.mockImplementationOnce((command, args, options, callback) => {
-        const timeout = typeof options === "object" && options !== null && "timeout" in options 
-          ? options.timeout 
-          : undefined;
+      mockExeca.mockImplementationOnce((command, args, options) => {
+        const timeout = options?.timeout;
         
         if (timeout) {
           expect(typeof timeout).toBe("number");
           expect(timeout).toBeGreaterThan(0);
         }
         
-        if (typeof options === "function") {
-          options(null, { stdout: base64Content }, "");
-        } else if (callback) {
-          callback(null, { stdout: base64Content }, "");
-        }
-        return {} as any;
+        return Promise.resolve({
+          stdout: base64Content,
+          stderr: "",
+          exitCode: 0,
+          command: String(command),
+          escapedCommand: String(command),
+          failed: false,
+          killed: false,
+          signal: null,
+          timedOut: false,
+          isCanceled: false,
+          isMaxBuffer: false,
+        } as any);
       });
 
       try {
@@ -133,16 +160,22 @@ describe("Catalog Service Security", () => {
         // Expected to fail in test environment
       }
 
-      // Verify timeout is passed to execFile
-      const firstCall = mockExecFile.mock.calls[0];
-      const options = typeof firstCall[2] === "object" && firstCall[2] !== null 
-        ? firstCall[2] 
-        : {};
+      // Verify execa was called
+      expect(mockExeca).toHaveBeenCalled();
       
-      expect("timeout" in options).toBe(true);
+      // Verify timeout is passed to execa
+      const firstCall = mockExeca.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      expect(firstCall.length).toBeGreaterThanOrEqual(3);
       
-      // Verify only one execFile call (gh command, base64 uses Buffer.from)
-      expect(mockExecFile).toHaveBeenCalledTimes(1);
+      const options = firstCall[2];
+      
+      expect(options).toBeDefined();
+      expect(options?.timeout).toBeDefined();
+      expect(typeof options?.timeout).toBe("number");
+      
+      // Verify only one execa call (gh command, base64 uses Buffer.from)
+      expect(mockExeca).toHaveBeenCalledTimes(1);
     });
   });
 });

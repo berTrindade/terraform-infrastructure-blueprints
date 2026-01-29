@@ -1,56 +1,58 @@
 /**
- * Structured logging utility
+ * Structured logging utility using pino
  * Implements wide events pattern: one context-rich event per operation
  */
 
+import pino from "pino";
 import { config } from "../config/config.js";
 import { sanitizeErrorPath } from "./errors.js";
-
-type LogLevel = "info" | "error";
 
 interface WideEvent {
     [key: string]: unknown;
 }
 
 /**
- * Redacts sensitive data from log events
- * Removes or sanitizes paths, URIs, and other potentially sensitive information
- *
- * @param event - Log event to redact
- * @returns Redacted event
+ * Custom serializer for sanitizing sensitive fields
+ * Uses pino's serializer API to automatically sanitize paths and URIs
  */
-function redactSensitiveData(event: WideEvent): WideEvent {
-    const redacted = { ...event };
-    
-    // Sanitize URI fields
-    if (redacted.uri && typeof redacted.uri === "string") {
-        redacted.uri = sanitizeErrorPath(redacted.uri);
-    }
-    
-    // Sanitize path fields
-    if (redacted.path && typeof redacted.path === "string") {
-        redacted.path = sanitizeErrorPath(redacted.path);
-    }
-    
-    // Remove potential secrets from error messages
-    if (redacted.error && typeof redacted.error === "object" && redacted.error !== null) {
-        const errorObj = redacted.error as Record<string, unknown>;
-        if (errorObj.message && typeof errorObj.message === "string") {
-            // Remove absolute paths from error messages
-            errorObj.message = errorObj.message.replace(/\/[^\s]+/g, (match) => {
-                return sanitizeErrorPath(match);
-            });
+const customSerializers = {
+    uri: (uri: unknown) => {
+        if (typeof uri === "string") {
+            return sanitizeErrorPath(uri);
         }
-    }
-    
-    return redacted;
-}
+        return uri;
+    },
+    path: (path: unknown) => {
+        if (typeof path === "string") {
+            return sanitizeErrorPath(path);
+        }
+        return path;
+    },
+    error: (error: unknown) => {
+        if (error && typeof error === "object" && error !== null) {
+            const errorObj = error as Record<string, unknown>;
+            const sanitized = { ...errorObj };
+
+            // Sanitize error message paths
+            if (typeof sanitized.message === "string") {
+                // Use replace with regex (replaceAll doesn't support regex patterns)
+                // eslint-disable-next-line unicorn/prefer-string-replace-all
+                sanitized.message = sanitized.message.replace(/\/[^\s]+/g, (match) => {
+                    return sanitizeErrorPath(match);
+                });
+            }
+
+            return sanitized;
+        }
+        return error;
+    },
+};
 
 /**
  * Environment context captured once at startup
  * Automatically included in all wide events
  */
-const envContext: WideEvent = {
+const envContext = {
     service: config.server.name,
     version: config.server.version,
     commit_hash: process.env.COMMIT_SHA || process.env.GIT_COMMIT || process.env.VERCEL_GIT_COMMIT_SHA || "unknown",
@@ -64,58 +66,47 @@ const envContext: WideEvent = {
 };
 
 /**
- * Structured logger implementing wide events pattern
- * Emits pure JSON logs with environment context automatically included
+ * Create pino logger with base context and custom serializers
+ * Configured for wide events pattern with automatic environment context
+ * Uses pino's built-in serializer API for automatic sanitization
+ */
+const pinoLogger = pino({
+    level: config.logging.level === "error" ? "error" : "info",
+    base: envContext,
+    formatters: {
+        level: (label) => ({ level: label }),
+    },
+    serializers: {
+        ...pino.stdSerializers,
+        ...customSerializers,
+    },
+    // Pino outputs JSON to stdout/stderr by default
+    // Serializers automatically sanitize sensitive fields
+});
+
+/**
+ * Logger wrapper that maintains the same API as the custom logger
+ * Uses pino's built-in serializers for automatic sanitization
  */
 class Logger {
-    private readonly logLevel: LogLevel;
-
-    constructor() {
-        // Only support info and error levels per best practices
-        this.logLevel = (config.logging.level === "error" ? "error" : "info");
-    }
-
-    /**
-     * Emit a wide event as pure JSON
-     * Environment context is automatically merged into every event
-     * Sensitive data is redacted before logging
-     */
-    private emit(level: LogLevel, event: WideEvent): void {
-        if (level === "error" || this.logLevel === "info") {
-            // Redact sensitive data before logging
-            const redactedEvent = redactSensitiveData(event);
-            
-            const wideEvent: WideEvent = {
-                timestamp: new Date().toISOString(),
-                level,
-                ...envContext,
-                ...redactedEvent,
-            };
-
-            // Emit as single-line JSON (no formatting)
-            const output = JSON.stringify(wideEvent);
-            if (level === "error") {
-                console.error(output);
-            } else {
-                console.info(output);
-            }
-        }
-    }
-
     /**
      * Log an info-level wide event
      * All context should be included in the event object
+     * Sensitive data is automatically sanitized via pino serializers
      */
     info(event: WideEvent): void {
-        this.emit("info", event);
+        // Pino serializers automatically sanitize uri, path, and error fields
+        pinoLogger.info(event);
     }
 
     /**
      * Log an error-level wide event
      * Error details should be included in the event object
+     * Sensitive data is automatically sanitized via pino serializers
      */
     error(event: WideEvent): void {
-        this.emit("error", event);
+        // Pino serializers automatically sanitize uri, path, and error fields
+        pinoLogger.error(event);
     }
 }
 

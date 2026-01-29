@@ -4,8 +4,8 @@
 
 import * as path from "node:path";
 import * as fs from "node:fs";
+import mimeTypes from "mime-types";
 import { config } from "../config/config.js";
-import { MIME_TYPES } from "../config/constants.js";
 import { SecurityError } from "./errors.js";
 import { validateFilePath } from "./validation.js";
 
@@ -32,14 +32,28 @@ export function resolveWorkspacePath(filePath: string, workspaceRoot: string = c
 }
 
 /**
- * Gets MIME type based on file extension
+ * Gets MIME type based on file extension using mime-types library
+ * Falls back to custom types for Terraform-specific extensions
  *
  * @param filename - File name or path
  * @returns MIME type string
  */
 export function getMimeType(filename: string): string {
+  // Use mime-types library for standard MIME types
+  const mimeType = mimeTypes.lookup(filename);
+  
+  if (mimeType) {
+    return mimeType;
+  }
+  
+  // Fallback for Terraform-specific extensions not in mime-types
   const ext = path.extname(filename).toLowerCase();
-  return MIME_TYPES[ext] || "text/plain";
+  const customTypes: Record<string, string> = {
+    ".tf": "text/x-hcl",
+    ".hcl": "text/x-hcl",
+  };
+  
+  return customTypes[ext] || "text/plain";
 }
 
 /**

@@ -8,7 +8,7 @@ import {
   fileExists,
   sanitizeResourceName,
 } from "../path-utils.js";
-import { ValidationError } from "../errors.js";
+import { SecurityError } from "../errors.js";
 
 describe("Path Utils", () => {
   describe("resolveWorkspacePath", () => {
@@ -19,8 +19,8 @@ describe("Path Utils", () => {
       expect(result).toBe(path.join(workspaceRoot, "aws/test/README.md"));
     });
 
-    it("throws ValidationError for paths with ..", () => {
-      expect(() => resolveWorkspacePath("../outside/file.txt", workspaceRoot)).toThrow(ValidationError);
+    it("throws SecurityError for paths with ..", () => {
+      expect(() => resolveWorkspacePath("../outside/file.txt", workspaceRoot)).toThrow(SecurityError);
     });
 
     it("normalizes path separators", () => {

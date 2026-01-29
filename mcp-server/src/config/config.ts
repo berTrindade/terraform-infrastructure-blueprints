@@ -34,20 +34,45 @@ function getWorkspaceRoot(): string {
 
 /**
  * Application configuration
+ * Uses Node.js native --env-file support (v20.6.0+) + Zod for type-safe validation
+ * 
+ * Usage: node --env-file=.env dist/index.js
+ */
+
+import { z } from "zod";
+
+/**
+ * Environment variable schema with Zod validation
+ * Provides type safety and automatic coercion
+ */
+const envSchema = z.object({
+    MCP_SERVER_NAME: z.string().default("ustwo-infra-blueprints"),
+    MCP_SERVER_VERSION: z.string().default("1.0.0"),
+    GITHUB_REPO: z.string().default("berTrindade/terraform-infrastructure-blueprints"),
+    GITHUB_TIMEOUT: z.coerce.number().default(10000),
+    WORKSPACE_ROOT: z.string().optional(),
+    LOG_LEVEL: z.enum(["info", "error"]).default("info"),
+});
+
+// Parse and validate environment variables
+const env = envSchema.parse(process.env);
+
+/**
+ * Application configuration
  */
 export const config = {
     server: {
-        name: process.env.MCP_SERVER_NAME || "ustwo-infra-blueprints",
-        version: process.env.MCP_SERVER_VERSION || "1.0.0",
+        name: env.MCP_SERVER_NAME,
+        version: env.MCP_SERVER_VERSION,
     },
     github: {
-        repo: process.env.GITHUB_REPO || "berTrindade/terraform-infrastructure-blueprints",
-        timeout: Number.parseInt(process.env.GITHUB_TIMEOUT || "10000", 10),
+        repo: env.GITHUB_REPO,
+        timeout: env.GITHUB_TIMEOUT,
     },
     workspace: {
-        root: process.env.WORKSPACE_ROOT || getWorkspaceRoot(),
+        root: env.WORKSPACE_ROOT || getWorkspaceRoot(),
     },
     logging: {
-        level: process.env.LOG_LEVEL || "info",
+        level: env.LOG_LEVEL,
     },
 } as const;
