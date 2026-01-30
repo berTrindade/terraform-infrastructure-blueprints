@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Setup script for @ustwo/blueprint-skill
+ * Setup script for @bertrindade/blueprint-skill
  * 
  * This script:
  * 1. Detects installed AI agents (Cursor, Claude Desktop, etc.)
@@ -193,7 +193,7 @@ function installSkillForAgent(agent, local = true) {
   }
 }
 
-console.log('🚀 Setting up @ustwo/blueprint-skill...\n');
+console.log('🚀 Setting up @bertrindade/blueprint-skill...\n');
 
 // Detect installed agents
 const detectedAgents = detectInstalledAgents();

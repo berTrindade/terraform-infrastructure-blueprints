@@ -1,5 +1,5 @@
 {
-  "name": "@ustwo/blueprint-skill",
+  "name": "@bertrindade/blueprint-skill",
   "version": "1.0.0",
   "description": "Cursor skill for AI-assisted infrastructure blueprint guidance in client projects",
   "type": "module",
