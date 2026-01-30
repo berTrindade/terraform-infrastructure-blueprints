@@ -14,6 +14,31 @@ This package installs skills for multiple AI assistants (Cursor, Claude Desktop,
 
 ## Installation
 
+### Prerequisites: Configure npm for GitHub Packages
+
+Since this package is published to GitHub Packages, you need to configure npm:
+
+1. **Create/update `.npmrc` file** in your project root:
+   ```
+   @bertrindade:registry=https://npm.pkg.github.com
+   ```
+
+2. **Authenticate with GitHub Packages** (choose one method):
+   
+   **Option A: Using GitHub CLI** (recommended):
+   ```bash
+   echo "//npm.pkg.github.com/:_authToken=$(gh auth token)" >> ~/.npmrc
+   ```
+   
+   **Option B: Using Personal Access Token**:
+   ```bash
+   echo "//npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN" >> ~/.npmrc
+   ```
+   
+   Create a token at: https://github.com/settings/tokens (requires `read:packages` scope)
+
+**Note**: The `.npmrc` can be either project-level (in project root) or user-level (`~/.npmrc`). For team projects, consider using project-level configuration.
+
 ### Step 1: Install Package
 
 ```bash
@@ -177,6 +202,41 @@ graph TB
 3. **AI Assistant**: Uses both to generate blueprint-aware code
 
 ## Troubleshooting
+
+### Package Installation Fails
+
+If `npm install` fails with authentication errors:
+
+1. **Verify `.npmrc` configuration**:
+   ```bash
+   # Check project-level config
+   cat .npmrc
+   
+   # Check user-level config
+   cat ~/.npmrc
+   ```
+   
+   Ensure both contain:
+   - `@bertrindade:registry=https://npm.pkg.github.com`
+   - `//npm.pkg.github.com/:_authToken=...`
+
+2. **Verify GitHub authentication**:
+   ```bash
+   # Test GitHub CLI authentication
+   gh auth status
+   
+   # Test token access
+   gh auth token
+   ```
+
+3. **Regenerate authentication**:
+   ```bash
+   # Using GitHub CLI
+   gh auth refresh -h github.com -s read:packages
+   echo "//npm.pkg.github.com/:_authToken=$(gh auth token)" >> ~/.npmrc
+   ```
+
+4. **Check token scope**: Ensure your token has `read:packages` scope
 
 ### Skill Not Working
 
