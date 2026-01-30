@@ -1,4 +1,4 @@
-# @ustwo/blueprint-skill
+# @bertrindade/blueprint-skill
 
 Cursor skill package that provides AI assistant guidance for using infrastructure blueprints in client projects. When installed, AI assistants (Cursor, Claude Desktop, etc.) will automatically reference production-tested blueprint patterns when writing Terraform code.
 
@@ -17,7 +17,7 @@ This package installs skills for multiple AI assistants (Cursor, Claude Desktop,
 ### Step 1: Install Package
 
 ```bash
-npm install --save-dev @ustwo/blueprint-skill
+npm install --save-dev @bertrindade/blueprint-skill
 ```
 
 The package will automatically run setup after installation, which:
@@ -144,7 +144,7 @@ npx blueprint-skill-setup
 Or if installed locally:
 
 ```bash
-node node_modules/@ustwo/blueprint-skill/bin/setup.js
+node node_modules/@bertrindade/blueprint-skill/bin/setup.js
 ```
 
 ## How It Works
@@ -152,7 +152,7 @@ node node_modules/@ustwo/blueprint-skill/bin/setup.js
 ```mermaid
 graph TB
     subgraph "Client Project"
-        PKG[@ustwo/blueprint-skill]
+        PKG[@bertrindade/blueprint-skill]
         SKILL[.cursor/skills/blueprint-guidance/]
         AGENTS[AGENTS.md]
     end
@@ -214,7 +214,7 @@ graph TB
 
 The package will not overwrite existing `AGENTS.md` if it already contains blueprint guidance. To update manually:
 
-1. Check `node_modules/@ustwo/blueprint-skill/templates/AGENTS.md`
+1. Check `node_modules/@bertrindade/blueprint-skill/templates/AGENTS.md`
 2. Copy content to your `AGENTS.md` or append as needed
 
 ## Uninstallation
@@ -223,7 +223,7 @@ To remove the skill:
 
 ```bash
 # Remove package
-npm uninstall @ustwo/blueprint-skill
+npm uninstall @bertrindade/blueprint-skill
 
 # Remove skill files (optional)
 rm -rf .cursor/skills/blueprint-guidance
