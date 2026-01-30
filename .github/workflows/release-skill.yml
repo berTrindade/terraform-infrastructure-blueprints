@@ -73,4 +73,23 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm publish
+          VERSION=${{ steps.release.outputs.version }}
+          PACKAGE_NAME="@bertrindade/blueprint-skill"
+          
+          # Check if version already exists
+          if npm view "${PACKAGE_NAME}@${VERSION}" version >/dev/null 2>&1; then
+            echo "Version ${VERSION} already exists in GitHub Packages, skipping publish"
+            exit 0
+          fi
+          
+          # Publish the package (handle 409 Conflict gracefully)
+          npm publish || {
+            EXIT_CODE=$?
+            # If publish failed, check if version now exists (might have been published concurrently)
+            if npm view "${PACKAGE_NAME}@${VERSION}" version >/dev/null 2>&1; then
+              echo "Version ${VERSION} exists (may have been published concurrently), treating as success"
+              exit 0
+            fi
+            # Otherwise, fail with original exit code
+            exit $EXIT_CODE
+          }
