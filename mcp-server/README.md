@@ -82,6 +82,21 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 | `recommend_blueprint` | Get blueprint recommendation with full details based on requirements | "I need PostgreSQL with containers" |
 | `extract_pattern`     | Get guidance on extracting a capability from blueprints to existing project | "How do I add a queue to existing Terraform?" |
 
+## Using in Client Projects
+
+For consultants working on client projects, install the [@ustwo/blueprint-skill](../packages/blueprint-skill/README.md) package to provide AI assistant guidance:
+
+```bash
+npm install --save-dev @ustwo/blueprint-skill
+```
+
+This package:
+- Installs a Cursor skill that guides AI assistants to use blueprint patterns
+- Creates/updates `AGENTS.md` with blueprint guidance
+- Works alongside this MCP server for complete blueprint awareness
+
+See [@ustwo/blueprint-skill](../packages/blueprint-skill/README.md) for full installation and usage instructions.
+
 ## Troubleshooting
 
 ### "denied" when pulling Docker image
