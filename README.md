@@ -202,6 +202,20 @@ For ustwo developers: Configure the MCP server to give AI assistants automatic a
 3. AI provides download instructions
 4. After download, AI can help customize using MCP's `fetch_blueprint_file()` tool
 
+**How we share Blueprint Knowledge with AI Assistants:**
+
+We use two complementary approaches depending on what type of information needs to be shared:
+
+- **MCP (Model Context Protocol)**: Think of this as a "live connection" that lets AI assistants search, discover, and get recommendations about blueprints in real-time. Best for when you need interactive help finding the right blueprint or extracting patterns. Like asking a librarian who can search the catalog for you.
+
+- **Skills**: Think of these as "local reference guides" installed directly in your AI assistant. They contain static knowledge about blueprint patterns, best practices, and documentation that doesn't change often. Best for quick lookups without needing to connect to external services. Like having a reference book on your desk.
+
+**Why both?** MCP is great for discovery ("What blueprint should I use?"), but having too many live connections can slow down your IDE. Skills provide instant access to common patterns without network calls. We use MCP to find what you need, and Skills to quickly reference how to use it.
+
+**New workflow (per ADR 0009)**: Static content (catalog, patterns) is now in Skills for instant access. MCP focuses on dynamic discovery tools. See [Developer Workflow Guide](docs/guides/developer-workflow.md) for detailed workflow examples.
+
+See [ADR 0009](docs/adr/0009-developer-workflow.md) for the full technical decision rationale.
+
 See [mcp-server/README.md](mcp-server/README.md) for setup instructions.
 
 ## Contributing

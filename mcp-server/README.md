@@ -10,7 +10,20 @@ MCP (Model Context Protocol) server that makes AI assistants aware of ustwo's Te
 
 ## What It Does
 
-Once configured, your AI assistant (Cursor, Claude Desktop, etc.) can recommend blueprints, extract patterns, and compare architectural options. Ask things like:
+The MCP server provides **dynamic discovery tools** for finding and accessing blueprints. Static content (catalog, patterns) is provided via Skills for instant access.
+
+**MCP Tools (Dynamic Discovery)**:
+- Recommend blueprints based on requirements
+- Search for blueprints by keywords
+- Extract patterns from blueprints
+- Find blueprints by project name
+- Fetch specific blueprint files on-demand
+
+**Skills (Static Content)**:
+- Blueprint catalog and decision trees
+- Common patterns and best practices
+
+Once configured, your AI assistant can recommend blueprints, extract patterns, and compare architectural options. Ask things like:
 
 - "I have a fullstack app with PostgreSQL - how do I deploy to AWS?"
 - "Add SQS queue processing to my existing Terraform"
@@ -77,10 +90,18 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ## Available Tools
 
+The MCP server provides **dynamic discovery tools only**. Static content (catalog, patterns) is in Skills.
+
 | Tool                 | Description                                                              | Example Use Case                        |
 |----------------------|--------------------------------------------------------------------------|-----------------------------------------|
 | `recommend_blueprint` | Get blueprint recommendation with full details based on requirements | "I need PostgreSQL with containers" |
+| `search_blueprints`  | Search for blueprints by keywords | "Find blueprints with DynamoDB" |
 | `extract_pattern`     | Get guidance on extracting a capability from blueprints to existing project | "How do I add a queue to existing Terraform?" |
+| `find_by_project`    | Find blueprints used by specific projects | "What blueprint did Mavie use?" |
+| `fetch_blueprint_file` | Get specific blueprint files on-demand | "Show me the RDS module from apigw-lambda-rds" |
+| `get_workflow_guidance` | Get step-by-step workflow guidance | "How do I start a new project?" |
+
+**Note**: Static content (blueprint catalog, decision trees, common patterns) is provided via Skills (`blueprint-catalog`, `blueprint-patterns`) for instant access without network calls.
 
 ## Using in Client Projects
 
@@ -150,14 +171,17 @@ Then configure Cursor:
 
 ## Architecture
 
-The MCP server implements **Dynamic Context Discovery** patterns to minimize token consumption and startup overhead:
+The MCP server implements **Dynamic Context Discovery** patterns per ADR 0009:
 
+- **MCP for Discovery**: Tools provide dynamic discovery and on-demand file access
+- **Skills for Static Content**: Catalog, patterns, and decision trees in Skills for instant access
 - **On-Demand Tool Execution**: Tools execute only when called
 - **Progressive Disclosure**: Optional parameters for requesting full content
-- **Lazy Resource Loading**: Resources registered at startup, content loaded when accessed
 - **Sequential Workflow Guidance**: Step-by-step guidance for common tasks
 
-See [ADR 0007](../../docs/adr/0007-dynamic-context-discovery-mcp.md) for detailed documentation of these patterns.
+**Per ADR 0009**: Static resources (catalog, list, blueprint files) have been moved to Skills. MCP focuses on dynamic discovery workflows.
+
+See [ADR 0007](../../docs/adr/0007-dynamic-context-discovery-mcp.md) and [ADR 0009](../../docs/adr/0009-developer-workflow.md) for detailed documentation.
 
 ## Security
 

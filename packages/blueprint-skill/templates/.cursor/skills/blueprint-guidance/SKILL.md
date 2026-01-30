@@ -26,6 +26,7 @@ This skill ensures AI assistants reference production-tested infrastructure blue
 Before writing any Terraform code, check:
 
 - [ ] Are MCP tools available? (Look for `mcp_ustwo-infra_*` tools)
+- [ ] Have I checked Skills for static content? (`blueprint-catalog`, `blueprint-patterns`)
 - [ ] Have I called `get_workflow_guidance()` to understand the correct workflow?
 - [ ] Have I called `recommend_blueprint()` for new projects?
 - [ ] Have I called `extract_pattern()` for adding capabilities?
@@ -59,8 +60,11 @@ get_workflow_guidance(task: "migrate_cloud")
 
 ### Step 3: Discover Blueprints
 
-Use MCP tools to find relevant blueprints:
+**For static content (catalog, patterns)**: Reference Skills for instant access:
+- **`blueprint-catalog`** - Blueprint catalog, decision trees, cross-cloud equivalents
+- **`blueprint-patterns`** - Common patterns (ephemeral passwords, VPC, naming, etc.)
 
+**For dynamic discovery**: Use MCP tools to find relevant blueprints:
 - **`recommend_blueprint()`** - Get blueprint recommendation based on requirements
 - **`search_blueprints()`** - Search for blueprints by keywords
 - **`extract_pattern()`** - Get guidance on extracting specific capabilities
@@ -79,7 +83,7 @@ fetch_blueprint_file(
 
 ### Step 5: Follow Blueprint Patterns
 
-Ensure code follows these critical patterns:
+**Reference `blueprint-patterns` skill** for detailed pattern documentation. Key patterns:
 
 #### 1. Ephemeral Passwords (Flow A)
 
@@ -197,6 +201,10 @@ module "api_lambda" {
 
 ## Key Patterns Reference
 
+**For detailed pattern documentation, see `blueprint-patterns` skill.**
+
+Quick reference:
+
 ### Database Patterns
 
 - **Ephemeral passwords**: Use `password_wo` attribute, never store in state
@@ -225,6 +233,25 @@ module "api_lambda" {
 - ✅ Adapt to existing project conventions
 - ❌ No references to blueprint repository
 - ❌ No external dependencies on ustwo systems
+
+## Related Skills
+
+- **`blueprint-catalog`**: Blueprint catalog, decision trees, cross-cloud equivalents
+- **`blueprint-patterns`**: Common patterns (ephemeral passwords, VPC, naming, etc.)
+
+## Workflow: Skills vs MCP Tools
+
+**Skills (Static Content)** - Instant access, no network calls:
+- `blueprint-catalog`: Catalog table, decision trees, cross-cloud equivalents
+- `blueprint-patterns`: Common patterns and best practices
+
+**MCP Tools (Dynamic Discovery)** - For interactive workflows:
+- `recommend_blueprint()`: Get recommendations based on requirements
+- `search_blueprints()`: Search for blueprints by keywords
+- `extract_pattern()`: Get extraction guidance for capabilities
+- `find_by_project()`: Find blueprints by project name
+- `fetch_blueprint_file()`: Get specific files on-demand during discovery
+- `get_workflow_guidance()`: Get step-by-step workflow guidance
 
 ## References
 

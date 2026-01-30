@@ -133,18 +133,33 @@ Once installed and configured, simply ask your AI assistant infrastructure quest
 
 ### AI Assistant Skills
 
-**Locations**:
+**Locations** (for each detected agent):
 - `.cursor/skills/blueprint-guidance/SKILL.md` (Cursor)
-- `.claude/skills/blueprint-guidance/SKILL.md` (Claude Desktop)
-- `.github/skills/blueprint-guidance/SKILL.md` (GitHub Copilot)
+- `.cursor/skills/blueprint-catalog/SKILL.md` (Cursor)
+- `.cursor/skills/blueprint-patterns/SKILL.md` (Cursor)
+- Similar paths for Claude Desktop and GitHub Copilot
 
 The setup script automatically detects installed agents and installs skills to all of them. Skills are installed using symlinks for efficiency (with automatic copy fallback if symlinks aren't supported).
 
-This skill file guides AI assistants on:
-- When to reference blueprints
-- How to use MCP tools
-- Key blueprint patterns to follow
-- Common scenarios and workflows
+**Skills installed**:
+
+1. **`blueprint-guidance`**: Workflow guidance for using blueprints
+   - When to reference blueprints
+   - How to use MCP tools
+   - Common scenarios and workflows
+
+2. **`blueprint-catalog`**: Static catalog content
+   - Blueprint catalog table
+   - Decision trees
+   - Cross-cloud equivalents
+   - Blueprint structure patterns
+
+3. **`blueprint-patterns`**: Common patterns and best practices
+   - Ephemeral passwords (Flow A)
+   - IAM Database Authentication
+   - VPC endpoints vs NAT Gateway
+   - Naming conventions
+   - Extractable patterns by capability
 
 ### AGENTS.md
 
@@ -178,28 +193,37 @@ node node_modules/@bertrindade/blueprint-skill/bin/setup.js
 graph TB
     subgraph "Client Project"
         PKG[@bertrindade/blueprint-skill]
-        SKILL[.cursor/skills/blueprint-guidance/]
+        SKILLS[.cursor/skills/<br/>blueprint-guidance/<br/>blueprint-catalog/<br/>blueprint-patterns/]
         AGENTS[AGENTS.md]
     end
     
     subgraph "AI Assistant"
         AI[Cursor/Claude Desktop]
-        AI --> |Reads| SKILL
+        AI --> |Reads| SKILLS
         AI --> |Reads| AGENTS
     end
     
     subgraph "MCP Server"
         MCP[MCP Server]
-        MCP --> |Fetches| BLUEPRINTS[Blueprint Repository]
+        MCP --> |Dynamic Discovery| BLUEPRINTS[Blueprint Repository]
     end
     
-    AI --> |Uses| MCP
-    SKILL -.->|References| MCP
+    AI --> |Uses Tools| MCP
+    SKILLS -.->|References| MCP
 ```
 
-1. **Skill Package**: Provides guidance to AI assistants
-2. **MCP Server**: Provides blueprint discovery and file access
-3. **AI Assistant**: Uses both to generate blueprint-aware code
+1. **Skills (Static Content)**: Instant access to catalog, patterns, and guidance
+   - `blueprint-catalog`: Catalog table, decision trees, cross-cloud equivalents
+   - `blueprint-patterns`: Common patterns and best practices
+   - `blueprint-guidance`: Workflow guidance and MCP tool usage
+
+2. **MCP Server (Dynamic Discovery)**: Tools for interactive workflows
+   - `recommend_blueprint()`: Get recommendations
+   - `search_blueprints()`: Search by keywords
+   - `extract_pattern()`: Extract capabilities
+   - `fetch_blueprint_file()`: Get files on-demand
+
+3. **AI Assistant**: Uses Skills for instant access, MCP tools for discovery
 
 ## Troubleshooting
 

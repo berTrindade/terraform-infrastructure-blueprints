@@ -1,5 +1,16 @@
 /**
  * Resource service for managing MCP resources
+ * 
+ * @deprecated Per ADR 0009, static resources have been moved to Skills.
+ * This service is kept for reference but is no longer used.
+ * Static content (blueprint files, catalog) is now in Skills:
+ * - blueprint-catalog: Catalog table, decision trees, cross-cloud equivalents
+ * - blueprint-patterns: Common patterns (RDS, DynamoDB, VPC, etc.)
+ * 
+ * Dynamic discovery still uses MCP tools:
+ * - search_blueprints(): Search for blueprints
+ * - recommend_blueprint(): Get recommendations
+ * - fetch_blueprint_file(): Get specific files on-demand
  */
 
 import * as path from "node:path";

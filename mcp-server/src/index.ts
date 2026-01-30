@@ -11,10 +11,11 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { randomUUID } from "node:crypto";
 import { config } from "./config/config.js";
+// BLUEPRINTS constant still used by tools, but not for static resources
 import { BLUEPRINTS } from "./config/constants.js";
 import { logger } from "./utils/logger.js";
-import { registerImportantBlueprintResources } from "./services/resource-service.js";
-import { getAgentsMdContent } from "./services/catalog-service.js";
+// Resource service deprecated - static resources moved to Skills per ADR 0009
+// import { registerImportantBlueprintResources } from "./services/resource-service.js";
 
 // Tool handlers
 import { searchBlueprintsSchema, handleSearchBlueprints } from "./tools/search-tool.js";
@@ -35,36 +36,9 @@ export function createServer(): McpServer {
     version: config.server.version,
   });
 
-  // Register catalog resource
-  server.registerResource(
-    "catalog",
-    "blueprints://catalog",
-    {
-      description: "Full AI context for infrastructure blueprints including decision trees and workflows",
-      mimeType: "text/markdown",
-    },
-    async () => {
-      const content = await getAgentsMdContent();
-      return {
-        contents: [{ uri: "blueprints://catalog", mimeType: "text/markdown", text: content }],
-      };
-    }
-  );
-
-  // Register list resource
-  server.registerResource(
-    "list",
-    "blueprints://list",
-    {
-      description: "JSON list of all available blueprints with metadata",
-      mimeType: "application/json",
-    },
-    async () => {
-      return {
-        contents: [{ uri: "blueprints://list", mimeType: "application/json", text: JSON.stringify(BLUEPRINTS, null, 2) }],
-      };
-    }
-  );
+  // Static resources (catalog, list, blueprint files) removed per ADR 0009
+  // Use Skills for static content (blueprint-catalog, blueprint-patterns)
+  // Use MCP tools for dynamic discovery (search_blueprints, recommend_blueprint, fetch_blueprint_file)
 
   // Register tools
   server.registerTool("search_blueprints", searchBlueprintsSchema, handleSearchBlueprints);
@@ -93,10 +67,8 @@ async function main(): Promise<void> {
   try {
     const server = createServer();
 
-    // Register blueprint resources before connecting
-    const resourceStartTime = Date.now();
-    await registerImportantBlueprintResources(server);
-    wideEvent.resource_registration_ms = Date.now() - resourceStartTime;
+    // Static blueprint resources removed per ADR 0009
+    // Static content now in Skills, dynamic discovery via MCP tools
 
     // Connect to stdio transport
     const transport = new StdioServerTransport();
