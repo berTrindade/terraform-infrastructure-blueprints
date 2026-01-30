@@ -4,7 +4,7 @@ Cursor skill package that provides AI assistant guidance for using infrastructur
 
 ## What It Does
 
-This package installs a Cursor skill that guides AI assistants to:
+This package installs skills for multiple AI assistants (Cursor, Claude Desktop, GitHub Copilot) that guide them to:
 
 - ✅ Reference blueprint patterns before writing generic Terraform code
 - ✅ Use MCP server tools for blueprint discovery and pattern extraction
@@ -21,7 +21,8 @@ npm install --save-dev @ustwo/blueprint-skill
 ```
 
 The package will automatically run setup after installation, which:
-- Installs the Cursor skill to `.cursor/skills/blueprint-guidance/`
+- Detects installed AI assistants (Cursor, Claude Desktop, GitHub Copilot)
+- Installs skills to all detected agents using symlinks (efficient, with copy fallback)
 - Creates/updates `AGENTS.md` in your project root
 
 ### Step 2: Configure MCP Server (One-time per developer)
@@ -105,9 +106,14 @@ Once installed and configured, simply ask your AI assistant infrastructure quest
 
 ## What Gets Installed
 
-### Cursor Skill
+### AI Assistant Skills
 
-**Location**: `.cursor/skills/blueprint-guidance/SKILL.md`
+**Locations**:
+- `.cursor/skills/blueprint-guidance/SKILL.md` (Cursor)
+- `.claude/skills/blueprint-guidance/SKILL.md` (Claude Desktop)
+- `.github/skills/blueprint-guidance/SKILL.md` (GitHub Copilot)
+
+The setup script automatically detects installed agents and installs skills to all of them. Skills are installed using symlinks for efficiency (with automatic copy fallback if symlinks aren't supported).
 
 This skill file guides AI assistants on:
 - When to reference blueprints
@@ -176,12 +182,21 @@ graph TB
 
 1. **Check installation**:
    ```bash
+   # For Cursor
    ls -la .cursor/skills/blueprint-guidance/SKILL.md
+   
+   # For Claude Desktop
+   ls -la .claude/skills/blueprint-guidance/SKILL.md
+   
+   # For GitHub Copilot
+   ls -la .github/skills/blueprint-guidance/SKILL.md
    ```
 
-2. **Restart Cursor**: Quit completely (Cmd+Q) and reopen
+2. **Restart your AI assistant**: Quit completely and reopen
 
-3. **Check MCP server**: Ensure MCP server is configured and working
+3. **Re-run setup**: If skills aren't detected, run `npx blueprint-skill-setup` manually
+
+4. **Check MCP server**: Ensure MCP server is configured and working
 
 ### MCP Server Not Available
 
@@ -210,8 +225,10 @@ To remove the skill:
 # Remove package
 npm uninstall @ustwo/blueprint-skill
 
-# Remove skill file (optional)
+# Remove skill files (optional)
 rm -rf .cursor/skills/blueprint-guidance
+rm -rf .claude/skills/blueprint-guidance
+rm -rf .github/skills/blueprint-guidance
 
 # Remove AGENTS.md content (optional, manual edit)
 # Edit AGENTS.md to remove blueprint guidance section
