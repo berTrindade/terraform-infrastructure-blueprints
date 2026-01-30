@@ -137,9 +137,19 @@ MCP tools provide dynamic discovery and on-demand file access:
 
 ## Setup
 
-1. **Install Skills**: Install `@bertrindade/blueprint-skill` package (installs Skills automatically)
+1. **Install Skills**: Use the `@bertrindade/agent-skills` CLI to install blueprint skills
+
+   ```bash
+   # Option 1: Use npx (recommended)
+   npx @bertrindade/agent-skills install --skill blueprint-guidance --skill blueprint-catalog --skill blueprint-patterns
+   
+   # Option 2: Install globally
+   npm install -g @bertrindade/agent-skills
+   ustwo-skills install
+   ```
+
 2. **Configure MCP Server**: Set up MCP server for discovery tools
 3. **Use Skills**: Reference Skills for common patterns (instant access)
 4. **Use MCP Tools**: Use MCP tools for discovery and specific file access
 
-See [mcp-server/README.md](../../mcp-server/README.md) and [packages/blueprint-skill/README.md](../../packages/blueprint-skill/README.md) for setup instructions.
+See [mcp-server/README.md](../../mcp-server/README.md) and [packages/cli/README.md](../../packages/cli/README.md) for setup instructions.

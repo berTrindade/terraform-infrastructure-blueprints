@@ -1,0 +1,12 @@
+{
+  "name": "blueprint-template-generator",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Template generator for Terraform blueprints",
+  "scripts": {
+    "generate": "node scripts/generate.js"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}

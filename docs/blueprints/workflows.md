@@ -2,6 +2,8 @@
 
 Step-by-step workflows for using blueprints in different scenarios.
 
+> **Note**: For understanding when to use Template Generator vs Blueprint Repository, see [Template Generator vs Repository](template-generator-vs-repo.md).
+
 ## Supported Scenarios
 
 This repository supports two core consultant scenarios. Understanding which scenario applies helps provide the right guidance.
@@ -13,6 +15,7 @@ This repository supports two core consultant scenarios. Understanding which scen
 **Or hybrid cases**: "I need AWS infrastructure (Lambda, Dynamo, API Gateway) but I also want a Strapi instance (which presumably involves EC2 or Fargate and a bunch of other supporting AWS infrastructure, with a Strapi image in the middle of it)."
 
 **AI should**:
+
 1. Ask about the tech stack and whether they want to containerize or go serverless
 2. **For single-pattern needs**: Recommend `alb-ecs-fargate-rds` (containerize as-is) or `apigw-lambda-rds` (refactor to serverless)
 3. **For hybrid/composite needs**: Identify multiple infrastructure patterns required and recommend combining blueprints (e.g., serverless API + containerized CMS)
@@ -24,13 +27,19 @@ This repository supports two core consultant scenarios. Understanding which scen
 **User says**: "I have an existing Terraform project with API Gateway and Lambda. I need to add SQS for background processing."
 
 **AI should**:
+
 1. Ask about existing infrastructure (VPC, naming conventions, etc.)
 2. Identify relevant blueprint: `apigw-sqs-lambda-dynamodb`
-3. Extract the relevant modules (`modules/queue/`, `modules/worker/`)
+3. **Use Template Generator** (if manifest exists) or extract modules from blueprint:
+   - **Template Generator**: Generate code adapted to project conventions (saves tokens)
+   - **Blueprint Repository**: Extract modules if template generator not available
 4. Adapt code to fit existing project conventions
 5. Provide standalone Terraform that integrates with their existing setup
 
+**Note**: Template Generator is preferred for adding capabilities as it generates code already adapted to project conventions and saves tokens. Use Blueprint Repository when studying or when template generator is not available.
+
 **Extractable patterns by capability**:
+
 | Capability | Source Blueprint | Modules to Extract |
 |------------|------------------|-------------------|
 | Database (RDS) | `apigw-lambda-rds` | `modules/data/`, `modules/networking/` |
@@ -53,15 +62,20 @@ This repository supports two core consultant scenarios. Understanding which scen
    - "Do you need the ephemeral secrets pattern for credentials?"
    - "Which resources need database access (e.g., Lambda, ECS)?"
 
-2. **Identify relevant modules** from blueprints:
-   - `modules/data/` - RDS instance configuration
-   - `modules/networking/` or security group rules
-   - Secrets Manager for connection metadata
+2. **Use Template Generator** (preferred) or extract from blueprint:
+   - **Template Generator**:
+     - Extract parameters from conversation history
+     - Generate code using `blueprint-template-generator` skill
+     - Code already adapted to project conventions
+     - Saves tokens (50 lines vs 200+ lines)
+   - **Blueprint Repository** (fallback):
+     - Extract modules from `apigw-lambda-rds/modules/data/`
+     - Adapt variables manually
 
-3. **Extract and adapt code**:
-   - Copy relevant module code from `apigw-lambda-rds/modules/data/`
-   - Adapt variables to match existing project's VPC, naming, etc.
+3. **Adapt code if needed**:
    - Ensure security groups allow access from compute resources
+   - Verify naming conventions match project
+   - Check variable names match existing patterns
 
 4. **Provide standalone Terraform**:
    - Code must work without any reference to this blueprints repo
@@ -86,6 +100,7 @@ This repository supports two core consultant scenarios. Understanding which scen
    - Explain why it fits their needs
 
 3. **Provide setup instructions**:
+
    ```bash
    # Download the blueprint (use your preferred method - git clone, GitHub CLI, etc.)
    git clone https://github.com/berTrindade/terraform-infrastructure-blueprints.git
@@ -136,6 +151,7 @@ This repository supports two core consultant scenarios. Understanding which scen
    - **Consolidated outputs**: Merge outputs from both patterns
 
 5. **Provide step-by-step guidance**:
+
    ```bash
    # Download both blueprints (use your preferred method - git clone, GitHub CLI, etc.)
    git clone https://github.com/berTrindade/terraform-infrastructure-blueprints.git

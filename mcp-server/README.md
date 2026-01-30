@@ -105,18 +105,24 @@ The MCP server provides **dynamic discovery tools only**. Static content (catalo
 
 ## Using in Client Projects
 
-For consultants working on client projects, install the [@ustwo/blueprint-skill](../packages/blueprint-skill/README.md) package to provide AI assistant guidance:
+For consultants working on client projects, install blueprint skills using the `@bertrindade/agent-skills` CLI:
 
 ```bash
-npm install --save-dev @ustwo/blueprint-skill
+# Option 1: Use npx (recommended)
+npx @bertrindade/agent-skills install --skill blueprint-guidance --skill blueprint-catalog --skill blueprint-patterns
+
+# Option 2: Install globally
+npm install -g @bertrindade/agent-skills
+ustwo-skills install
 ```
 
-This package:
-- Installs a Cursor skill that guides AI assistants to use blueprint patterns
-- Creates/updates `AGENTS.md` with blueprint guidance
+This CLI:
+- Installs blueprint skills to all detected AI assistants (Cursor, Claude Desktop, GitHub Copilot, etc.)
+- Provides interactive installation with skill selection
+- Supports both local and global installation
 - Works alongside this MCP server for complete blueprint awareness
 
-See [@ustwo/blueprint-skill](../packages/blueprint-skill/README.md) for full installation and usage instructions.
+See [packages/cli/README.md](../packages/cli/README.md) for full installation and usage instructions.
 
 ## Troubleshooting
 

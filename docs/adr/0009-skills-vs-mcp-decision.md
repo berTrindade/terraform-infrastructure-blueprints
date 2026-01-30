@@ -67,11 +67,12 @@ Our current architecture already follows this pattern:
 
 ### Client Projects
 
-1. **Blueprint Skill Package** (`packages/blueprint-skill/`): Distributes Skills to client projects
-   - Published as `@bertrindade/blueprint-skill` on GitHub Packages
-   - Installs `blueprint-guidance` skill to guide AI assistants
-   - Updates `AGENTS.md` with blueprint references
+1. **Agent Skills CLI** (`packages/cli/`): Distributes Skills to client projects
+   - Published as `@bertrindade/agent-skills` on npm
+   - Installs `blueprint-guidance`, `blueprint-catalog`, and `blueprint-patterns` skills
+   - Provides interactive installation with support for multiple AI assistants
    - Works alongside MCP server for complete blueprint awareness
+   - **Note**: Previously implemented as `@bertrindade/blueprint-skill` npm package, now replaced by CLI tool for better UX and flexibility
 
 2. **Blueprint Content**: Static Terraform code that changes infrequently
    - Blueprints are updated via Git commits and releases
@@ -113,7 +114,7 @@ Our current architecture already follows this pattern:
 
 - **MCP Server**: Continue using for discovery, recommendation, and interactive workflows
 - **Internal Skills**: Already implemented for development workflows (create, validate, release, docs)
-- **Client Skills**: Already implemented via `@bertrindade/blueprint-skill` package
+- **Client Skills**: Implemented via `@bertrindade/agent-skills` CLI (replaces previous `@bertrindade/blueprint-skill` package)
 - **Documentation**: Updated to clarify when to use each approach
 
 ## Notes
@@ -150,7 +151,7 @@ This aligns with our blueprint distribution model where blueprints are:
 
 **Client Projects:**
 
-- ✅ `@bertrindade/blueprint-skill` package installs Skills for blueprint guidance
+- ✅ `@bertrindade/agent-skills` CLI installs Skills for blueprint guidance
 - ✅ MCP Server (optional) for interactive discovery
 - ✅ Hybrid approach: Skills provide static patterns, MCP provides interactive discovery
 
