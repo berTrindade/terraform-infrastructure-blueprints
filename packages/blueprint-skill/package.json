@@ -1,0 +1,39 @@
+{
+  "name": "@ustwo/blueprint-skill",
+  "version": "1.0.0",
+  "description": "Cursor skill for AI-assisted infrastructure blueprint guidance in client projects",
+  "type": "module",
+  "main": "bin/setup.js",
+  "bin": {
+    "blueprint-skill-setup": "./bin/setup.js"
+  },
+  "scripts": {
+    "postinstall": "node bin/setup.js"
+  },
+  "keywords": [
+    "cursor",
+    "skill",
+    "terraform",
+    "infrastructure",
+    "blueprints",
+    "ai-assistant"
+  ],
+  "author": "ustwo",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/berTrindade/terraform-infrastructure-blueprints.git",
+    "directory": "packages/blueprint-skill"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "bin",
+    "templates",
+    "README.md"
+  ]
+}
