@@ -1,102 +1,102 @@
 # Template Generator vs Blueprint Repository
 
-Guia para entender quando usar o **Template Generator** (skill) vs quando usar o **Blueprint Repository** (MCP tools).
+Guide to understand when to use **Template Generator** (skill) vs when to use **Blueprint Repository** (MCP tools).
 
-> **Contexto arquitetural**: Este documento descreve os dois cenários mencionados pelo Felipe: o **Template Generator** funciona como uma "linha de montagem técnica" que entrega código pronto, enquanto o **Blueprint Repository** funciona como um "manual de boas práticas" para estudo e compreensão. Para entender a visão completa sobre manifestos YAML e arquitetura agnóstica, veja [ADR 0007: Manifest-Based Template Generation Architecture](../adr/0007-manifest-based-template-generation.md).
+> **Architectural context**: This document describes the two scenarios mentioned by Felipe: **Template Generator** works as a "technical assembly line" that delivers ready code, while **Blueprint Repository** works as a "best practices manual" for study and understanding. To understand the complete vision about YAML manifests and agnostic architecture, see [ADR 0007: Manifest-Based Template Generation Architecture](../adr/0007-manifest-based-template-generation.md).
 
-## Visão Geral
+## Overview
 
-O **Template Generator** e o **Blueprint Repository** servem propósitos diferentes e complementares:
+**Template Generator** and **Blueprint Repository** serve different and complementary purposes:
 
-| Cenário | Ferramenta | Por quê? |
-|---------|-----------|----------|
-| **Adicionar capacidade** a projeto existente | Template Generator | Gera código adaptado, economiza tokens |
-| **Criar novo blueprint** | Blueprint Repository | Precisa ver estrutura completa, padrões, testes |
-| **Estudar como funciona** | Blueprint Repository | Precisa ver código completo, entender arquitetura |
-| **Copiar blueprint completo** | Blueprint Repository | Precisa de toda a estrutura (módulos, testes, docs) |
-| **Gerar snippet específico** | Template Generator | Gera apenas o necessário, já adaptado |
+| Scenario | Tool | Why? |
+|---------|------|------|
+| **Add capability** to existing project | Template Generator | Generates adapted code, saves tokens |
+| **Create new blueprint** | Blueprint Repository | Need to see complete structure, patterns, tests |
+| **Study how it works** | Blueprint Repository | Need to see complete code, understand architecture |
+| **Copy complete blueprint** | Blueprint Repository | Need entire structure (modules, tests, docs) |
+| **Generate specific snippet** | Template Generator | Generates only what's needed, already adapted |
 
-## Quando Usar Template Generator
+## When to Use Template Generator
 
-### ✅ Use Template Generator Para
+### ✅ Use Template Generator For
 
-1. **Adicionar capacidade a projeto existente**
-   - Exemplo: "Preciso adicionar RDS ao meu projeto Lambda existente"
-   - O generator extrai parâmetros do histórico e gera código adaptado
-   - Economiza tokens (50 linhas vs 200+ linhas)
+1. **Add capability to existing project**
+   - Example: "I need to add RDS to my existing Lambda project"
+   - The generator extracts parameters from history and generates adapted code
+   - Saves tokens (50 lines vs 200+ lines)
 
-2. **Gerar snippets específicos**
-   - Exemplo: "Preciso do padrão de senha efêmera"
-   - Gera apenas o necessário, não o blueprint inteiro
+2. **Generate specific snippets**
+   - Example: "I need the ephemeral password pattern"
+   - Generates only what's needed, not the entire blueprint
 
-3. **Scaffold rápido de módulos**
-   - Exemplo: "Preciso de um módulo SQS seguindo padrões do blueprint"
-   - Gera código já seguindo convenções do projeto
+3. **Quick module scaffolding**
+   - Example: "I need an SQS module following blueprint patterns"
+   - Generates code already following project conventions
 
-### ❌ NÃO Use Template Generator Para
+### ❌ DON'T Use Template Generator For
 
-- Estudar como um blueprint funciona
-- Ver a estrutura completa de um blueprint
-- Copiar um blueprint completo para novo projeto
-- Entender testes e validações
-- Ver documentação completa
+- Study how a blueprint works
+- See the complete structure of a blueprint
+- Copy a complete blueprint for new project
+- Understand tests and validations
+- See complete documentation
 
-## Quando Usar Blueprint Repository
+## When to Use Blueprint Repository
 
-### ✅ Use Blueprint Repository (MCP tools) Para
+### ✅ Use Blueprint Repository (MCP tools) For
 
-1. **Criar novos blueprints**
-   - Precisa ver estrutura completa de blueprints existentes
-   - Precisa entender padrões de módulos, testes, documentação
-   - Precisa referenciar múltiplos arquivos para criar blueprint completo
+1. **Create new blueprints**
+   - Need to see complete structure of existing blueprints
+   - Need to understand module patterns, tests, documentation
+   - Need to reference multiple files to create complete blueprint
 
-2. **Estudar blueprints**
-   - Exemplo: "Como funciona o blueprint apigw-lambda-rds?"
-   - Precisa ver código completo, arquitetura, testes
+2. **Study blueprints**
+   - Example: "How does the apigw-lambda-rds blueprint work?"
+   - Need to see complete code, architecture, tests
 
-3. **Copiar blueprint completo**
-   - Exemplo: "Quero usar o blueprint apigw-lambda-rds no meu projeto"
-   - Precisa de toda a estrutura: módulos, environments, testes, docs
+3. **Copy complete blueprint**
+   - Example: "I want to use the apigw-lambda-rds blueprint in my project"
+   - Need entire structure: modules, environments, tests, docs
 
-4. **Entender padrões complexos**
-   - Exemplo: "Como funciona o padrão de VPC endpoints?"
-   - Precisa ver implementação completa, não apenas snippet
+4. **Understand complex patterns**
+   - Example: "How does the VPC endpoints pattern work?"
+   - Need to see complete implementation, not just snippet
 
-5. **Referenciar múltiplos arquivos**
-   - Exemplo: "Preciso ver o módulo de dados, networking e secrets juntos"
-   - Template generator gera um snippet, repo permite ver tudo
+5. **Reference multiple files**
+   - Example: "I need to see data, networking and secrets modules together"
+   - Template generator generates one snippet, repo allows seeing everything
 
-## Fluxo de Criação de Novos Blueprints
+## New Blueprint Creation Flow
 
-### Passo 1: Identificar Necessidade
+### Step 1: Identify Need
 
-**Quando criar um novo blueprint:**
+**When to create a new blueprint:**
 
-- Novo padrão arquitetural não coberto por blueprints existentes
-- Combinação única de serviços que não existe
-- Padrão específico de um cloud provider
+- New architectural pattern not covered by existing blueprints
+- Unique combination of services that doesn't exist
+- Cloud provider-specific pattern
 
-**Exemplo**: "Preciso de um blueprint para API Gateway + Step Functions + Lambda + DynamoDB"
+**Example**: "I need a blueprint for API Gateway + Step Functions + Lambda + DynamoDB"
 
-### Passo 2: Estudar Blueprints Existentes
+### Step 2: Study Existing Blueprints
 
-**Use Blueprint Repository** para:
+**Use Blueprint Repository** to:
 
-- Ver estrutura de blueprints similares
-- Entender padrões de módulos
-- Ver como testes são estruturados
-- Entender documentação necessária
+- See structure of similar blueprints
+- Understand module patterns
+- See how tests are structured
+- Understand necessary documentation
 
 ```typescript
-// Use MCP tools para estudar
+// Use MCP tools to study
 fetch_blueprint_file(blueprint: "apigw-lambda-dynamodb", path: "modules/api/main.tf")
 fetch_blueprint_file(blueprint: "apigw-lambda-dynamodb", path: "environments/dev/main.tf")
 fetch_blueprint_file(blueprint: "apigw-lambda-dynamodb", path: "README.md")
 ```
 
-### Passo 3: Criar Estrutura do Blueprint
+### Step 3: Create Blueprint Structure
 
-**Use a skill `create-blueprint`** ou siga o padrão manualmente:
+**Use the `create-blueprint` skill** or follow the pattern manually:
 
 ```
 aws/apigw-lambda-stepfunctions/
@@ -111,7 +111,7 @@ aws/apigw-lambda-stepfunctions/
 │   ├── api/
 │   ├── compute/
 │   ├── data/
-│   ├── orchestration/  # Novo módulo para Step Functions
+│   ├── orchestration/  # New module for Step Functions
 │   ├── networking/
 │   ├── naming/
 │   └── tagging/
@@ -120,17 +120,17 @@ aws/apigw-lambda-stepfunctions/
 └── README.md
 ```
 
-### Passo 4: Implementar Módulos
+### Step 4: Implement Modules
 
-**Use Blueprint Repository** para referenciar padrões:
+**Use Blueprint Repository** to reference patterns:
 
-- Copiar e adaptar módulos similares
-- Seguir padrões de naming, tagging, secrets
-- Implementar testes seguindo padrões existentes
+- Copy and adapt similar modules
+- Follow naming, tagging, secrets patterns
+- Implement tests following existing patterns
 
-### Passo 5: Criar Manifesto YAML (Opcional)
+### Step 5: Create YAML Manifest (Optional)
 
-**Depois de criar o blueprint**, você pode criar um manifesto para o Template Generator:
+**After creating the blueprint**, you can create a manifest for Template Generator:
 
 ```yaml
 # blueprints/manifests/apigw-lambda-stepfunctions.yaml
@@ -149,15 +149,15 @@ snippets:
       # ...
 ```
 
-Isso permite que o Template Generator gere snippets deste blueprint no futuro.
+This allows Template Generator to generate snippets from this blueprint in the future.
 
-## Exemplos Práticos
+## Practical Examples
 
-### Exemplo 1: Adicionar RDS a Projeto Existente
+### Example 1: Add RDS to Existing Project
 
-**Cenário**: Projeto Lambda existente, precisa adicionar RDS
+**Scenario**: Existing Lambda project, needs to add RDS
 
-**Ferramenta**: **Template Generator**
+**Tool**: **Template Generator**
 
 ```json
 {
@@ -171,47 +171,47 @@ Isso permite que o Template Generator gere snippets deste blueprint no futuro.
 }
 ```
 
-**Resultado**: Código Terraform gerado (50 linhas) já adaptado ao projeto
+**Result**: Generated Terraform code (50 lines) already adapted to project
 
-### Exemplo 2: Criar Novo Blueprint Step Functions
+### Example 2: Create New Step Functions Blueprint
 
-**Cenário**: Criar blueprint completo para API Gateway + Step Functions
+**Scenario**: Create complete blueprint for API Gateway + Step Functions
 
-**Ferramenta**: **Blueprint Repository**
+**Tool**: **Blueprint Repository**
 
-1. Estudar blueprints similares:
+1. Study similar blueprints:
 
    ```typescript
    fetch_blueprint_file(blueprint: "apigw-lambda-dynamodb", path: "modules/api/main.tf")
    fetch_blueprint_file(blueprint: "apigw-eventbridge-lambda", path: "modules/events/main.tf")
    ```
 
-2. Criar estrutura completa usando `create-blueprint` skill
+2. Create complete structure using `create-blueprint` skill
 
-3. Implementar módulos referenciando padrões do repo
+3. Implement modules referencing repo patterns
 
-4. Criar testes, documentação, etc.
+4. Create tests, documentation, etc.
 
-**Resultado**: Blueprint completo pronto para uso
+**Result**: Complete blueprint ready for use
 
-### Exemplo 3: Entender Como Funciona Ephemeral Password
+### Example 3: Understand How Ephemeral Password Works
 
-**Cenário**: "Como funciona o padrão de senha efêmera?"
+**Scenario**: "How does the ephemeral password pattern work?"
 
-**Ferramenta**: **Blueprint Repository**
+**Tool**: **Blueprint Repository**
 
 ```typescript
 fetch_blueprint_file(blueprint: "apigw-lambda-rds", path: "modules/data/main.tf")
 fetch_blueprint_file(blueprint: "apigw-lambda-rds", path: "environments/dev/terraform.tfvars")
 ```
 
-**Resultado**: Entende implementação completa, contexto, variáveis
+**Result**: Understands complete implementation, context, variables
 
-### Exemplo 4: Gerar Snippet de Ephemeral Password
+### Example 4: Generate Ephemeral Password Snippet
 
-**Cenário**: "Preciso do padrão de senha efêmera no meu projeto"
+**Scenario**: "I need the ephemeral password pattern in my project"
 
-**Ferramenta**: **Template Generator**
+**Tool**: **Template Generator**
 
 ```json
 {
@@ -223,84 +223,84 @@ fetch_blueprint_file(blueprint: "apigw-lambda-rds", path: "environments/dev/terr
 }
 ```
 
-**Resultado**: Código gerado pronto para usar
+**Result**: Generated code ready to use
 
-## Resumo: Para Que Precisa do Blueprint Repo?
+## Summary: What Do You Need Blueprint Repo For?
 
-### Você PRECISA do Blueprint Repo para
+### You NEED Blueprint Repo for
 
-1. ✅ **Criar novos blueprints**
-   - Ver estrutura completa
-   - Entender padrões de módulos
-   - Ver como testes são feitos
-   - Entender documentação necessária
+1. ✅ **Create new blueprints**
+   - See complete structure
+   - Understand module patterns
+   - See how tests are done
+   - Understand necessary documentation
 
-2. ✅ **Estudar blueprints**
-   - Ver código completo
-   - Entender arquitetura
-   - Ver implementação de padrões
+2. ✅ **Study blueprints**
+   - See complete code
+   - Understand architecture
+   - See pattern implementation
 
-3. ✅ **Copiar blueprint completo**
-   - Para novo projeto
-   - Precisa de toda a estrutura
+3. ✅ **Copy complete blueprint**
+   - For new project
+   - Need entire structure
 
-4. ✅ **Referenciar múltiplos arquivos**
-   - Ver módulos relacionados
-   - Entender dependências
-   - Ver padrões complexos
+4. ✅ **Reference multiple files**
+   - See related modules
+   - Understand dependencies
+   - See complex patterns
 
-### Você NÃO precisa do Blueprint Repo para
+### You DON'T need Blueprint Repo for
 
-1. ❌ **Adicionar capacidade a projeto existente**
+1. ❌ **Add capability to existing project**
    - Use Template Generator
-   - Gera código adaptado
-   - Economiza tokens
+   - Generates adapted code
+   - Saves tokens
 
-2. ❌ **Gerar snippet específico**
+2. ❌ **Generate specific snippet**
    - Use Template Generator
-   - Gera apenas o necessário
+   - Generates only what's needed
 
-## Workflow Recomendado
+## Recommended Workflow
 
-### Para Adicionar Capacidade (Projeto Existente)
-
-```
-1. Identificar necessidade → "adicionar RDS"
-2. Usar Template Generator → Gerar código adaptado
-3. Integrar no projeto → Adaptar se necessário
-```
-
-### Para Criar Novo Blueprint
+### To Add Capability (Existing Project)
 
 ```
-1. Identificar necessidade → "novo padrão arquitetural"
-2. Estudar blueprints similares → Usar Blueprint Repository
-3. Criar estrutura → Usar create-blueprint skill
-4. Implementar módulos → Referenciar padrões do repo
-5. Criar manifesto YAML → Para Template Generator (opcional)
+1. Identify need → "add RDS"
+2. Use Template Generator → Generate adapted code
+3. Integrate into project → Adapt if necessary
 ```
 
-### Para Estudar Blueprint
+### To Create New Blueprint
 
 ```
-1. Identificar blueprint → "apigw-lambda-rds"
-2. Usar Blueprint Repository → fetch_blueprint_file()
-3. Entender arquitetura → Ver múltiplos arquivos
-4. Aplicar conhecimento → No projeto ou criar novo blueprint
+1. Identify need → "new architectural pattern"
+2. Study similar blueprints → Use Blueprint Repository
+3. Create structure → Use create-blueprint skill
+4. Implement modules → Reference repo patterns
+5. Create YAML manifest → For Template Generator (optional)
 ```
 
-## Conclusão
+### To Study Blueprint
 
-O **Template Generator** e o **Blueprint Repository** são complementares:
+```
+1. Identify blueprint → "apigw-lambda-rds"
+2. Use Blueprint Repository → fetch_blueprint_file()
+3. Understand architecture → See multiple files
+4. Apply knowledge → In project or create new blueprint
+```
 
-- **Template Generator**: Para adicionar capacidades, gerar snippets, economizar tokens
-- **Blueprint Repository**: Para criar blueprints, estudar, copiar completo, entender padrões
+## Conclusion
 
-**Para criar novos blueprints, você ainda precisa do Blueprint Repository** para:
+**Template Generator** and **Blueprint Repository** are complementary:
 
-- Ver estrutura completa
-- Entender padrões
-- Referenciar múltiplos arquivos
-- Criar blueprint completo com testes e documentação
+- **Template Generator**: To add capabilities, generate snippets, save tokens
+- **Blueprint Repository**: To create blueprints, study, copy complete, understand patterns
 
-O Template Generator **complementa** o repo, não o substitui.
+**To create new blueprints, you still need Blueprint Repository** for:
+
+- See complete structure
+- Understand patterns
+- Reference multiple files
+- Create complete blueprint with tests and documentation
+
+Template Generator **complements** the repo, doesn't replace it.

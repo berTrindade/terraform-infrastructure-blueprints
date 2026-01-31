@@ -4,7 +4,7 @@
 #
 # Usage:
 #   ./scripts/validate-blueprint.sh <blueprint-path>
-#   ./scripts/validate-blueprint.sh aws/example-sqs-worker-api
+#   ./scripts/validate-blueprint.sh blueprints/aws/example-sqs-worker-api
 #   ./scripts/validate-blueprint.sh --all  # Validate all blueprints
 #
 # Exit codes:
@@ -293,7 +293,7 @@ print_usage() {
     echo "       $0 --all"
     echo ""
     echo "Examples:"
-    echo "  $0 aws/example-sqs-worker-api"
+    echo "  $0 blueprints/aws/example-sqs-worker-api"
     echo "  $0 --all"
 }
 
@@ -345,9 +345,9 @@ if [ "$1" = "--all" ]; then
     TOTAL_PASS=0
     TOTAL_FAIL=0
     
-    for blueprint in "$REPO_ROOT"/aws/example-*/; do
+    for blueprint in "$REPO_ROOT"/blueprints/aws/*/; do
         blueprint_name=$(basename "$blueprint")
-        if validate_blueprint "aws/$blueprint_name"; then
+        if validate_blueprint "blueprints/aws/$blueprint_name"; then
             ((TOTAL_PASS++))
         else
             ((TOTAL_FAIL++))

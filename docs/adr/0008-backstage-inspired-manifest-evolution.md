@@ -7,7 +7,7 @@ Inspired by: Felipe's vision and Backstage's catalog-info.yaml approach
 
 ## Context
 
-Felipe's vision: "No primeiro cenário, o fetch funciona como se a LLM estivesse consultando um manual de boas práticas da empresa para desenhar a solução ideal. Já no segundo, a skill vira uma linha de montagem técnica que só entrega a peça pronta, economizando um tempo enorme de processamento. Essa ideia do manifesto YAML é o caminho para deixar tudo escalável. Se você seguir essa lógica de ter um arquivo de configuração em cada blueprint, sua skill fica agnóstica e você consegue plugar novos padrões sem precisar mexer na inteligência da ferramenta o tempo todo. É basicamente o que o backstage faz"
+Felipe's vision: "In the first scenario, the fetch works as if the LLM were consulting a company best practices manual to design the ideal solution. In the second, the skill becomes a technical assembly line that only delivers the ready piece, saving enormous processing time. This YAML manifest idea is the path to make everything scalable. If you follow this logic of having a configuration file in each blueprint, your skill becomes agnostic and you can plug new patterns without needing to modify the tool's intelligence all the time. It's basically what backstage does"
 
 Current state:
 

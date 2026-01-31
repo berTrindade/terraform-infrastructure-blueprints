@@ -213,7 +213,7 @@ spec:
 links:
   - title: Blueprint Repository
     url: "https://github.com/berTrindade/terraform-infrastructure-blueprints/tree/main/aws/apigw-lambda-rds"
-  - title: AI Assistant Guidelines
-    url: "https://github.com/berTrindade/terraform-infrastructure-blueprints/blob/main/docs/ai-assistant-guidelines.md"
+  - title: Developer Workflow
+    url: "https://github.com/berTrindade/terraform-infrastructure-blueprints/blob/main/docs/developer-workflow.md"
   - title: Pattern Documentation
     url: "https://github.com/berTrindade/terraform-infrastructure-blueprints/blob/main/docs/blueprints/patterns.md"

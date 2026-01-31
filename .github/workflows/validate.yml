@@ -8,17 +8,17 @@ on:
   push:
     branches: [main]
     paths:
-      - 'aws/**'
-      - 'gcp/**'
-      - 'azure/**'
+      - 'blueprints/aws/**'
+      - 'blueprints/gcp/**'
+      - 'blueprints/azure/**'
       - 'scripts/**'
       - '.github/workflows/validate.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'aws/**'
-      - 'gcp/**'
-      - 'azure/**'
+      - 'blueprints/aws/**'
+      - 'blueprints/gcp/**'
+      - 'blueprints/azure/**'
 
 env:
   TF_VERSION: '1.9.0'
@@ -65,7 +65,7 @@ jobs:
           fi
           
           # Extract unique blueprint paths (handle both example-* and direct blueprint names)
-          BLUEPRINTS=$(echo "$CHANGED_FILES" | grep -E '^(aws|gcp|azure)/[^/]+/' | cut -d'/' -f1,2 | sort -u | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          BLUEPRINTS=$(echo "$CHANGED_FILES" | grep -E '^blueprints/(aws|gcp|azure)/[^/]+/' | cut -d'/' -f2,3 | sort -u | jq -R -s -c 'split("\n") | map(select(length > 0)) | map("blueprints/" + .)')
           
           echo "Changed blueprints: $BLUEPRINTS"
           echo "blueprints=$BLUEPRINTS" >> $GITHUB_OUTPUT

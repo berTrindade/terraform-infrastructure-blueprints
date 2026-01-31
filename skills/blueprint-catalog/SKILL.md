@@ -98,7 +98,7 @@ What do you need?
 Every blueprint follows this pattern:
 
 ```
-aws/{blueprint-name}/
+blueprints/aws/{blueprint-name}/
 ├── environments/
 │   └── dev/
 │       ├── main.tf           # Module composition

@@ -7,12 +7,16 @@ Opinionated, standalone Infrastructure-as-Code blueprints for AWS, Azure, and GC
 **Consultancy model**: ustwo builds for clients. When engagements end, clients own the code. Generated Terraform must be completely standalone with zero ustwo dependencies.
 
 For detailed documentation, see:
+
 - [Blueprint Catalog](docs/blueprints/catalog.md) - Complete blueprint reference, decision trees, cross-cloud equivalents
 - [Workflows](docs/blueprints/workflows.md) - Usage scenarios and step-by-step workflows
 - [Patterns](docs/blueprints/patterns.md) - Key patterns (secrets, naming, VPC, extractable patterns)
 - [Customization](docs/blueprints/customization.md) - Common customizations, commands, constraints
 
 **For AI Assistants**:
-- [AI Assistant Guidelines](docs/ai-assistant-guidelines.md) - Comprehensive guide for referencing blueprints instead of generic code
-- [AI Quick Reference](docs/ai-quick-reference.md) - One-page lookup for MCP tools and patterns
+
+- [Developer Workflow](docs/developer-workflow.md) - How developers work with blueprints
+- [AI Assistant Guidelines](docs/ai-assistant-guidelines.md) - Guidelines for AI assistants
+- [MCP Tools Reference](docs/mcp-tools-reference.md) - Technical reference for MCP tools
+- [Manifests and Templates](docs/manifests-and-templates.md) - How the system works
 - [Patterns with Examples](docs/blueprints/patterns.md) - Key patterns including wrong vs right code comparisons

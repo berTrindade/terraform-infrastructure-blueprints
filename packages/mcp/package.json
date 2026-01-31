@@ -1,0 +1,57 @@
+{
+  "name": "@bertrindade/infra-mcp",
+  "version": "1.4.0",
+  "description": "MCP server for ustwo Terraform infrastructure blueprints",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "infra-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node --env-file=.env dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "terraform",
+    "infrastructure",
+    "aws",
+    "blueprints"
+  ],
+  "author": "ustwo",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/berTrindade/terraform-infrastructure-blueprints.git",
+    "directory": "packages/mcp"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "execa": "^9.6.1",
+    "mime-types": "^3.0.2",
+    "pino": "^10.3.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^12.0.2",
+    "@types/mime-types": "^3.0.1",
+    "@types/node": "^20.0.0",
+    "conventional-changelog-conventionalcommits": "^9.1.0",
+    "semantic-release": "^25.0.2",
+    "typescript": "^5.0.0",
+    "vitest": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

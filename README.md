@@ -54,7 +54,9 @@ If you have the MCP server configured (see [AI Assistant Integration](#ai-assist
 
 For detailed guides, see:
 
-- [Template Generator Development](skills/blueprint-template-generator/DEVELOPMENT.md) - Development guide for the template generator
+- [Developer Workflow](docs/developer-workflow.md) - How developers work with blueprints
+- [AI Assistant Guidelines](docs/ai-assistant-guidelines.md) - Guidelines for AI assistants
+- [Template Generator Development](tools/template-generator/DEVELOPMENT.md) - Development guide for the template generator
 
 Each blueprint also includes a blueprint-specific README with detailed instructions, architecture diagrams, and cost estimates.
 
@@ -116,7 +118,16 @@ See [ADR-0002](docs/adr/0002-expand-scope-pattern-extraction.md) for the rationa
 
 - `appengine-cloudsql-strapi` - Containerized app with Cloud SQL
 
-**Full blueprint catalog with descriptions, use cases, and decision trees:** See [Blueprint Catalog](docs/blueprints/catalog.md) or [AGENTS.md](AGENTS.md) for AI assistant integration
+**Full blueprint catalog with descriptions, use cases, and decision trees:** See [Blueprint Catalog](docs/blueprints/catalog.md)
+
+**Documentation:**
+
+- [Developer Workflow](docs/developer-workflow.md) - How developers work with blueprints
+- [AI Assistant Guidelines](docs/ai-assistant-guidelines.md) - Guidelines for AI assistants
+- [MCP Tools Reference](docs/mcp-tools-reference.md) - Technical reference for MCP tools
+- [Manifests and Templates](docs/manifests-and-templates.md) - How the system works
+
+See [AGENTS.md](AGENTS.md) for AI assistant integration setup.
 
 ## Blueprint Structure
 
@@ -187,6 +198,12 @@ For ustwo developers: Configure the MCP server to give AI assistants automatic a
 - **Find cross-cloud equivalents** (AWS → Azure → GCP)
 - **Fetch blueprint files** to view code examples and adapt them
 
+**Documentation for AI Assistants:**
+
+- **[AI Assistant Guidelines](docs/ai-assistant-guidelines.md)** - How AI assistants should reference blueprints
+- **[MCP Tools Reference](docs/mcp-tools-reference.md)** - Technical reference for all MCP tools
+- **[Developer Workflow](docs/developer-workflow.md)** - How developers interact with the system
+
 **How MCP works:**
 
 - **MCP server**: Helps you discover, understand, and extract patterns from blueprints
@@ -214,7 +231,7 @@ We use two complementary approaches depending on what type of information needs 
 
 See [ADR 0005](docs/adr/0005-skills-vs-mcp-decision.md) for the full technical decision rationale.
 
-See [mcp/README.md](mcp/README.md) for setup instructions.
+See [packages/mcp/README.md](packages/mcp/README.md) for setup instructions.
 
 ## Contributing
 
@@ -234,8 +251,10 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for:
 
 **Automated Releases:**
 
-- MCP server releases are fully automated using `semantic-release`
-- Commits to `mcp/**` automatically trigger version bumps, changelog generation, npm publishing, and Docker builds
+- **MCP server** (`packages/mcp/`): Fully automated using `semantic-release`
+  - Commits to `packages/mcp/**` automatically trigger version bumps, changelog generation, npm publishing (GitHub Packages), and Docker builds (GHCR)
+- **CLI tool** (`packages/cli/`): Fully automated using `semantic-release`
+  - Commits to `packages/cli/**` automatically trigger version bumps, changelog generation, and npm publishing (public registry)
 - Use conventional commits (`feat:`, `fix:`, `feat!:`) for automatic versioning
 
 ## License
