@@ -2,6 +2,8 @@
 
 Guia para entender quando usar o **Template Generator** (skill) vs quando usar o **Blueprint Repository** (MCP tools).
 
+> **Contexto arquitetural**: Este documento descreve os dois cenários mencionados pelo Felipe: o **Template Generator** funciona como uma "linha de montagem técnica" que entrega código pronto, enquanto o **Blueprint Repository** funciona como um "manual de boas práticas" para estudo e compreensão. Para entender a visão completa sobre manifestos YAML e arquitetura agnóstica, veja [ADR 0007: Manifest-Based Template Generation Architecture](../adr/0007-manifest-based-template-generation.md).
+
 ## Visão Geral
 
 O **Template Generator** e o **Blueprint Repository** servem propósitos diferentes e complementares:

@@ -463,10 +463,9 @@ Before providing Terraform code, ask:
 ## Additional Resources
 
 - [Blueprint Catalog](blueprints/catalog.md) - Complete blueprint reference
-- [Patterns](blueprints/patterns.md) - Key patterns (secrets, naming, VPC)
+- [Patterns](blueprints/patterns.md) - Key patterns (secrets, naming, VPC) with examples
 - [Workflows](blueprints/workflows.md) - Step-by-step usage scenarios
 - [Quick Reference](ai-quick-reference.md) - One-page lookup guide
-- [Wrong vs Right Examples](examples/wrong-vs-right-database.md) - Code comparisons
 
 ## Summary
 

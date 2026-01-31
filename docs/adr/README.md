@@ -87,10 +87,8 @@ In most cases storing in the same repository as the code allows for easy access 
 |-----|-------|--------|------|
 | [0001](0001-standalone-blueprints.md) | Standalone Self-Contained Blueprints | Approved | 2026-01-23 |
 | [0002](0002-expand-scope-pattern-extraction.md) | Expand Scope to Support Pattern Extraction | Approved | 2026-01-23 |
-| [0003](0003-mcp-server-ai-discovery.md) | MCP Server for AI-Assisted Blueprint Discovery | Approved | 2026-01-23 |
-| [0004](0004-supported-consultant-scenarios.md) | Supported Consultant Scenarios | Approved | 2026-01-23 |
-| [0005](0005-secrets-management-pattern.md) | Secrets Management Pattern | Approved | 2026-01-24 |
-| [0006](0006-progressive-disclosure-agents.md) | Progressive Disclosure for AGENTS.md | Approved | 2026-01-24 |
-| [0007](0007-dynamic-context-discovery-mcp.md) | Dynamic Context Discovery Patterns for MCP Server | Approved | 2026-01-29 |
-| [0008](0008-mcp-server-security-hardening.md) | MCP Server Security Hardening | Approved | 2026-01-29 |
-| [0009](0009-skills-vs-mcp-decision.md) | Skills vs MCP: When to Use Each Approach | Approved | 2026-01-30 |
+| [0003](0003-secrets-management-pattern.md) | Secrets Management Pattern | Approved | 2026-01-24 |
+| [0004](0004-progressive-disclosure-agents.md) | Progressive Disclosure for AGENTS.md | Approved | 2026-01-26 |
+| [0005](0005-skills-vs-mcp-decision.md) | Skills vs MCP: When to Use Each Approach | Approved | 2026-01-30 |
+| [0006](0006-documentation-consolidation.md) | Documentation Consolidation and Cleanup | Approved | 2026-01-30 |
+| [0007](0007-manifest-based-template-generation.md) | Manifest-Based Template Generation Architecture | Approved | 2026-01-30 |

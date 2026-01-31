@@ -28,46 +28,49 @@ Expand the repository's purpose to support two use cases:
 
 2. **Extract patterns** (new purpose)
    - Add modules/patterns from blueprints to existing Terraform projects
-   - Reference blueprints as "source of truth" for implementation patterns
-   - Adapt extracted code to fit existing project conventions
-
-This does NOT mean creating shared modules. The blueprints remain self-contained. The change is in how we document and support the extraction workflow.
+   - Use MCP tools (`extract_pattern`) to get guidance on extracting capabilities
+   - Use template generator to generate adapted code
+   - Reference blueprint modules as examples
 
 ## Alternatives Considered
 
-1. **Keep original scope**
-   - Description: Only support copying whole blueprints, no extraction guidance
-   - Pros: Simpler documentation, clearer boundaries
-   - Cons: Doesn't match how consultants actually work, lower adoption
+1. **Keep Original Scope Only**
+   - Pros: Clear, simple purpose, no confusion
+   - Cons: Doesn't serve real consulting needs, developers extract patterns anyway without guidance
+   - Rejected: Ignores real-world usage patterns
 
-2. **Create separate "modules" repository**
-   - Description: Split reusable patterns into a dedicated modules repo
-   - Pros: Clear separation of concerns, explicit module versioning
-   - Cons: Maintenance overhead, fragmented documentation, contradicts ADR-0001
+2. **Separate Repository for Patterns**
+   - Pros: Clear separation, dedicated tooling
+   - Cons: Maintenance overhead, duplication, harder to discover
+   - Rejected: Creates unnecessary complexity
 
-3. **Terraform Registry publication**
-   - Description: Publish individual modules to Terraform Registry
-   - Pros: Standard Terraform workflow
-   - Cons: Creates external dependency, violates client ownership principle
+3. **Extract Patterns Only**
+   - Pros: Focused purpose, optimized for extraction
+   - Cons: Loses value of complete blueprints for new projects
+   - Rejected: Removes valuable use case
 
 ## Consequences
 
-**Benefits:**
-- Matches how consultants actually work on long-running projects
-- More flexible usage of the blueprints
-- Higher adoption and value from the repository
-- Blueprints become a living reference, not just starter templates
+### Benefits
 
-**Risks:**
-- More complex AI guidance needed to support extraction workflow
-- Must document extraction patterns clearly
-- Risk of consultants creating inconsistent implementations
+- **Serves Real Needs**: Addresses both new projects and existing project enhancement
+- **Flexible Usage**: Developers choose the approach that fits their scenario
+- **Better Guidance**: MCP tools and template generator provide structured extraction guidance
+- **Maintains Original Value**: Complete blueprints still available for new projects
 
-**Impact:**
-- Update AGENTS.md with "Add to Existing Project" workflow
-- Enhance MCP server tools to support pattern discovery
-- Add documentation for common extraction scenarios
+### Trade-offs
+
+- **Increased Complexity**: Repository serves two distinct use cases
+- **Documentation Overhead**: Must document both workflows clearly
+- **Tooling Requirements**: Need MCP tools and template generator to support extraction
+
+### Impact
+
+- **Developer Experience**: More flexible, serves more scenarios
+- **Repository Purpose**: Broader scope, but more valuable
+- **Tooling**: Requires MCP server and template generator skills
+- **Documentation**: Must clearly distinguish between use cases
 
 ## Notes
 
-This decision does not change ADR-0001. Blueprints remain self-contained. The change is in supporting developers who want to learn from and adapt patterns, not in creating shared dependencies.
+This decision expanded the repository from "blueprint library" to "blueprint library + pattern extraction system." The addition of MCP tools and template generator skills enables the extraction use case while maintaining the original copy-whole-blueprint workflow.

@@ -28,36 +28,44 @@ This means:
 
 ## Alternatives Considered
 
-1. **Shared module library**
-   - Description: Central `/modules` folder referenced by all blueprints
-   - Pros: DRY code, single source of truth, easier to propagate improvements
-   - Cons: Creates ustwo dependency, versioning complexity, harder client handover
+1. **Shared Module Library**
+   - Pros: DRY principle, single source of truth, easier updates
+   - Cons: Clients depend on ustwo repository, can't maintain independently, violates consultancy model
+   - Rejected: Violates core requirement of client ownership
 
-2. **Terraform Registry modules**
-   - Description: Publish modules to public Terraform Registry
-   - Pros: Standard Terraform approach, version pinning built-in
-   - Cons: Still creates external dependency, public exposure of internal patterns
+2. **Terraform Registry Modules**
+   - Pros: Standard approach, versioned modules, widely used
+   - Cons: Still creates dependency, requires registry access, harder to customize
+   - Rejected: Doesn't solve the client ownership problem
 
-3. **Git submodules**
-   - Description: Shared modules as git submodules
-   - Pros: Versioned, trackable
-   - Cons: Complex workflow, confusing for clients, still creates dependency
+3. **Copy-Paste with Manual Adaptation**
+   - Pros: Complete independence, no dependencies
+   - Cons: Time-consuming, error-prone, inconsistent patterns
+   - Rejected: Too slow for project delivery
 
 ## Consequences
 
-**Benefits:**
-- Clean client handover with zero ustwo dependencies
-- No vendor lock-in for clients
-- Easy to understand and modify
-- Each blueprint is self-documenting
-- Clients can diverge from patterns without breaking anything
+### Benefits
 
-**Risks:**
-- Code duplication across blueprints
-- Improvements to one blueprint don't automatically propagate to others
-- Maintenance overhead when fixing bugs across multiple blueprints
+- **Client Independence**: Clients own complete, working infrastructure code
+- **Fast Handover**: Single folder copy, no dependency resolution
+- **Battle-Tested Patterns**: Each blueprint is production-ready
+- **Flexibility**: Clients can modify without breaking dependencies
+- **Clear Boundaries**: Each blueprint is a complete unit
 
-**Mitigations:**
-- Use official terraform-aws-modules where possible (community-maintained)
-- Document patterns clearly so similar fixes can be applied manually
-- Periodic audits to sync improvements across blueprints
+### Trade-offs
+
+- **Code Duplication**: Similar modules exist across multiple blueprints
+- **Maintenance Overhead**: Updates must be applied to multiple blueprints
+- **Larger Repository**: More code overall due to duplication
+
+### Impact
+
+- **Project Delivery**: Faster client handover, less dependency management
+- **Client Satisfaction**: Clients can maintain and modify independently
+- **Repository Size**: Larger repository, but acceptable trade-off
+- **Maintenance**: Requires discipline to keep blueprints consistent
+
+## Notes
+
+This decision is fundamental to the repository's purpose. It ensures that every blueprint can be copied and owned by clients without any ustwo dependencies. Code duplication is intentional and acceptable to achieve client independence.

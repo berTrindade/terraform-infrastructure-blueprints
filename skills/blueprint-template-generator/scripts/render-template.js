@@ -16,7 +16,8 @@ const __dirname = dirname(__filename);
 function getRepoRoot() {
   let current = __dirname;
   while (current !== '/') {
-    if (existsSync(join(current, 'package.json'))) {
+    // Look for blueprints directory which is at the repo root
+    if (existsSync(join(current, 'blueprints'))) {
       return current;
     }
     current = dirname(current);

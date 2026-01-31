@@ -53,17 +53,17 @@ Use [Conventional Commits](https://www.conventionalcommits.org/) format for MCP 
 
 **Examples:**
 ```bash
-feat(mcp-server): add new blueprint recommendation endpoint
-fix(mcp-server): correct path validation for blueprint files
-feat(mcp-server)!: change API response format to include metadata
-chore(mcp-server): update dependencies
+feat(mcp): add new blueprint recommendation endpoint
+fix(mcp): correct path validation for blueprint files
+feat(mcp)!: change API response format to include metadata
+chore(mcp): update dependencies
 ```
 
-**Important**: Only commits that modify files in `mcp-server/**` trigger releases.
+**Important**: Only commits that modify files in `mcp/**` trigger releases.
 
 ### Step 3: What Happens on Push to Main
 
-When you push to `main` (and `mcp-server/**` files changed):
+When you push to `main` (and `mcp/**` files changed):
 
 1. **Tests run** - CI ensures code quality
 2. **semantic-release analyzes commits** - Checks for conventional commit format
@@ -140,7 +140,7 @@ Developers get updates automatically (--pull always)
 
 **Commit**:
 ```bash
-feat(mcp-server): add blueprint comparison tool
+feat(mcp): add blueprint comparison tool
 ```
 
 **Result**: Minor version bump (1.0.0 → 1.1.0), automatic release
@@ -151,7 +151,7 @@ feat(mcp-server): add blueprint comparison tool
 
 **Commit**:
 ```bash
-fix(mcp-server): correct blueprint path validation
+fix(mcp): correct blueprint path validation
 ```
 
 **Result**: Patch version bump (1.0.0 → 1.0.1), automatic release
@@ -162,7 +162,7 @@ fix(mcp-server): correct blueprint path validation
 
 **Commit**:
 ```bash
-feat(mcp-server)!: change API response format
+feat(mcp)!: change API response format
 ```
 
 **Result**: Major version bump (1.0.0 → 2.0.0), automatic release
@@ -173,7 +173,7 @@ feat(mcp-server)!: change API response format
 
 **Commit**:
 ```bash
-chore(mcp-server): update dependencies
+chore(mcp): update dependencies
 ```
 
 **Result**: No release (workflow completes without version change)
@@ -183,12 +183,12 @@ chore(mcp-server): update dependencies
 ### Release Not Triggered
 
 **Possible causes:**
-1. No `mcp-server/**` files changed
+1. No `mcp/**` files changed
 2. Commit doesn't follow conventional format
 3. Commit type is `chore:` (no release)
 4. CI workflow failed before semantic-release
 
-**Solution**: Check commit format and ensure `mcp-server/**` files were modified
+**Solution**: Check commit format and ensure `mcp/**` files were modified
 
 ### Wrong Version Bump
 
@@ -204,7 +204,7 @@ chore(mcp-server): update dependencies
 - [ ] Commit follows conventional format
 - [ ] Commit type matches desired version bump
 - [ ] Breaking changes marked with `!`
-- [ ] Changes are in `mcp-server/**` directory
+- [ ] Changes are in `mcp/**` directory
 
 ### After Pushing
 - [ ] CI tests pass
@@ -214,7 +214,7 @@ chore(mcp-server): update dependencies
 
 ## References
 
-- [mcp-server/README.md](../mcp-server/README.md) - MCP server documentation and release process
+- [mcp/README.md](../mcp/README.md) - MCP server documentation and release process
 - [semantic-release](https://github.com/semantic-release/semantic-release) - Automated release tool
 - [Conventional Commits](https://www.conventionalcommits.org/) - Commit message format
 - [CONTRIBUTING.md](../CONTRIBUTING.md) - Commit message guidelines

@@ -273,7 +273,7 @@ Quick reference:
 - **MCP Server**: Configured separately - provides blueprint discovery tools
 - **Blueprint Repository**: https://github.com/berTrindade/terraform-infrastructure-blueprints
 - **AI Guidelines**: See `docs/ai-assistant-guidelines.md` in blueprint repository
-- **Pattern Examples**: See `docs/examples/wrong-vs-right-database.md`
+- **Pattern Examples**: See `docs/blueprints/patterns.md` (includes wrong vs right examples)
 
 ## Checklist
 

@@ -43,14 +43,28 @@ cat payload.json | node scripts/generate.js
 ```
 blueprint-template-generator/
 ├── SKILL.md                    # Instructions for LLM
+├── CONTRIBUTING.md             # Contribution guidelines
 ├── package.json                # Dependencies
+├── jest.config.js              # Jest test configuration
 ├── scripts/
-│   ├── generate.js             # Main script
+│   ├── generate.js             # Main generation script
 │   ├── parse-manifest.js       # Manifest parser
-│   └── render-template.js      # Template renderer
-└── templates/
-    ├── rds-module.tf.template  # RDS module template
-    └── ephemeral-password.tf.template
+│   ├── render-template.js      # Template renderer
+│   ├── setup.js                # Setup validation script
+│   └── validate-manifest.js    # Manifest validation script
+├── templates/
+│   ├── rds-module.tf.template  # RDS PostgreSQL module
+│   ├── dynamodb-table.tf.template
+│   ├── sqs-queue.tf.template
+│   ├── lambda-function.tf.template
+│   ├── security-group.tf.template
+│   ├── cognito-user-pool.tf.template
+│   ├── ecs-service.tf.template
+│   └── ephemeral-password.tf.template
+└── __tests__/
+    ├── generate.test.js
+    ├── parse-manifest.test.js
+    └── render-template.test.js
 ```
 
 ## Manifest Format

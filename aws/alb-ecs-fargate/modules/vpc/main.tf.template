@@ -1,0 +1,177 @@
+# VPC Module - Template
+# Generated from blueprint: alb-ecs-fargate
+# This template is rendered with client-specific parameters (naming conventions, CIDR, AZs, etc.)
+
+resource "aws_vpc" "{{resource_prefix}}" {
+  cidr_block           = "{{vpc_cidr}}"
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+
+  tags = merge(
+    {{tags}},
+    {
+      Name        = "{{resource_prefix}}"
+      Environment = "{{environment}}"
+    }
+  )
+}
+
+# Internet Gateway
+resource "aws_internet_gateway" "{{resource_prefix}}" {
+  vpc_id = aws_vpc.{{resource_prefix}}.id
+
+  tags = merge(
+    {{tags}},
+    {
+      Name = "{{resource_prefix}}-igw"
+    }
+  )
+}
+
+# Public Subnets (one per AZ)
+{{#each public_subnets}}
+resource "aws_subnet" "public_{{this.az}}" {
+  vpc_id                  = aws_vpc.{{resource_prefix}}.id
+  cidr_block              = "{{this.cidr}}"
+  availability_zone       = "{{aws_region}}{{this.az}}"
+  map_public_ip_on_launch = true
+
+  tags = merge(
+    {{tags}},
+    {
+      Name = "{{resource_prefix}}-public-{{this.az}}"
+      Type = "Public"
+    }
+  )
+}
+{{/each}}
+
+# Private Subnets (one per AZ)
+{{#each private_subnets}}
+resource "aws_subnet" "private_{{this.az}}" {
+  vpc_id            = aws_vpc.{{resource_prefix}}.id
+  cidr_block        = "{{this.cidr}}"
+  availability_zone = "{{aws_region}}{{this.az}}"
+
+  tags = merge(
+    {{tags}},
+    {
+      Name = "{{resource_prefix}}-private-{{this.az}}"
+      Type = "Private"
+    }
+  )
+}
+{{/each}}
+
+# Elastic IPs for NAT
+{{#if single_nat_gateway}}
+resource "aws_eip" "nat" {
+  domain = "vpc"
+
+  tags = {
+    Name = "{{resource_prefix}}-nat-eip"
+  }
+
+  depends_on = [aws_internet_gateway.{{resource_prefix}}]
+}
+
+# Single NAT Gateway (cost-saving)
+resource "aws_nat_gateway" "nat" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = aws_subnet.public_a.id
+
+  tags = {
+    Name = "{{resource_prefix}}-nat"
+  }
+
+  depends_on = [aws_internet_gateway.{{resource_prefix}}]
+}
+{{else}}
+{{#each nat_gateways}}
+resource "aws_eip" "nat_{{this.az}}" {
+  domain = "vpc"
+
+  tags = {
+    Name = "{{resource_prefix}}-nat-eip-{{this.az}}"
+  }
+
+  depends_on = [aws_internet_gateway.{{resource_prefix}}]
+}
+
+resource "aws_nat_gateway" "nat_{{this.az}}" {
+  allocation_id = aws_eip.nat_{{this.az}}.id
+  subnet_id     = aws_subnet.public_{{this.az}}.id
+
+  tags = {
+    Name = "{{resource_prefix}}-nat-{{this.az}}"
+  }
+
+  depends_on = [aws_internet_gateway.{{resource_prefix}}]
+}
+{{/each}}
+{{/if}}
+
+# Public Route Table
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.{{resource_prefix}}.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.{{resource_prefix}}.id
+  }
+
+  tags = {
+    Name = "{{resource_prefix}}-public-rt"
+  }
+}
+
+# Associate public subnets with public route table
+{{#each public_subnets}}
+resource "aws_route_table_association" "public_{{this.az}}" {
+  subnet_id      = aws_subnet.public_{{this.az}}.id
+  route_table_id = aws_route_table.public.id
+}
+{{/each}}
+
+# Private Route Tables (one per NAT if multi-NAT, else shared)
+{{#if single_nat_gateway}}
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.{{resource_prefix}}.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat.id
+  }
+
+  tags = {
+    Name = "{{resource_prefix}}-private-rt"
+  }
+}
+
+{{#each private_subnets}}
+resource "aws_route_table_association" "private_{{this.az}}" {
+  subnet_id      = aws_subnet.private_{{this.az}}.id
+  route_table_id = aws_route_table.private.id
+}
+{{/each}}
+{{else}}
+{{#each private_subnets}}
+resource "aws_route_table" "private_{{this.az}}" {
+  vpc_id = aws_vpc.{{resource_prefix}}.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat_{{this.az}}.id
+  }
+
+  tags = {
+    Name = "{{resource_prefix}}-private-rt-{{this.az}}"
+  }
+}
+
+resource "aws_route_table_association" "private_{{this.az}}" {
+  subnet_id      = aws_subnet.private_{{this.az}}.id
+  route_table_id = aws_route_table.private_{{this.az}}.id
+}
+{{/each}}
+{{/if}}

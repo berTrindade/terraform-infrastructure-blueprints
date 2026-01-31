@@ -15,4 +15,4 @@ For detailed documentation, see:
 **For AI Assistants**:
 - [AI Assistant Guidelines](docs/ai-assistant-guidelines.md) - Comprehensive guide for referencing blueprints instead of generic code
 - [AI Quick Reference](docs/ai-quick-reference.md) - One-page lookup for MCP tools and patterns
-- [Wrong vs Right Examples](docs/examples/wrong-vs-right-database.md) - Code comparison showing blueprint patterns vs generic Terraform
+- [Patterns with Examples](docs/blueprints/patterns.md) - Key patterns including wrong vs right code comparisons

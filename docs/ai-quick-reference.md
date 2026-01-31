@@ -191,9 +191,8 @@ terraform init && terraform apply
 ## Related Documentation
 
 - [AI Assistant Guidelines](ai-assistant-guidelines.md) - Comprehensive guide
-- [Wrong vs Right Examples](examples/wrong-vs-right-database.md) - Code comparisons
 - [Blueprint Catalog](blueprints/catalog.md) - All blueprints
-- [Patterns](blueprints/patterns.md) - Key patterns
+- [Patterns](blueprints/patterns.md) - Key patterns with examples
 - [Workflows](blueprints/workflows.md) - Usage scenarios
 
 ## Golden Rule

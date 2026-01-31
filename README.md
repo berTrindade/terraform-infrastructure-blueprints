@@ -54,10 +54,7 @@ If you have the MCP server configured (see [AI Assistant Integration](#ai-assist
 
 For detailed guides, see:
 
-- [Deployment Guide](docs/guides/deployment.md) - Step-by-step deployment instructions
-- [Environment Creation](docs/guides/environments.md) - Creating staging and production environments
-- [Testing Guide](docs/guides/testing.md) - Running and writing Terraform tests
-- [CI/CD Pipeline](docs/guides/cicd.md) - Setting up CI/CD workflows
+- [Template Generator Development](skills/blueprint-template-generator/DEVELOPMENT.md) - Development guide for the template generator
 
 Each blueprint also includes a blueprint-specific README with detailed instructions, architecture diagrams, and cost estimates.
 
@@ -164,18 +161,19 @@ For more details, see [Blueprint Structure](docs/blueprints/catalog.md#blueprint
 
 We use [ADRs](docs/adr/README.md) to document significant architectural decisions:
 
-| ADR | Title                                                              | Status   |
-|-----|---------------------------------------------------------------------|----------|
+| ADR | Title | Status |
+|-----|-------|--------|
 | [0001](docs/adr/0001-standalone-blueprints.md) | Standalone Self-Contained Blueprints | Approved |
 | [0002](docs/adr/0002-expand-scope-pattern-extraction.md) | Expand Scope to Support Pattern Extraction | Approved |
-| [0003](docs/adr/0003-mcp-server-ai-discovery.md) | MCP Server for AI-Assisted Blueprint Discovery | Approved |
-| [0004](docs/adr/0004-supported-consultant-scenarios.md) | Supported Consultant Scenarios | Approved |
-| [0005](docs/adr/0005-secrets-management-pattern.md) | Secrets Management Pattern | Approved |
-| [0006](docs/adr/0006-progressive-disclosure-agents.md) | Progressive Disclosure for AGENTS.md | Approved |
+| [0003](docs/adr/0003-secrets-management-pattern.md) | Secrets Management Pattern | Approved |
+| [0004](docs/adr/0004-progressive-disclosure-agents.md) | Progressive Disclosure for AGENTS.md | Approved |
+| [0005](docs/adr/0005-skills-vs-mcp-decision.md) | Skills vs MCP: When to Use Each Approach | Approved |
+| [0006](docs/adr/0006-documentation-consolidation.md) | Documentation Consolidation and Cleanup | Approved |
+| [0007](docs/adr/0007-manifest-based-template-generation.md) | Manifest-Based Template Generation Architecture | Approved |
 
 ## Key Information
 
-- **Secrets Management**: All blueprints use a two-flow pattern for secure secret handling. See [ADR-0005](docs/adr/0005-secrets-management-pattern.md) for details.
+- **Secrets Management**: All blueprints use a two-flow pattern for secure secret handling. See [Patterns Guide](docs/blueprints/patterns.md) for details.
 - **Terraform Version**: Most blueprints require Terraform >= 1.9. Blueprints using ephemeral values (RDS, Aurora, RDS Proxy, AppSync) require Terraform >= 1.11. See individual blueprint READMEs for specific requirements.
 - **Official Modules**: Blueprints use [terraform-aws-modules](https://registry.terraform.io/namespaces/terraform-aws-modules) for battle-tested infrastructure components
 
@@ -212,11 +210,11 @@ We use two complementary approaches depending on what type of information needs 
 
 **Why both?** MCP is great for discovery ("What blueprint should I use?"), but having too many live connections can slow down your IDE. Skills provide instant access to common patterns without network calls. We use MCP to find what you need, and Skills to quickly reference how to use it.
 
-**New workflow (per ADR 0009)**: Static content (catalog, patterns) is now in Skills for instant access. MCP focuses on dynamic discovery tools. See [Developer Workflow Guide](docs/guides/developer-workflow.md) for detailed workflow examples.
+**New workflow (per ADR 0005)**: Static content (catalog, patterns) is now in Skills for instant access. MCP focuses on dynamic discovery tools. See [Workflows Guide](docs/blueprints/workflows.md) for detailed workflow examples.
 
-See [ADR 0009](docs/adr/0009-developer-workflow.md) for the full technical decision rationale.
+See [ADR 0005](docs/adr/0005-skills-vs-mcp-decision.md) for the full technical decision rationale.
 
-See [mcp-server/README.md](mcp-server/README.md) for setup instructions.
+See [mcp/README.md](mcp/README.md) for setup instructions.
 
 ## Contributing
 
@@ -237,7 +235,7 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for:
 **Automated Releases:**
 
 - MCP server releases are fully automated using `semantic-release`
-- Commits to `mcp-server/**` automatically trigger version bumps, changelog generation, npm publishing, and Docker builds
+- Commits to `mcp/**` automatically trigger version bumps, changelog generation, npm publishing, and Docker builds
 - Use conventional commits (`feat:`, `fix:`, `feat!:`) for automatic versioning
 
 ## License

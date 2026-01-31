@@ -1,0 +1,183 @@
+# RDS PostgreSQL Module Template - para use em Scenario 2
+# Este arquivo é renderizado com parâmetros específicos do cliente
+# Exemplo de uso:
+#   generate_module(blueprint: "alb-ecs-fargate", module: "rds-postgres", params: {...})
+
+resource "aws_db_subnet_group" "{{resource_prefix}}" {
+  name       = "{{resource_prefix}}-postgres"
+  subnet_ids = var.private_subnet_ids
+
+  tags = merge(
+    {{tags}},
+    {
+      Name = "{{resource_prefix}}-postgres-subnet-group"
+    }
+  )
+}
+
+resource "aws_security_group" "{{resource_prefix}}_db" {
+  name        = "{{resource_prefix}}-postgres-sg"
+  description = "Security group for {{resource_prefix}} RDS PostgreSQL"
+  vpc_id      = var.vpc_id
+
+  ingress {
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    security_groups = [var.app_security_group_id]
+    description     = "PostgreSQL from ECS tasks"
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(
+    {{tags}},
+    {
+      Name = "{{resource_prefix}}-postgres-sg"
+    }
+  )
+}
+
+resource "aws_db_instance" "{{resource_prefix}}" {
+  identifier            = "{{resource_prefix}}-postgres"
+  engine                = "postgres"
+  engine_version        = "{{postgres_version}}"
+  instance_class        = "{{instance_class}}"
+  allocated_storage     = {{allocated_storage}}
+  storage_type          = "gp3"
+  storage_encrypted     = true
+  multi_az              = {{multi_az}}
+
+  # Credentials
+  db_name  = "{{db_name}}"
+  username = "{{db_username}}"
+  password = random_password.db_password.result
+
+  # Network
+  db_subnet_group_name   = aws_db_subnet_group.{{resource_prefix}}.name
+  vpc_security_group_ids = [aws_security_group.{{resource_prefix}}_db.id]
+  publicly_accessible    = false
+
+  # Backups
+  backup_retention_period = {{backup_retention_days}}
+  backup_window           = "03:00-04:00"
+  maintenance_window      = "mon:04:00-mon:05:00"
+
+  # Monitoring
+  performance_insights_enabled    = {{enable_performance_insights}}
+  performance_insights_retention_period = 7
+  enabled_cloudwatch_logs_exports = ["postgresql"]
+  monitoring_enabled              = true
+  monitoring_interval             = 60
+  monitoring_role_arn             = aws_iam_role.rds_monitoring.arn
+
+  # Parameters
+  skip_final_snapshot       = {{skip_final_snapshot}}
+  final_snapshot_identifier = "{{resource_prefix}}-snapshot-{{timestamp}}"
+
+  tags = merge(
+    {{tags}},
+    {
+      Name = "{{resource_prefix}}-postgres"
+    }
+  )
+}
+
+# Generate random password for database
+resource "random_password" "db_password" {
+  length  = 32
+  special = true
+}
+
+# Store password in Secrets Manager
+resource "aws_secretsmanager_secret" "{{resource_prefix}}_db_password" {
+  name                    = "{{resource_prefix}}/rds/postgres/password"
+  recovery_window_in_days = 7
+
+  tags = merge(
+    {{tags}},
+    {
+      Name = "{{resource_prefix}}-postgres-password"
+    }
+  )
+}
+
+resource "aws_secretsmanager_secret_version" "{{resource_prefix}}_db_password" {
+  secret_id = aws_secretsmanager_secret.{{resource_prefix}}_db_password.id
+  secret_string = jsonencode({
+    username = aws_db_instance.{{resource_prefix}}.username
+    password = random_password.db_password.result
+    host     = aws_db_instance.{{resource_prefix}}.address
+    port     = 5432
+    database = aws_db_instance.{{resource_prefix}}.db_name
+  })
+}
+
+# CloudWatch Alarms
+resource "aws_cloudwatch_metric_alarm" "{{resource_prefix}}_cpu" {
+  alarm_name          = "{{resource_prefix}}-postgres-cpu-high"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/RDS"
+  period              = 300
+  statistic           = "Average"
+  threshold           = 80
+
+  dimensions = {
+    DBInstanceIdentifier = aws_db_instance.{{resource_prefix}}.id
+  }
+
+  alarm_actions = [var.sns_topic_arn]
+
+  tags = {{tags}}
+}
+
+resource "aws_cloudwatch_metric_alarm" "{{resource_prefix}}_connections" {
+  alarm_name          = "{{resource_prefix}}-postgres-high-connections"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "DatabaseConnections"
+  namespace           = "AWS/RDS"
+  period              = 300
+  statistic           = "Average"
+  threshold           = 100
+
+  dimensions = {
+    DBInstanceIdentifier = aws_db_instance.{{resource_prefix}}.id
+  }
+
+  alarm_actions = [var.sns_topic_arn]
+
+  tags = {{tags}}
+}
+
+# IAM Role for enhanced monitoring
+resource "aws_iam_role" "rds_monitoring" {
+  name = "{{resource_prefix}}-rds-monitoring-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "monitoring.rds.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {{tags}}
+}
+
+resource "aws_iam_role_policy_attachment" "rds_monitoring" {
+  role       = aws_iam_role.rds_monitoring.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
+}

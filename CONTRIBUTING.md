@@ -131,10 +131,10 @@ fix!: change authentication method
 feat(apigw-lambda-rds): add RDS Proxy support
 fix(alb-ecs-fargate): correct security group rules
 docs(readme): update quick start guide
-feat(mcp-server)!: change API response format
+feat(mcp)!: change API response format
 ```
 
-**Note**: For MCP server changes (`mcp-server/**`), conventional commits automatically trigger releases via `semantic-release`. Commits with `feat:` trigger minor version bumps, `fix:` triggers patch bumps, and `feat!:` triggers major version bumps.
+**Note**: For MCP server changes (`mcp/**`), conventional commits automatically trigger releases via `semantic-release`. Commits with `feat:` trigger minor version bumps, `fix:` triggers patch bumps, and `feat!:` triggers major version bumps.
 
 ### Terraform Code Style
 
@@ -191,7 +191,7 @@ feat(mcp-server)!: change API response format
 
 ### Running Tests
 
-Each blueprint includes Terraform tests (`.tftest.hcl`). See [Testing Guide](docs/guides/testing.md) for detailed instructions:
+Each blueprint includes Terraform tests (`.tftest.hcl`). Run tests with:
 
 ```bash
 cd aws/apigw-lambda-dynamodb/environments/dev
@@ -248,7 +248,7 @@ For significant architectural decisions:
 
 ### Maintaining AGENTS.md
 
-The root `AGENTS.md` file uses progressive disclosure to minimize token consumption for AI assistants. See [ADR-0006](docs/adr/0006-progressive-disclosure-agents.md) for the rationale.
+The root `AGENTS.md` file uses progressive disclosure to minimize token consumption for AI assistants. See [ADR-0004](docs/adr/0004-progressive-disclosure-agents.md) for the rationale.
 
 **Rules for root `AGENTS.md`:**
 
@@ -370,10 +370,7 @@ Address HIGH and CRITICAL findings before merging.
 
 ## Additional Guides
 
-- **[Deployment Guide](docs/guides/deployment.md)** - Detailed step-by-step deployment instructions
-- **[Environment Creation](docs/guides/environments.md)** - Creating staging and production environments
-- **[Testing Guide](docs/guides/testing.md)** - Running and writing Terraform tests
-- **[CI/CD Pipeline](docs/guides/cicd.md)** - Setting up CI/CD workflows
+- **[Template Generator Development](skills/blueprint-template-generator/DEVELOPMENT.md)** - Development guide for the template generator
 
 ## Contact
 
