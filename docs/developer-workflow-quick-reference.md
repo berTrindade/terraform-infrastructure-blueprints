@@ -4,35 +4,85 @@
 
 ## 🎯 Dois Cenários Principais (Desenvolvedores)
 
-### 1️⃣ Adicionar Capacidade (Mais Comum)
+### Scenario 1: App Exists, Needs Infrastructure
+
+**Situação**: Você tem uma aplicação (React, Node.js, Python, etc.) rodando localmente e precisa de infraestrutura Terraform completa para fazer deploy na AWS.
 
 ```
-Você: "Preciso adicionar RDS ao meu projeto"
+Você: "Preciso fazer deploy na AWS"
   ↓
-AI: Identifica blueprint → Extrai parâmetros → Gera código
-  ↓
-Você: Copia código → Aplica → Testa
-```
-
-**Tempo**: 2 minutos  
-**Ferramenta**: Template Generator  
-**Resultado**: Código Terraform gerado automaticamente
-
----
-
-### 2️⃣ Criar Novo Projeto
-
-```
-Você: "Preciso de uma API serverless com PostgreSQL"
-  ↓
-AI: Recomenda blueprint → Mostra estrutura
+AI: Analisa código da app → Recomenda blueprint → Mostra estrutura completa
   ↓
 Você: Copia blueprint completo → Adapta → Aplica
 ```
 
 **Tempo**: 5-10 minutos  
 **Ferramenta**: Blueprint Repository (MCP)  
-**Resultado**: Projeto completo copiado
+**Resultado**: Estrutura Terraform completa (environments/, modules/, etc.)  
+**Por quê**: Precisa de estrutura completa, não apenas snippets individuais
+
+**Como funciona**:
+
+- ✅ AI analisa automaticamente código da aplicação (package.json, requirements.txt, etc.)
+- ✅ AI identifica stack (React, Node.js, Python, PostgreSQL, etc.)
+- ✅ AI recomenda blueprint apropriado
+- ✅ AI mostra estrutura completa
+
+**Você pode ser mais específico se quiser**:
+
+- "Preciso fazer deploy serverless" (vs containers)
+- "Quero usar containers" (vs serverless)
+- Mas não precisa listar toda a stack - AI vê no código
+
+**Exemplos**:
+
+- "Preciso fazer deploy na AWS"
+- "Quero deployar minha API usando serverless"
+- "Preciso de infraestrutura para minha aplicação containerizada"
+
+---
+
+### Scenario 2: Existing Terraform, Add Capability
+
+**Situação**: Você já tem Terraform configurado e quer adicionar um recurso específico (RDS, SQS, Cognito, etc.).
+
+```
+Você: "Preciso adicionar RDS PostgreSQL"
+  ↓
+AI: Analisa Terraform existente → Identifica blueprint → Gera snippet
+  ↓
+Você: Copia código gerado → Integra → Aplica
+```
+
+**Tempo**: 2 minutos  
+**Ferramenta**: Template Generator  
+**Resultado**: Snippet Terraform gerado e adaptado  
+**Por quê**: Gera apenas o necessário, já adaptado às convenções do projeto
+
+**Como funciona**:
+
+- ✅ AI analisa automaticamente seu código Terraform existente
+- ✅ AI identifica recursos existentes (API Gateway, Lambda, VPC, etc.)
+- ✅ AI extrai convenções de nomenclatura do projeto
+- ✅ AI gera código já adaptado às suas convenções
+
+**Você não precisa dizer**:
+
+- ❌ "Tenho API Gateway + Lambda" (AI vê no código)
+- ❌ "Meu projeto usa padrão myapp-dev-*" (AI extrai do código)
+- ❌ "Tenho VPC vpc-123456" (AI pode ver nos arquivos)
+
+**Você só precisa dizer**:
+
+- ✅ "Preciso adicionar RDS PostgreSQL"
+- ✅ "Quero adicionar SQS"
+- ✅ "Preciso de autenticação Cognito"
+
+**Exemplos**:
+
+- "Preciso adicionar RDS PostgreSQL"
+- "Quero adicionar SQS para processamento assíncrono"
+- "Preciso adicionar autenticação Cognito"
 
 ---
 
@@ -60,24 +110,29 @@ Mantenedor: Cria manifest → Cria template → Testa → Commita
 ┌─────────────────────────────────────────────────────────┐
 │ PASSO 1: Você pede                                      │
 └─────────────────────────────────────────────────────────┘
-"Preciso adicionar RDS PostgreSQL ao meu projeto Lambda"
+"Preciso adicionar RDS PostgreSQL"
 
 ┌─────────────────────────────────────────────────────────┐
-│ PASSO 2: AI identifica                                  │
+│ PASSO 2: AI analisa código Terraform existente          │
+└─────────────────────────────────────────────────────────┘
+✅ AI lê arquivos Terraform do projeto
+✅ AI identifica recursos existentes (API Gateway, Lambda, VPC)
+✅ AI extrai convenções de nomenclatura (myapp-dev-*)
+✅ AI identifica VPC, subnet groups, security groups
+
+┌─────────────────────────────────────────────────────────┐
+│ PASSO 3: AI identifica blueprint e gera código         │
 └─────────────────────────────────────────────────────────┘
 ✅ Intent: "adicionar capacidade"
 ✅ Blueprint: apigw-lambda-rds
 ✅ Snippet: rds-module
 ✅ Skill: blueprint-template-generator
-
-┌─────────────────────────────────────────────────────────┐
-│ PASSO 3: AI extrai parâmetros do histórico              │
-└─────────────────────────────────────────────────────────┘
-- Projeto: "myapp"
-- Ambiente: "dev"
-- VPC: "vpc-123456"
-- Subnet group: "myapp-dev-db-subnets"
-- Security group: "sg-123456"
+✅ Parâmetros extraídos automaticamente:
+   - Projeto: "myapp" (do código)
+   - Ambiente: "dev" (do código)
+   - VPC: "vpc-123456" (do código)
+   - Subnet group: "myapp-dev-db-subnets" (do código)
+   - Security group: "sg-123456" (do código)
 
 ┌─────────────────────────────────────────────────────────┐
 │ PASSO 4: AI executa Template Generator                 │
@@ -173,13 +228,15 @@ resource "aws_db_instance" "this" {
 ```
 Você precisa de infraestrutura
   │
-  ├─ Adicionar ao projeto existente?
-  │   └─ SIM → AI usa Template Generator
-  │       └─ Você recebe código em 2 min
+  ├─ Você tem Terraform existente?
+  │   └─ SIM → Scenario 2: Existing Terraform, Add Capability
+  │       └─ AI usa Template Generator
+  │       └─ Você recebe snippet em 2 min
   │
-  ├─ Criar novo projeto?
-  │   └─ SIM → AI usa Blueprint Repository
-  │       └─ Você recebe código em 5-10 min
+  ├─ Você tem app mas sem Terraform?
+  │   └─ SIM → Scenario 1: App Exists, Needs Infrastructure
+  │       └─ AI usa Blueprint Repository
+  │       └─ Você recebe estrutura completa em 5-10 min
   │
   └─ Padrão não existe?
       └─ SIM → Solicita a mantenedor
@@ -191,17 +248,23 @@ Você precisa de infraestrutura
 
 ## 💡 Dicas Práticas
 
-### Para Adicionar Capacidade
+### Scenario 1: App Exists, Needs Infrastructure
 
-1. **Seja específico**: "Adicionar RDS PostgreSQL" vs "Preciso de banco"
-2. **Mencione contexto**: "Ao meu projeto Lambda existente"
-3. **Forneça parâmetros**: Nomes, VPC, security groups (se souber)
+1. **Diga o que quer fazer**: "Preciso fazer deploy na AWS"
+2. **Opcional - seja específico sobre preferência**: "Preciso de API serverless" ou "Quero usar containers"
+3. **AI analisa automaticamente**: package.json, requirements.txt, etc.
+4. **AI recomenda**: Blueprint apropriado baseado na stack detectada
 
-### Para Criar Projeto
+**Exemplo**: "Preciso fazer deploy na AWS" (AI vê que é Node.js + PostgreSQL e recomenda blueprint)
 
-1. **Descreva requisitos**: "API serverless com PostgreSQL"
-2. **Mencione padrão**: "Sync" ou "Async"
-3. **Pergunte sobre opções**: AI pode recomendar alternativas
+### Scenario 2: Existing Terraform, Add Capability
+
+1. **Diga o que quer adicionar**: "Preciso adicionar RDS PostgreSQL"
+2. **AI analisa automaticamente**: Código Terraform existente
+3. **AI extrai automaticamente**: Convenções, VPC, security groups, etc.
+4. **AI gera código**: Já adaptado às suas convenções
+
+**Exemplo**: "Preciso adicionar RDS PostgreSQL" (AI vê Terraform existente, extrai tudo automaticamente, gera código adaptado)
 
 ### Para Solicitar Novo Blueprint (Desenvolvedores)
 
@@ -265,8 +328,11 @@ A: Sim, para criar/manter blueprints. Não, para usar blueprints existentes.
 **Q: Manifest substitui código?**  
 A: Não, manifest é metadados. Código é fonte de verdade.
 
-**Q: Quando usar Template Generator vs copiar blueprint?**  
-A: Template Generator para adicionar capacidade. Copiar para novo projeto.
+**Q: Quando usar Template Generator vs Blueprint Repository?**  
+A: Template Generator para Scenario 2 (adicionar capacidade a Terraform existente). Blueprint Repository para Scenario 1 (app existe, precisa de infraestrutura completa).
+
+**Q: Por que Template Generator não é usado para criar novo projeto?**  
+A: Template Generator gera snippets individuais. Para criar projeto completo, você precisa de estrutura completa (environments/, main.tf, etc.) que Blueprint Repository fornece.
 
 **Q: Como adicionar novo blueprint?**  
 A: Desenvolvedores não adicionam. Solicite a mantenedor que cria no repositório.

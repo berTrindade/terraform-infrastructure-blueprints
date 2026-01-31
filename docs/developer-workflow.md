@@ -6,23 +6,53 @@ Guia prático de como desenvolvedores trabalham com blueprints através de AI As
 
 ## Cenários de Uso
 
-### Cenário 1: Adicionar Capacidade a Projeto Existente
+### Scenario 1: App Exists, Needs Infrastructure
 
-**Situação**: Você tem um projeto Lambda e precisa adicionar RDS PostgreSQL.
+**Situação**: Você tem uma aplicação (React, Node.js, Python, etc.) rodando localmente e precisa de infraestrutura Terraform completa para fazer deploy na AWS.
 
-#### Fluxo Completo
+**Exemplos**:
+
+- "Preciso fazer deploy na AWS" (AI vê que é React + Node.js + PostgreSQL no código)
+- "Preciso de infraestrutura para minha aplicação containerizada" (AI vê Dockerfile)
+- "Quero deployar minha API usando serverless" (AI vê código da API)
+
+**Ferramenta**: Blueprint Repository (MCP tools)  
+**Por quê**: Precisa de estrutura completa (environments/, modules/, main.tf, etc.), não apenas snippets individuais
+
+---
+
+### Scenario 2: Existing Terraform, Add Capability
+
+**Situação**: Você já tem Terraform configurado e quer adicionar um recurso específico (RDS, SQS, Cognito, etc.).
+
+**Exemplos**:
+
+- "Preciso adicionar RDS PostgreSQL" (AI vê que já tem API Gateway + Lambda no código)
+- "Quero adicionar SQS para processamento assíncrono" (AI vê infraestrutura existente)
+- "Preciso adicionar autenticação Cognito" (AI vê projeto existente)
+
+**Ferramenta**: Template Generator  
+**Por quê**: Gera apenas o snippet necessário, já adaptado às convenções do projeto
+
+---
+
+### Cenário Detalhado: Scenario 2 - Adicionar Capacidade a Terraform Existente
+
+#### Fluxo Completo: Scenario 2
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ 1. DESCOBERTA (AI Assistant)                                │
 └─────────────────────────────────────────────────────────────┘
 
-Você: "Preciso adicionar RDS PostgreSQL ao meu projeto"
+Você: "Preciso adicionar RDS PostgreSQL"
 
 AI Assistant:
+  ✅ Analisa código Terraform existente automaticamente
+  ✅ Identifica recursos existentes (API Gateway, Lambda, VPC, etc.)
+  ✅ Extrai convenções de nomenclatura do projeto
   ✅ Identifica intent: "adicionar capacidade"
   ✅ Usa skill blueprint-template-generator
-  ✅ Internamente lê manifest (você não vê isso)
   ✅ Identifica snippet: "rds-module"
 
 
@@ -30,12 +60,14 @@ AI Assistant:
 │ 2. EXTRAÇÃO DE PARÂMETROS (AI Assistant)                    │
 └─────────────────────────────────────────────────────────────┘
 
-AI Assistant analisa histórico da conversa:
-  - Projeto: "myapp"
-  - Ambiente: "dev"
-  - VPC: "vpc-123456"
-  - Subnet group: "myapp-dev-db-subnets"
-  - Security group: "sg-123456"
+AI Assistant analisa código Terraform automaticamente:
+  - Lê arquivos .tf do projeto
+  - Extrai projeto: "myapp" (de variáveis ou nomes de recursos)
+  - Extrai ambiente: "dev" (de variáveis ou nomes de recursos)
+  - Extrai VPC: "vpc-123456" (de recursos existentes)
+  - Extrai subnet group: "myapp-dev-db-subnets" (de recursos existentes)
+  - Extrai security group: "sg-123456" (de recursos existentes)
+  - Identifica padrão de nomenclatura: "{project}-{env}-{component}"
 
 
 ┌─────────────────────────────────────────────────────────────┐
@@ -82,23 +114,26 @@ Você:
 
 ---
 
-### Cenário 2: Criar Novo Projeto do Zero
+### Cenário Detalhado: Scenario 1 - App Exists, Needs Infrastructure
 
-**Situação**: Você precisa criar uma nova API serverless com PostgreSQL.
+**Situação**: Você tem uma aplicação e precisa de infraestrutura Terraform completa.
 
-#### Fluxo Completo
+#### Fluxo Completo: Scenario 1
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ 1. DESCOBERTA (AI Assistant)                                │
 └─────────────────────────────────────────────────────────────┘
 
-Você: "Preciso de uma API serverless com PostgreSQL"
+Você: "Preciso fazer deploy na AWS"
 
 AI Assistant:
+  ✅ Analisa código da aplicação automaticamente (package.json, requirements.txt, etc.)
+  ✅ Identifica stack: React, Node.js, PostgreSQL
+  ✅ Identifica: app existe, precisa de infraestrutura completa
   ✅ Usa MCP tool: recommend_blueprint()
-  ✅ Recomenda: "apigw-lambda-rds"
-  ✅ Explica por quê: "Serverless REST API with PostgreSQL"
+  ✅ Recomenda: "apigw-lambda-rds" (serverless) ou "alb-ecs-fargate-rds" (containers)
+  ✅ Explica diferenças e recomenda baseado na stack detectada
 
 
 ┌─────────────────────────────────────────────────────────────┐
@@ -106,29 +141,32 @@ AI Assistant:
 └─────────────────────────────────────────────────────────────┘
 
 AI Assistant usa MCP tools internamente:
-  - fetch_blueprint_file() busca arquivos do repo (você não acessa)
-  - Mostra estrutura e código para você
-  - Você recebe código já extraído
+  - fetch_blueprint_file() busca estrutura completa do repo
+  - Mostra: environments/dev/main.tf, modules/, README.md
+  - Você recebe código já extraído e organizado
 
 
 ┌─────────────────────────────────────────────────────────────┐
-│ 3. VOCÊ RECEBE CÓDIGO                                       │
+│ 3. VOCÊ RECEBE ESTRUTURA COMPLETA                          │
 └─────────────────────────────────────────────────────────────┘
 
 AI Assistant mostra:
-  ✅ Estrutura do blueprint
-  ✅ Código dos módulos principais
-  ✅ Instruções de como usar
+  ✅ Estrutura completa do blueprint
+  ✅ environments/dev/main.tf (composição)
+  ✅ Todos os módulos (api, data, compute, etc.)
+  ✅ Instruções de configuração e deploy
 
 Você:
-  ✅ Copia código mostrado pelo AI
-  ✅ Adapta valores (nomes, tags, etc.)
+  ✅ Copia estrutura completa mostrada pelo AI
+  ✅ Adapta valores (nomes, tags, região, etc.)
+  ✅ Configura terraform.tfvars
   ✅ Aplica com terraform apply
 
 ⚠️ Você NÃO acessa o repositório diretamente - AI faz isso por você
+⚠️ Você recebe estrutura completa, não apenas snippets
 ```
 
-**Tempo total**: ~5 minutos (vs horas criando do zero)
+**Tempo total**: 5-10 minutos (vs 2-4 horas criando do zero)
 
 ---
 
@@ -272,23 +310,31 @@ Mantenedor cria: skills/blueprint-template-generator/templates/
 
 ## Decisão: Qual Ferramenta Usar?
 
-### Use Template Generator quando
+### Scenario 1: App Exists, Needs Infrastructure
 
-- ✅ Adicionar capacidade a projeto existente
-- ✅ Gerar snippet específico
-- ✅ Precisa de código já adaptado
-- ✅ Quer economizar tokens
+**Use Blueprint Repository (MCP tools) quando**:
 
-**Exemplo**: "Adicionar RDS ao meu projeto Lambda"
+- ✅ Você tem uma aplicação (React, Node.js, Python, etc.)
+- ✅ Você não tem Terraform ainda
+- ✅ Precisa de estrutura completa (environments/, modules/, etc.)
+- ✅ Quer fazer deploy completo da aplicação
 
-### Use Blueprint Repository (MCP) quando
+**Exemplo**: "Tenho uma app React + Node.js + PostgreSQL rodando localmente. Preciso fazer deploy na AWS."
 
-- ✅ Criar novo projeto do zero
-- ✅ Estudar como blueprint funciona
-- ✅ Copiar blueprint completo
-- ✅ Entender padrões complexos
+**Por quê**: Blueprint Repository fornece estrutura completa necessária para deploy completo.
 
-**Exemplo**: "Preciso de uma API serverless com PostgreSQL"
+### Scenario 2: Existing Terraform, Add Capability
+
+**Use Template Generator quando**:
+
+- ✅ Você já tem Terraform configurado
+- ✅ Quer adicionar um recurso específico (RDS, SQS, Cognito)
+- ✅ Precisa de código já adaptado às convenções do projeto
+- ✅ Quer economizar tokens (50 linhas vs 200+ linhas)
+
+**Exemplo**: "Tenho API Gateway + Lambda. Preciso adicionar RDS PostgreSQL."
+
+**Por quê**: Template Generator gera apenas o snippet necessário, já adaptado.
 
 ### Use Código Direto quando (Apenas Mantenedores)
 
@@ -303,7 +349,7 @@ Mantenedor cria: skills/blueprint-template-generator/templates/
 
 ## Exemplo Prático Completo
 
-### Situação: Adicionar RDS a Projeto Existente
+### Exemplo 1: Scenario 2 - Adicionar RDS a Terraform Existente
 
 **1. Você inicia conversa:**
 
@@ -384,8 +430,8 @@ terraform apply
 
 | Cenário | Sem Sistema | Com Sistema | Economia |
 |---------|-------------|-------------|----------|
-| Adicionar RDS | 15-30 min | 2 min | 87-93% |
-| Criar novo projeto | 2-4 horas | 5-10 min | 90-95% |
+| **Scenario 2**: Adicionar RDS a Terraform existente | 15-30 min | 2 min | 87-93% |
+| **Scenario 1**: Deploy de app (infraestrutura completa) | 2-4 horas | 5-10 min | 90-95% |
 | Criar novo blueprint (mantenedor) | 4-8 horas | 2-4 horas | 50% |
 
 > **Nota**: Desenvolvedores não criam blueprints. Apenas mantenedores criam/manuten blueprints no repositório.
