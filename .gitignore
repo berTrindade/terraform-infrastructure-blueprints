@@ -59,7 +59,9 @@ tfplan.json
 
 # Node.js (for Lambda and scripts)
 node_modules/
-package-lock.json
+# Ignore package-lock.json in subdirectories, but commit root one for workspace monorepo
+**/package-lock.json
+!package-lock.json
 
 # Coverage and test output
 coverage/
