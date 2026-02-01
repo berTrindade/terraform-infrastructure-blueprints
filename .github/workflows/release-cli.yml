@@ -3,6 +3,7 @@ name: Automated CLI Release
 # Requires NPM_TOKEN secret in repository settings
 # Create token at https://www.npmjs.com/settings/{username}/tokens
 # Token needs "Automation" type for publishing packages
+# Note: npm ci runs from root directory to use workspace package-lock.json
 
 on:
   push:
