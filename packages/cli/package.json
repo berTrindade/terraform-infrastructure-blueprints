@@ -21,7 +21,7 @@
   "scripts": {
     "build": "node esbuild.config.js",
     "dev": "tsx src/index.ts",
-    "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
+    "test": "NODE_OPTIONS='--experimental-vm-modules' jest --passWithNoTests",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build"
   },
