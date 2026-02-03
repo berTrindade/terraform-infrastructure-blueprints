@@ -52,6 +52,9 @@ const envSchema = z.object({
     GITHUB_TIMEOUT: z.coerce.number().default(10000),
     WORKSPACE_ROOT: z.string().optional(),
     LOG_LEVEL: z.enum(["info", "error"]).default("info"),
+    // OAuth configuration (optional - if not set, OAuth is disabled)
+    AUTH_SERVER_URL: z.string().url().optional(),
+    OAUTH_CLIENT_ID: z.string().optional(),
 });
 
 // Parse and validate environment variables
@@ -75,4 +78,8 @@ export const config = {
     logging: {
         level: env.LOG_LEVEL,
     },
+    oauth: env.AUTH_SERVER_URL ? {
+        authServerUrl: env.AUTH_SERVER_URL,
+        clientId: env.OAUTH_CLIENT_ID,
+    } : undefined,
 } as const;

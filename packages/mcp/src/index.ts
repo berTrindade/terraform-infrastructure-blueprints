@@ -14,6 +14,7 @@ import { config } from "./config/config.js";
 // BLUEPRINTS constant still used by tools, but not for static resources
 import { BLUEPRINTS } from "./config/constants.js";
 import { logger } from "./utils/logger.js";
+import { getOAuthMetadata } from "./services/oauth-metadata.js";
 // Resource service deprecated - static resources moved to Skills per ADR 0007
 // import { registerImportantBlueprintResources } from "./services/resource-service.js";
 
@@ -33,10 +34,52 @@ import { getWorkflowGuidanceSchema, handleGetWorkflowGuidance } from "./tools/wo
  * @returns Configured MCP server instance
  */
 export function createServer(): McpServer {
-  const server = new McpServer({
+  const oauthMetadata = getOAuthMetadata();
+  
+  // Initialize server with OAuth metadata if configured
+  // Note: The MCP SDK may support OAuth via capabilities or well-known endpoints
+  // This structure follows the MCP OAuth 2.0 specification
+  const serverOptions: {
+    name: string;
+    version: string;
+    capabilities?: {
+      experimental?: {
+        oauth?: {
+          authorizationServerMetadata: {
+            issuer: string;
+            authorizationEndpoint: string;
+            tokenEndpoint: string;
+            scopesSupported: string[];
+            responseTypesSupported: string[];
+            codeChallengeMethodsSupported: string[];
+          };
+        };
+      };
+    };
+  } = {
     name: config.server.name,
     version: config.server.version,
-  });
+  };
+
+  // Add OAuth metadata if configured
+  if (oauthMetadata) {
+    serverOptions.capabilities = {
+      experimental: {
+        oauth: {
+          authorizationServerMetadata: {
+            issuer: oauthMetadata.issuer,
+            authorizationEndpoint: oauthMetadata.authorization_endpoint,
+            tokenEndpoint: oauthMetadata.token_endpoint,
+            scopesSupported: oauthMetadata.scopes_supported,
+            responseTypesSupported: oauthMetadata.response_types_supported,
+            codeChallengeMethodsSupported: oauthMetadata.code_challenge_methods_supported,
+          },
+        },
+      },
+    };
+  }
+
+  const server = new McpServer(serverOptions);
 
   // Static resources (catalog, list, blueprint files) removed per ADR 0007
   // Use Skills for static content (blueprint-catalog, blueprint-patterns)

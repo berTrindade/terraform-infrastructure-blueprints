@@ -38,6 +38,12 @@ Once configured, your AI assistant can recommend blueprints, extract patterns, a
 - GitHub account that's a member of the ustwo org
 - `gh` CLI installed ([install guide](https://cli.github.com/))
 
+### Authentication
+
+The MCP server supports OAuth 2.0 authentication with automatic detection by Cursor. When OAuth is configured, Cursor will automatically show a "Connect" button and handle the OAuth flow with PKCE.
+
+**OAuth is optional** - if `AUTH_SERVER_URL` is not set, the server runs without authentication.
+
 ### Step 1: Add `read:packages` scope to GitHub CLI (one-time)
 
 ```bash
@@ -70,6 +76,29 @@ Create or edit `~/.cursor/mcp.json`:
 ### Step 4: Restart Cursor
 
 Quit Cursor completely (Cmd+Q) and reopen it.
+
+### Step 5: Authenticate (if OAuth is enabled)
+
+If the MCP server is configured with OAuth (`AUTH_SERVER_URL` environment variable), Cursor will automatically:
+
+1. **Detect authentication requirement** - Shows "Needs authentication" with a "Connect" button
+2. **Handle OAuth flow** - When you click "Connect", Cursor opens your browser to the OAuth URL
+3. **Authenticate with Google** - You'll be prompted to sign in with your Google account
+4. **Verify company domain** - The auth service validates your email domain matches the required company domain
+5. **Store token automatically** - Cursor stores the token and uses it for all MCP requests
+
+**OAuth Flow:**
+```
+1. Cursor generates PKCE code_verifier and code_challenge
+2. Cursor redirects to: https://auth.yourdomain.com/oauth/authorize?...
+3. User authenticates with Google
+4. Auth service validates company domain
+5. Redirects back to cursor://anysphere.cursor-mcp/oauth/callback?code=...
+6. Cursor exchanges code for token
+7. Token stored automatically - MCP server now works
+```
+
+No manual token management needed - Cursor handles everything automatically!
 
 ## Claude Desktop Setup
 
@@ -188,6 +217,45 @@ The MCP server implements **Dynamic Context Discovery** patterns per ADR 0007:
 **Per ADR 0005**: Static resources (catalog, list, blueprint files) have been moved to Skills. MCP focuses on dynamic discovery workflows.
 
 See [ADR 0005](../../docs/adr/0005-skills-vs-mcp-decision.md) for detailed documentation.
+
+## OAuth Configuration
+
+The MCP server can be configured with OAuth 2.0 authentication. When configured, Cursor automatically detects the authentication requirement and handles the OAuth flow.
+
+### Environment Variables
+
+**MCP Server:**
+- `AUTH_SERVER_URL` - OAuth authorization server URL (e.g., `https://auth.yourdomain.com`)
+- `OAUTH_CLIENT_ID` - OAuth client ID (optional, for token validation)
+
+**Auth Service:**
+- `PORT` - Server port (default: 3000)
+- `AUTH_BASE_URL` - Base URL for the auth service
+- `GOOGLE_CLIENT_ID` - Google OAuth client ID
+- `GOOGLE_CLIENT_SECRET` - Google OAuth client secret
+- `COMPANY_DOMAIN` - Required company email domain (e.g., `ustwo.com`)
+- `JWT_SECRET` - Secret key for JWT signing (min 32 characters)
+- `DATABASE_URL` - Database URL for token storage (optional, uses in-memory by default)
+
+### OAuth Server Setup
+
+The OAuth authorization server is a separate service (`packages/auth-service/`). See [packages/auth-service/README.md](../auth-service/README.md) for setup instructions.
+
+**Key Features:**
+- OAuth 2.0 Authorization Code flow with PKCE
+- Google OAuth integration
+- Company domain verification
+- JWT token generation
+- Token validation endpoint
+
+### User Flow
+
+1. Developer adds MCP server to Cursor config
+2. Cursor detects OAuth requirement → Shows "Connect" button
+3. User clicks "Connect" → Cursor opens browser to OAuth URL
+4. User authenticates with Google → Auth service validates domain
+5. Redirects back to Cursor → Token exchange happens automatically
+6. Token stored → MCP server works seamlessly
 
 ## Security
 
