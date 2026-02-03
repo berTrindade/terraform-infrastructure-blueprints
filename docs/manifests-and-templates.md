@@ -12,7 +12,7 @@ graph TD
     
     A1[blueprints/aws/apigw-lambda-rds/modules/data/main.tf] --> A
     B1[blueprints/manifests/apigw-lambda-rds.yaml] --> B
-    C1[tools/template-generator/templates/rds-module.tf.template] --> C
+    C1[skills/blueprint-template-generator/templates/rds-module.tf.template] --> C
     D1[Generated Terraform HCL] --> D
 ```
 

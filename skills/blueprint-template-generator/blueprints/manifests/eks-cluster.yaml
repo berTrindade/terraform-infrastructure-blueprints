@@ -1,0 +1,9 @@
+# Blueprint Manifest: eks-cluster
+# Amazon EKS Kubernetes cluster with node groups and networking
+name: eks-cluster
+description: Amazon EKS Kubernetes cluster with node groups and networking
+version: 1.0.0
+
+snippets:
+  # Note: EKS-specific templates would need to be created for full support
+  # This manifest provides basic structure for future expansion

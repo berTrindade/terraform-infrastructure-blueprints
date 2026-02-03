@@ -20,8 +20,7 @@ The MCP server provides **dynamic discovery tools** for finding and accessing bl
 - Fetch specific blueprint files on-demand
 
 **Skills (Static Content)**:
-- Blueprint catalog and decision trees
-- Common patterns and best practices
+- Blueprint best practices (consolidated: catalog, patterns, workflow guidance with priority levels)
 
 Once configured, your AI assistant can recommend blueprints, extract patterns, and compare architectural options. Ask things like:
 
@@ -100,6 +99,116 @@ If the MCP server is configured with OAuth (`AUTH_SERVER_URL` environment variab
 
 No manual token management needed - Cursor handles everything automatically!
 
+## HTTP Mode (Like Jam)
+
+The MCP server supports HTTP-based access similar to Jam's implementation. This allows clients to connect via a simple URL without requiring Docker or local setup.
+
+### Benefits
+
+- **Simple Configuration**: Just a URL, like Jam
+- **No Local Docker**: Works from any client without Docker
+- **Automatic OAuth**: Integrated authentication flow
+- **Scalable**: HTTP server can handle multiple clients
+
+### Deployment
+
+Deploy using Docker Compose:
+
+```bash
+cd packages/mcp
+docker-compose up -d
+```
+
+This starts:
+- **MCP HTTP Server** on port 3000
+- **Caddy** reverse proxy with HTTPS on ports 80/443
+
+### Configuration
+
+#### Cursor Configuration
+
+```json
+{
+  "mcpServers": {
+    "ustwo-infra": {
+      "url": "https://mcp.ustwo.com/mcp"
+    }
+  }
+}
+```
+
+#### VS Code Configuration
+
+```json
+{
+  "servers": {
+    "ustwo-infra": {
+      "url": "https://mcp.ustwo.com/mcp",
+      "type": "http"
+    }
+  }
+}
+```
+
+#### Claude Desktop Configuration
+
+Add via UI or config:
+
+```json
+{
+  "mcpServers": {
+    "ustwo-infra": {
+      "url": "https://mcp.ustwo.com/mcp"
+    }
+  }
+}
+```
+
+OAuth authentication happens automatically when you connect. The server exposes OAuth metadata at `/.well-known/mcp-oauth-authorization-server`, which clients use to initiate the OAuth flow.
+
+### Environment Variables
+
+For HTTP mode deployment:
+
+```bash
+PORT=3000
+AUTH_BASE_URL=https://mcp.ustwo.com
+MCP_BASE_URL=https://mcp.ustwo.com
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+COMPANY_DOMAIN=ustwo.com
+JWT_SECRET=your-secret-key-min-32-chars
+LOG_LEVEL=info
+```
+
+### Architecture
+
+```
+┌─────────────┐
+│   Cursor   │
+│  Claude    │  HTTPS
+│  VS Code   │──────┐
+└─────────────┘      │
+                    ▼
+            ┌───────────────┐
+            │     Caddy     │
+            │ HTTPS Proxy   │
+            └───────┬───────┘
+                    │
+                    ▼
+            ┌───────────────┐
+            │  HTTP MCP     │
+            │  Server       │
+            │  (Express)    │
+            └───────────────┘
+```
+
+The HTTP server:
+- Handles MCP protocol over HTTP/SSE
+- Integrates OAuth 2.0 endpoints
+- Validates tokens on each request
+- Supports multiple concurrent connections
+
 ## Claude Desktop Setup
 
 Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
@@ -130,28 +239,24 @@ The MCP server provides **dynamic discovery tools only**. Static content (catalo
 | `fetch_blueprint_file` | Get specific blueprint files on-demand | "Show me the RDS module from apigw-lambda-rds" |
 | `get_workflow_guidance` | Get step-by-step workflow guidance | "How do I start a new project?" |
 
-**Note**: Static content (blueprint catalog, decision trees, common patterns) is provided via Skills (`blueprint-catalog`, `blueprint-patterns`) for instant access without network calls.
+**Note**: Static content (blueprint catalog, decision trees, common patterns) is provided via Skills (`blueprint-best-practices`) for instant access without network calls. The new consolidated skill includes priority levels to help AI assistants prioritize recommendations.
 
 ## Using in Client Projects
 
-For consultants working on client projects, install blueprint skills using the `@bertrindade/agent-skills` CLI:
+For consultants working on client projects, install blueprint skills using the standard `npx skills` tool:
 
 ```bash
-# Option 1: Use npx (recommended)
-npx @bertrindade/agent-skills install --skill blueprint-guidance --skill blueprint-catalog --skill blueprint-patterns
-
-# Option 2: Install globally
-npm install -g @bertrindade/agent-skills
-ustwo-skills install
+npx skills add bertrindade/terraform-infrastructure-blueprints
 ```
 
-This CLI:
-- Installs blueprint skills to all detected AI assistants (Cursor, Claude Desktop, GitHub Copilot, etc.)
-- Provides interactive installation with skill selection
-- Supports both local and global installation
+**Note**: The `blueprint-best-practices` skill consolidates the previous three skills (`blueprint-catalog`, `blueprint-guidance`, `blueprint-patterns`) and adds priority levels.
+
+This installs the blueprint skills to your AI assistant, providing:
+- Instant access to blueprint patterns and best practices
+- No network calls needed for common questions
 - Works alongside this MCP server for complete blueprint awareness
 
-See [packages/cli/README.md](../packages/cli/README.md) for full installation and usage instructions.
+Skills are distributed via [skills.sh](https://skills.sh/) and work with all agents that support the skills.sh standard.
 
 ## Troubleshooting
 
@@ -214,7 +319,7 @@ The MCP server implements **Dynamic Context Discovery** patterns per ADR 0007:
 - **Progressive Disclosure**: Optional parameters for requesting full content
 - **Sequential Workflow Guidance**: Step-by-step guidance for common tasks
 
-**Per ADR 0005**: Static resources (catalog, list, blueprint files) have been moved to Skills. MCP focuses on dynamic discovery workflows.
+**Per ADR 0005**: Static resources (catalog, list, blueprint files) have been moved to Skills. MCP focuses on dynamic discovery workflows. The `blueprint-best-practices` skill consolidates catalog, patterns, and workflow guidance with priority levels to help AI assistants prioritize recommendations.
 
 See [ADR 0005](../../docs/adr/0005-skills-vs-mcp-decision.md) for detailed documentation.
 

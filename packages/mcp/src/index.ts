@@ -82,7 +82,7 @@ export function createServer(): McpServer {
   const server = new McpServer(serverOptions);
 
   // Static resources (catalog, list, blueprint files) removed per ADR 0007
-  // Use Skills for static content (blueprint-catalog, blueprint-patterns)
+  // Use Skills for static content (blueprint-best-practices)
   // Use MCP tools for dynamic discovery (search_blueprints, recommend_blueprint, fetch_blueprint_file)
 
   // Register tools

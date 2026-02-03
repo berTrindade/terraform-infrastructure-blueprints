@@ -67,12 +67,12 @@ Our current architecture already follows this pattern:
 
 ### Client Projects
 
-1. **Agent Skills CLI** (`packages/cli/`): Distributes Skills to client projects
-   - Published as `@bertrindade/agent-skills` on npm
-   - Installs `blueprint-guidance`, `blueprint-catalog`, and `blueprint-patterns` skills
-   - Provides interactive installation with support for multiple AI assistants
+1. **Skills Distribution**: Skills are distributed via [skills.sh](https://skills.sh/) using the standard `npx skills` tool
+   - Install with: `npx skills add bertrindade/terraform-infrastructure-blueprints`
+   - Installs `blueprint-best-practices` skill (consolidated skill with priority levels)
+   - Works with all agents that support the skills.sh standard (Cursor, Claude Desktop, GitHub Copilot, etc.)
    - Works alongside MCP server for complete blueprint awareness
-   - **Note**: Previously implemented as `@bertrindade/blueprint-skill` npm package, now replaced by CLI tool for better UX and flexibility
+   - **Note**: Previously implemented as `@bertrindade/blueprint-skill` npm package and `@bertrindade/agent-skills` CLI, now migrated to standard skills.sh distribution
 
 2. **Blueprint Content**: Static Terraform code that changes infrequently
    - Blueprints are updated via Git commits and releases
@@ -114,7 +114,7 @@ Our current architecture already follows this pattern:
 
 - **MCP Server**: Continue using for discovery, recommendation, and interactive workflows
 - **Internal Skills**: Already implemented for development workflows (create, validate, release, docs)
-- **Client Skills**: Implemented via `@bertrindade/agent-skills` CLI (replaces previous `@bertrindade/blueprint-skill` package)
+- **Client Skills**: Distributed via `npx skills add bertrindade/terraform-infrastructure-blueprints` (standard skills.sh distribution)
 - **Documentation**: Updated to clarify when to use each approach
 
 ## Notes
@@ -151,9 +151,10 @@ This aligns with our blueprint distribution model where blueprints are:
 
 **Client Projects:**
 
-- ✅ `@bertrindade/agent-skills` CLI installs Skills for blueprint guidance
+- ✅ Skills installed via `npx skills add bertrindade/terraform-infrastructure-blueprints` (standard skills.sh distribution)
+- ✅ `blueprint-best-practices` skill (consolidated with priority levels)
 - ✅ MCP Server (optional) for interactive discovery
-- ✅ Hybrid approach: Skills provide static patterns, MCP provides interactive discovery
+- ✅ Hybrid approach: Skills provide static patterns with priority levels, MCP provides interactive discovery
 
 ### Future Considerations
 

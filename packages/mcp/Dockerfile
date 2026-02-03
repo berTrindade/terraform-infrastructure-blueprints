@@ -45,5 +45,7 @@ RUN chown -R mcpuser:mcpuser /app
 # Switch to non-root user
 USER mcpuser
 
-# MCP servers communicate via stdio
-ENTRYPOINT ["node", "dist/index.js"]
+# Support both stdio and HTTP modes
+# Default: stdio mode (for Docker/local MCP clients)
+# HTTP mode: set MCP_TRANSPORT=http environment variable
+ENTRYPOINT ["sh", "-c", "if [ \"$MCP_TRANSPORT\" = \"http\" ]; then node dist/http-server.js; else node dist/index.js; fi"]

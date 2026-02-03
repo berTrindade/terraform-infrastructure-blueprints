@@ -1,0 +1,73 @@
+{
+    admin off
+}
+
+mcp.ustwo.com {
+    # MCP HTTP endpoint
+    handle /mcp {
+        reverse_proxy mcp-server:3000 {
+            timeout 60s
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+    
+    # OAuth endpoints
+    handle /oauth/* {
+        reverse_proxy mcp-server:3000 {
+            timeout 30s
+        }
+    }
+    
+    # OAuth metadata
+    handle /.well-known/* {
+        reverse_proxy mcp-server:3000 {
+            timeout 10s
+        }
+    }
+    
+    # Health check
+    handle /health {
+        reverse_proxy mcp-server:3000 {
+            timeout 10s
+        }
+    }
+    
+    # Default: proxy to MCP server
+    handle {
+        reverse_proxy mcp-server:3000 {
+            timeout 30s
+        }
+    }
+    
+    request_body {
+        max_size 10MB
+    }
+    
+    encode gzip {
+        match {
+            header Content-Type application/json*
+            header Content-Type text/event-stream
+        }
+    }
+    
+    header {
+        Strict-Transport-Security "max-age=63072000"
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Access-Control-Allow-Origin "*"
+        Access-Control-Allow-Methods "GET, POST, OPTIONS"
+        Access-Control-Allow-Headers "Authorization, Content-Type, X-Connection-ID"
+    }
+    
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 100mb
+            roll_keep 5
+            roll_keep_for 720h
+        }
+        format json
+    }
+}

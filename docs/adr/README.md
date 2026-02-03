@@ -92,3 +92,5 @@ In most cases storing in the same repository as the code allows for easy access 
 | [0005](0005-skills-vs-mcp-decision.md) | Skills vs MCP: When to Use Each Approach | Approved | 2026-01-30 |
 | [0006](0006-documentation-consolidation.md) | Documentation Consolidation and Cleanup | Approved | 2026-01-30 |
 | [0007](0007-manifest-based-template-generation.md) | Manifest-Based Template Generation Architecture | Approved | 2026-01-30 |
+| [0008](0008-backstage-inspired-manifest-evolution.md) | Backstage-Inspired Manifest Evolution | Proposed | 2026-01-31 |
+| [0009](0009-migrate-to-skills-sh-distribution.md) | Migrate from Custom CLI to Standard skills.sh Distribution | Approved | 2026-01-31 |

@@ -56,7 +56,7 @@ For detailed guides, see:
 
 - [Developer Workflow](docs/developer-workflow.md) - How developers work with blueprints
 - [AI Assistant Guidelines](docs/ai-assistant-guidelines.md) - Guidelines for AI assistants
-- [Template Generator Development](tools/template-generator/DEVELOPMENT.md) - Development guide for the template generator
+- [Template Generator Development](skills/blueprint-template-generator/DEVELOPMENT.md) - Development guide for the template generator
 
 Each blueprint also includes a blueprint-specific README with detailed instructions, architecture diagrams, and cost estimates.
 
@@ -229,6 +229,16 @@ We use two complementary approaches depending on what type of information needs 
 
 **New workflow (per ADR 0005)**: Static content (catalog, patterns) is now in Skills for instant access. MCP focuses on dynamic discovery tools. See [Workflows Guide](docs/blueprints/workflows.md) for detailed workflow examples.
 
+**Installing Skills:**
+
+For client projects, install blueprint skills using the standard `npx skills` tool:
+
+```bash
+npx skills add bertrindade/terraform-infrastructure-blueprints
+```
+
+This installs the `blueprint-best-practices` skill which provides instant access to blueprint patterns, best practices, and documentation without network calls.
+
 See [ADR 0005](docs/adr/0005-skills-vs-mcp-decision.md) for the full technical decision rationale.
 
 See [packages/mcp/README.md](packages/mcp/README.md) for setup instructions.
@@ -253,8 +263,6 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for:
 
 - **MCP server** (`packages/mcp/`): Fully automated using `semantic-release`
   - Commits to `packages/mcp/**` automatically trigger version bumps, changelog generation, npm publishing (GitHub Packages), and Docker builds (GHCR)
-- **CLI tool** (`packages/cli/`): Fully automated using `semantic-release`
-  - Commits to `packages/cli/**` automatically trigger version bumps, changelog generation, and npm publishing (public registry)
 - Use conventional commits (`feat:`, `fix:`, `feat!:`) for automatic versioning
 
 ## License

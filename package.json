@@ -17,13 +17,10 @@
   },
   "homepage": "https://github.com/berTrindade/terraform-infrastructure-blueprints#readme",
   "scripts": {
-    "build": "npm run build --workspace=@bertrindade/agent-skills",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "test": "NODE_OPTIONS='--experimental-vm-modules' npm run test --workspace=@bertrindade/agent-skills",
-    "start:dev": "npm run dev --workspace=@bertrindade/agent-skills"
+    "lint:fix": "eslint . --fix"
   },
   "repository": {
     "type": "git",
