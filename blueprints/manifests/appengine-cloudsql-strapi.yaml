@@ -4,6 +4,6 @@ name: appengine-cloudsql-strapi
 description: Google Cloud App Engine with Cloud SQL PostgreSQL and Strapi CMS
 version: 1.0.0
 
-snippets:
+snippets: []
   # Note: GCP-specific templates would need to be created for full support
   # This manifest provides basic structure for future expansion

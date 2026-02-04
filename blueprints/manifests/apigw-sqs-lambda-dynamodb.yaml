@@ -8,7 +8,7 @@ snippets:
   - id: sqs-queue
     name: SQS Queue with DLQ
     description: SQS queue with dead letter queue for reliable async processing
-    template: sqs-queue.tf.template
+    template: sqs-queue.tftpl
     output_file: modules/queue/main.tf
     variables:
       - name: queue_name
@@ -27,7 +27,7 @@ snippets:
         type: number
         required: false
         default: 345600
-        description: Message retention period in seconds (default: 4 days)
+        description: "Message retention period in seconds (default: 4 days)"
       
       - name: visibility_timeout_seconds
         type: number
@@ -44,7 +44,7 @@ snippets:
   - id: dynamodb-table
     name: DynamoDB Table
     description: DynamoDB table for processed data storage
-    template: dynamodb-table.tf.template
+    template: dynamodb-table.tftpl
     output_file: modules/data/main.tf
     variables:
       - name: table_name

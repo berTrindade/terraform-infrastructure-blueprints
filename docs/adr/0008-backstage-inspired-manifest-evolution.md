@@ -55,7 +55,7 @@ spec:
     - id: rds-module
       name: RDS PostgreSQL Module
       description: Complete RDS module with ephemeral passwords (Flow A)
-      template: rds-module.tf.template
+      template: rds-module.tftpl
       output_file: modules/data/main.tf
       variables:
         # ... existing variable definitions
@@ -157,7 +157,7 @@ async function discoverBlueprints(): Promise<Blueprint[]> {
 
 - [ ] Update `blueprint-catalog` to read from manifests
 - [ ] Update `blueprint-guidance` to reference manifest structure
-- [ ] Keep `blueprint-template-generator` as-is (already manifest-based)
+- [ ] Keep `infrastructure-code-generation` as-is (already manifest-based)
 
 ## Benefits
 

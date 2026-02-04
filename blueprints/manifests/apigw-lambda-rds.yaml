@@ -8,7 +8,7 @@ snippets:
   - id: rds-module
     name: RDS PostgreSQL Module
     description: Complete RDS module with ephemeral passwords (Flow A)
-    template: rds-module.tf.template
+    template: rds-module.tftpl
     output_file: modules/data/main.tf
     variables:
       - name: db_identifier
@@ -101,7 +101,7 @@ snippets:
   - id: ephemeral-password
     name: Ephemeral Password Pattern
     description: Flow A ephemeral password generation pattern
-    template: ephemeral-password.tf.template
+    template: ephemeral-password.tftpl
     output_file: environments/dev/ephemeral-password.tf
     variables:
       - name: password_name

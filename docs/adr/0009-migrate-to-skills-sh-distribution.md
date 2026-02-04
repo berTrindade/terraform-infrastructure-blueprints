@@ -87,7 +87,7 @@ The migration involved:
 3. **Skills.sh Integration:** Skills are now distributed via skills.sh standard repository structure
 4. **User Communication:** Updated installation instructions across all documentation
 
-The skill content itself (`skills/blueprint-best-practices/`) remained unchanged - only the distribution mechanism was updated.
+The skill content itself (`skills/infrastructure-style-guide/`) remained unchanged - only the distribution mechanism was updated.
 
 ## Relationship to Other ADRs
 

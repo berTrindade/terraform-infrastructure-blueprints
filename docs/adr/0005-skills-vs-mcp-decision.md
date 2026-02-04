@@ -69,7 +69,7 @@ Our current architecture already follows this pattern:
 
 1. **Skills Distribution**: Skills are distributed via [skills.sh](https://skills.sh/) using the standard `npx skills` tool
    - Install with: `npx skills add bertrindade/terraform-infrastructure-blueprints`
-   - Installs `blueprint-best-practices` skill (consolidated skill with priority levels)
+   - Installs `infrastructure-style-guide` skill (consolidated skill with priority levels)
    - Works with all agents that support the skills.sh standard (Cursor, Claude Desktop, GitHub Copilot, etc.)
    - Works alongside MCP server for complete blueprint awareness
    - **Note**: Previously implemented as `@bertrindade/blueprint-skill` npm package and `@bertrindade/agent-skills` CLI, now migrated to standard skills.sh distribution
@@ -152,7 +152,7 @@ This aligns with our blueprint distribution model where blueprints are:
 **Client Projects:**
 
 - ✅ Skills installed via `npx skills add bertrindade/terraform-infrastructure-blueprints` (standard skills.sh distribution)
-- ✅ `blueprint-best-practices` skill (consolidated with priority levels)
+- ✅ `infrastructure-style-guide` skill (consolidated with priority levels)
 - ✅ MCP Server (optional) for interactive discovery
 - ✅ Hybrid approach: Skills provide static patterns with priority levels, MCP provides interactive discovery
 

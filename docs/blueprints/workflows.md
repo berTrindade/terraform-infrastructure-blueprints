@@ -65,7 +65,7 @@ This repository supports two core consultant scenarios. Understanding which scen
 2. **Use Template Generator** (preferred) or extract from blueprint:
    - **Template Generator**:
      - Extract parameters from conversation history
-     - Generate code using `blueprint-template-generator` skill
+     - Generate code using `infrastructure-code-generation` skill
      - Code already adapted to project conventions
      - Saves tokens (50 lines vs 200+ lines)
    - **Blueprint Repository** (fallback):

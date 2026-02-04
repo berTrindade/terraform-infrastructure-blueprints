@@ -48,7 +48,7 @@ If you have the MCP server configured (see [AI Assistant Integration](#ai-assist
 
 **Prerequisites:**
 
-- Terraform >= 1.9 (some blueprints require >= 1.11 - see individual READMEs)
+- Terraform >= 1.11 recommended; blueprints using RDS/Aurora/ephemeral (write-only) require 1.11+. The infrastructure-code-generation skill produces code compatible with Terraform 1.11+.
 - AWS CLI configured with appropriate credentials
 - AWS account with necessary permissions
 
@@ -56,7 +56,7 @@ For detailed guides, see:
 
 - [Developer Workflow](docs/developer-workflow.md) - How developers work with blueprints
 - [AI Assistant Guidelines](docs/ai-assistant-guidelines.md) - Guidelines for AI assistants
-- [Template Generator Development](skills/blueprint-template-generator/DEVELOPMENT.md) - Development guide for the template generator
+- [Template Generator Development](skills/infrastructure-code-generation/DEVELOPMENT.md) - Development guide for the template generator
 
 Each blueprint also includes a blueprint-specific README with detailed instructions, architecture diagrams, and cost estimates.
 
@@ -185,7 +185,7 @@ We use [ADRs](docs/adr/README.md) to document significant architectural decision
 ## Key Information
 
 - **Secrets Management**: All blueprints use a two-flow pattern for secure secret handling. See [Patterns Guide](docs/blueprints/patterns.md) for details.
-- **Terraform Version**: Most blueprints require Terraform >= 1.9. Blueprints using ephemeral values (RDS, Aurora, RDS Proxy, AppSync) require Terraform >= 1.11. See individual blueprint READMEs for specific requirements.
+- **Terraform Version**: Terraform >= 1.11 is recommended. Blueprints using ephemeral values (RDS, Aurora, RDS Proxy, AppSync) require Terraform 1.11+. All blueprints in this repo use `required_version = ">= 1.11"`.
 - **Official Modules**: Blueprints use [terraform-aws-modules](https://registry.terraform.io/namespaces/terraform-aws-modules) for battle-tested infrastructure components
 
 ## AI Assistant Integration
@@ -237,7 +237,7 @@ For client projects, install blueprint skills using the standard `npx skills` to
 npx skills add bertrindade/terraform-infrastructure-blueprints
 ```
 
-This installs the `blueprint-best-practices` skill which provides instant access to blueprint patterns, best practices, and documentation without network calls.
+This installs the `infrastructure-style-guide` skill which provides instant access to blueprint patterns, best practices, and documentation without network calls.
 
 See [ADR 0005](docs/adr/0005-skills-vs-mcp-decision.md) for the full technical decision rationale.
 

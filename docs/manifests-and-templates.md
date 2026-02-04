@@ -12,7 +12,7 @@ graph TD
     
     A1[blueprints/aws/apigw-lambda-rds/modules/data/main.tf] --> A
     B1[blueprints/manifests/apigw-lambda-rds.yaml] --> B
-    C1[skills/blueprint-template-generator/templates/rds-module.tf.template] --> C
+    C1[skills/infrastructure-code-generation/templates/rds-module.tftpl] --> C
     D1[Generated Terraform HCL] --> D
 ```
 
@@ -29,8 +29,10 @@ flowchart LR
 
 **Phase 1**: Write Terraform code in `blueprints/aws/{blueprint-name}/`  
 **Phase 2**: Create manifest describing blueprint in YAML  
-**Phase 3**: Create parameterized template with `{{placeholders}}`  
+**Phase 3**: Create parameterized template with `${placeholders}` (`.tftpl` files; Terraform-style placeholders)  
 **Phase 4**: Use Template Generator or copy blueprint directly
+
+Design-time code generation uses Node.js and `${var}` substitution. For **runtime** file templating inside Terraform (e.g. `user_data`, IAM policies), HashiCorp recommends `templatefile()` and `.tftpl` files.
 
 ## Template Generator Workflow
 
@@ -69,7 +71,7 @@ sequenceDiagram
 
 3. **Creating templates for snippets**
    - Based on real blueprint code
-   - Add placeholders `{{variable}}`
+   - Use `.tftpl` extension and Terraform-style placeholders `${variable}` (simple identifiers only; Terraform literals like `"${var.x}"` stay intact)
    - Keep templates synchronized with real code
 
 ### ❌ You DON'T write code when
@@ -82,6 +84,10 @@ sequenceDiagram
 2. **Using existing blueprints**
    - Copy the complete blueprint
    - Don't need to rewrite, just adapt
+
+## Manifest location
+
+The **canonical manifest location** is **`blueprints/manifests/`** at the repository root. The infrastructure-code-generation skill reads manifests from there when run from the repo (single source of truth).
 
 ## Fundamental Principle
 

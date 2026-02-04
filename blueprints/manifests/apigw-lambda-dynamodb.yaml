@@ -8,7 +8,7 @@ snippets:
   - id: dynamodb-table
     name: DynamoDB Table
     description: DynamoDB table for items storage
-    template: dynamodb-table.tf.template
+    template: dynamodb-table.tftpl
     output_file: modules/data/main.tf
     variables:
       - name: table_name
@@ -45,7 +45,7 @@ snippets:
   - id: lambda-function
     name: Lambda Function
     description: Lambda function for API handler
-    template: lambda-function.tf.template
+    template: lambda-function.tftpl
     output_file: modules/api/lambda.tf
     variables:
       - name: function_name

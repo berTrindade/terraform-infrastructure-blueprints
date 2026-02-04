@@ -8,7 +8,7 @@ snippets:
   - id: ecs-service
     name: ECS Service
     description: ECS Fargate service with task definition
-    template: ecs-service.tf.template
+    template: ecs-service.tftpl
     output_file: modules/service/main.tf
     variables:
       - name: service_name

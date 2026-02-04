@@ -35,14 +35,14 @@ Implement a manifest-based template generation system:
    - Reference template files
    - Machine-readable specification
 
-2. **Template Generator Skill** (`skills/blueprint-template-generator`):
+2. **Template Generator Skill** (`skills/infrastructure-code-generation`):
    - Agnostic skill that works with any manifest
    - Validates parameters against manifest definitions
    - Renders templates with parameter substitution
    - Returns generated Terraform code
    - Executes locally (Node.js), sub-second response
 
-3. **Reusable Templates** (`skills/blueprint-template-generator/templates/*.tf.template`):
+3. **Reusable Templates** (`skills/infrastructure-code-generation/templates/*.tf.template`):
    - Parameterized Terraform templates
    - Use `{{variable_name}}` placeholders
    - Follow blueprint patterns (ephemeral passwords, naming, etc.)

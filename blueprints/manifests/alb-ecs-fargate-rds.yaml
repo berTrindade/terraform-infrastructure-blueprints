@@ -8,7 +8,7 @@ snippets:
   - id: ecs-service
     name: ECS Service
     description: ECS Fargate service with task definition
-    template: ecs-service.tf.template
+    template: ecs-service.tftpl
     output_file: modules/service/main.tf
     variables:
       - name: service_name
@@ -57,7 +57,7 @@ snippets:
   - id: rds-module
     name: RDS PostgreSQL Module
     description: Complete RDS module with ephemeral passwords (Flow A)
-    template: rds-module.tf.template
+    template: rds-module.tftpl
     output_file: modules/data/main.tf
     variables:
       - name: db_identifier
@@ -150,7 +150,7 @@ snippets:
   - id: ephemeral-password
     name: Ephemeral Password Pattern
     description: Flow A ephemeral password generation pattern
-    template: ephemeral-password.tf.template
+    template: ephemeral-password.tftpl
     output_file: environments/dev/ephemeral-password.tf
     variables:
       - name: password_name

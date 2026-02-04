@@ -4,6 +4,6 @@ name: functions-postgresql
 description: Azure Functions serverless compute with Azure Database for PostgreSQL
 version: 1.0.0
 
-snippets:
+snippets: []
   # Note: Azure-specific templates would need to be created for full support
   # This manifest provides basic structure for future expansion

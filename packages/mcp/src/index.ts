@@ -25,7 +25,7 @@ import { recommendBlueprintSchema, handleRecommendBlueprint } from "./tools/reco
 import { extractPatternSchema, handleExtractPattern } from "./tools/extract-tool.js";
 import { findByProjectSchema, handleFindByProject } from "./tools/project-tool.js";
 import { getWorkflowGuidanceSchema, handleGetWorkflowGuidance } from "./tools/workflow-tool.js";
-// generate_module tool removed - use blueprint-template-generator skill instead
+// generate_module tool removed - use infrastructure-code-generation skill instead
 // import { generateModuleSchema, handleGenerateModule } from "./tools/generate-tool.js";
 
 /**
@@ -82,7 +82,7 @@ export function createServer(): McpServer {
   const server = new McpServer(serverOptions);
 
   // Static resources (catalog, list, blueprint files) removed per ADR 0007
-  // Use Skills for static content (blueprint-best-practices)
+  // Use Skills for static content (infrastructure-style-guide)
   // Use MCP tools for dynamic discovery (search_blueprints, recommend_blueprint, fetch_blueprint_file)
 
   // Register tools
@@ -92,7 +92,7 @@ export function createServer(): McpServer {
   server.registerTool("extract_pattern", extractPatternSchema, handleExtractPattern);
   server.registerTool("find_by_project", findByProjectSchema, handleFindByProject);
   server.registerTool("get_workflow_guidance", getWorkflowGuidanceSchema, handleGetWorkflowGuidance);
-  // generate_module tool removed - use blueprint-template-generator skill instead
+  // generate_module tool removed - use infrastructure-code-generation skill instead
   // server.registerTool("generate_module", generateModuleSchema, handleGenerateModule);
 
   return server;

@@ -20,3 +20,15 @@ For detailed documentation, see:
 - [MCP Tools Reference](docs/mcp-tools-reference.md) - Technical reference for MCP tools
 - [Manifests and Templates](docs/manifests-and-templates.md) - How the system works
 - [Patterns with Examples](docs/blueprints/patterns.md) - Key patterns including wrong vs right code comparisons
+
+**Skills** (when to use which):
+
+| Skill | Use when |
+|-------|----------|
+| `infrastructure-style-guide` | Selecting blueprints, writing/reviewing Terraform, architectural decisions; full catalog and priority rules (CRITICAL/HIGH/MEDIUM/LOW). |
+| `infrastructure-code-generation` | Adding a capability to an existing project; generate Terraform from parameterized templates. |
+| `infrastructure-selection` | Choosing the right blueprint; decision tree, sync vs async, database type, cross-cloud. |
+| `mcp-discovery` | Finding blueprints, fetching files, workflow guidance; when to use each MCP tool. |
+| `secrets-and-ephemeral-passwords` | RDS/Aurora passwords, Secrets Manager, IAM DB auth; never store secrets in state. |
+| `security-groups-least-privilege` | Security group rules for Lambda, RDS, API Gateway, ECS; least-privilege, no 0.0.0.0/0. |
+| `infrastructure-naming-conventions` | Naming resources, tagging; project-environment-component pattern. |

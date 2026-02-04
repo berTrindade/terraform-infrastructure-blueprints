@@ -59,7 +59,7 @@ Feature suggestions are welcome! Please include:
 
 ### Prerequisites
 
-- Terraform >= 1.9.0
+- Terraform >= 1.11 (blueprints with ephemeral/write-only require 1.11+)
 - AWS CLI configured (for testing)
 - Git
 - Pre-commit hooks (recommended)
@@ -370,7 +370,7 @@ Address HIGH and CRITICAL findings before merging.
 
 ## Additional Guides
 
-- **[Template Generator Development](skills/blueprint-template-generator/DEVELOPMENT.md)** - Development guide for the template generator
+- **[Template Generator Development](skills/infrastructure-code-generation/DEVELOPMENT.md)** - Development guide for the template generator
 
 ## Contact
 

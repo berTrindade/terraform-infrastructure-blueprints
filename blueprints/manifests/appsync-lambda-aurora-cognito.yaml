@@ -8,7 +8,7 @@ snippets:
   - id: cognito-user-pool
     name: Cognito User Pool
     description: Cognito user pool for authentication
-    template: cognito-user-pool.tf.template
+    template: cognito-user-pool.tftpl
     output_file: modules/auth/main.tf
     variables:
       - name: user_pool_name
@@ -81,7 +81,7 @@ snippets:
   - id: lambda-function
     name: Lambda Resolver
     description: Lambda function as AppSync resolver
-    template: lambda-function.tf.template
+    template: lambda-function.tftpl
     output_file: modules/compute/main.tf
     variables:
       - name: function_name

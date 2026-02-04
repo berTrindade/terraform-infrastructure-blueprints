@@ -141,7 +141,7 @@ version: 1.0.0
 snippets:
   - id: stepfunctions-state-machine
     name: Step Functions State Machine
-    template: stepfunctions-state-machine.tf.template
+    template: stepfunctions-state-machine.tftpl
     variables:
       - name: state_machine_name
         type: string
