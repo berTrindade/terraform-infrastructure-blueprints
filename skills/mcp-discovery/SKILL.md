@@ -15,21 +15,21 @@ description: Use when the user wants to find blueprints, fetch blueprint files, 
 - Deciding whether to call MCP vs use a Skill for static content
 
 **When not to use**
-- Static catalog or decision tree → use `infrastructure-selection` or `infrastructure-style-guide` skill
-- Generating code from templates → use `infrastructure-code-generation` skill
+- Static catalog or decision tree → use `style-guide` skill
+- Generating code from templates → use `code-generation` skill
 
 ## When to use MCP vs Skills
 
 | Need | Use |
 |------|-----|
-| Catalog, decision tree, patterns (static) | Skills: `infrastructure-style-guide`, `infrastructure-selection` |
+| Catalog, decision tree, patterns (static) | Skill: `style-guide` |
 | Recommend blueprint by requirements | MCP: `recommend_blueprint()` |
 | Search by keywords | MCP: `search_blueprints()` |
 | Get a specific file from a blueprint | MCP: `fetch_blueprint_file()` |
 | Workflow steps (new project, add capability, migrate) | MCP: `get_workflow_guidance()` |
 | Cross-cloud / project-based lookup | MCP: `find_by_project()` |
 | Extract a capability into existing project | MCP: `extract_pattern()` |
-| Generate Terraform from templates | Skill: `infrastructure-code-generation` |
+| Generate Terraform from templates | Skill: `code-generation` |
 
 ## Tool matrix
 
@@ -48,7 +48,7 @@ description: Use when the user wants to find blueprints, fetch blueprint files, 
 
 1. `get_workflow_guidance(task: "add_capability")`
 2. `extract_pattern(capability: "database", include_code_examples: true)`
-3. Option A: Use `infrastructure-code-generation` skill to generate from templates  
+3. Option A: Use `code-generation` skill to generate from templates  
    Option B: `fetch_blueprint_file(blueprint: "apigw-lambda-rds", path: "modules/data/main.tf")` to study then adapt
 
 ### New project – serverless API with PostgreSQL

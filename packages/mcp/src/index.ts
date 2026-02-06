@@ -25,7 +25,8 @@ import { recommendBlueprintSchema, handleRecommendBlueprint } from "./tools/reco
 import { extractPatternSchema, handleExtractPattern } from "./tools/extract-tool.js";
 import { findByProjectSchema, handleFindByProject } from "./tools/project-tool.js";
 import { getWorkflowGuidanceSchema, handleGetWorkflowGuidance } from "./tools/workflow-tool.js";
-// generate_module tool removed - use infrastructure-code-generation skill instead
+import { getWorkflowContent, WORKFLOW_PROMPTS_LIST } from "./services/prompts-service.js";
+// generate_module tool removed - use code-generation skill instead
 // import { generateModuleSchema, handleGenerateModule } from "./tools/generate-tool.js";
 
 /**
@@ -82,7 +83,7 @@ export function createServer(): McpServer {
   const server = new McpServer(serverOptions);
 
   // Static resources (catalog, list, blueprint files) removed per ADR 0007
-  // Use Skills for static content (infrastructure-style-guide)
+  // Use Skills for static content (style-guide)
   // Use MCP tools for dynamic discovery (search_blueprints, recommend_blueprint, fetch_blueprint_file)
 
   // Register tools
@@ -92,8 +93,21 @@ export function createServer(): McpServer {
   server.registerTool("extract_pattern", extractPatternSchema, handleExtractPattern);
   server.registerTool("find_by_project", findByProjectSchema, handleFindByProject);
   server.registerTool("get_workflow_guidance", getWorkflowGuidanceSchema, handleGetWorkflowGuidance);
-  // generate_module tool removed - use infrastructure-code-generation skill instead
+  // generate_module tool removed - use code-generation skill instead
   // server.registerTool("generate_module", generateModuleSchema, handleGenerateModule);
+
+  // MCP Prompts API (third building block) — same content as get_workflow_guidance, for list/get prompt
+  for (const prompt of WORKFLOW_PROMPTS_LIST) {
+    server.registerPrompt(prompt.name, {
+      title: prompt.title,
+      description: prompt.description,
+    }, () => ({
+      messages: [{
+        role: "user" as const,
+        content: { type: "text" as const, text: getWorkflowContent(prompt.name) },
+      }],
+    }));
+  }
 
   return server;
 }

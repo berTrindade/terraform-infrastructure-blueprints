@@ -121,6 +121,8 @@ graph LR
 | Create project | 3 hours | 10 min      | 94%     |
 | Understand pattern | 1 hour | 5 min   | 92%     |
 
+For validation and testing of Terraform (e.g. `terraform validate`, native tests, CI/CD), teams can use the **terraform-practices** skill.
+
 ## References
 
 - [AI Assistant Guidelines](./ai-assistant-guidelines.md) - How AI Assistants help you

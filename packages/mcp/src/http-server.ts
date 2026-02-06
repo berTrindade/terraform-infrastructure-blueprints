@@ -50,7 +50,7 @@ function createApp() {
 
   // Middleware
   app.use(express.json({ limit: "10mb" }));
-  app.use(pinoHttp({ logger: httpLogger }));
+  app.use((pinoHttp as unknown as (opts: { logger: pino.Logger }) => express.RequestHandler)({ logger: httpLogger }));
 
   // CORS configuration for MCP clients
   app.use((req: Request, res: Response, next: NextFunction) => {
@@ -236,17 +236,17 @@ async function main(): Promise<void> {
 
     // Graceful shutdown
     process.on("SIGTERM", () => {
-      logger.info("SIGTERM received, shutting down gracefully");
+      logger.info({ message: "SIGTERM received, shutting down gracefully" });
       server.close(() => {
-        logger.info("Server closed");
+        logger.info({ message: "Server closed" });
         process.exit(0);
       });
     });
 
     process.on("SIGINT", () => {
-      logger.info("SIGINT received, shutting down gracefully");
+      logger.info({ message: "SIGINT received, shutting down gracefully" });
       server.close(() => {
-        logger.info("Server closed");
+        logger.info({ message: "Server closed" });
         process.exit(0);
       });
     });

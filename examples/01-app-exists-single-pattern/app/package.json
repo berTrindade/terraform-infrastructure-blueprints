@@ -1,0 +1,6 @@
+{
+  "name": "my-app-placeholder",
+  "version": "1.0.0",
+  "description": "Replace this with your app. This folder represents the application you have before adding infrastructure.",
+  "main": "index.js"
+}

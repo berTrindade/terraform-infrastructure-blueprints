@@ -6,7 +6,7 @@ mcp.ustwo.com {
     # MCP HTTP endpoint
     handle /mcp {
         reverse_proxy mcp-server:3000 {
-            timeout 60s
+            timeout 300s
             header_up X-Real-IP {remote_host}
             header_up X-Forwarded-Proto {scheme}
         }

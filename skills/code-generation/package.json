@@ -1,0 +1,15 @@
+{
+  "name": "code-generation",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Template generator for Terraform blueprints",
+  "scripts": {
+    "generate": "node scripts/generate.js",
+    "setup": "node scripts/setup.js",
+    "validate:manifest": "node scripts/validate-manifest.js",
+    "validate:all": "node scripts/validate-manifest.js --all"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}

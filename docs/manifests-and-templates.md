@@ -12,7 +12,7 @@ graph TD
     
     A1[blueprints/aws/apigw-lambda-rds/modules/data/main.tf] --> A
     B1[blueprints/manifests/apigw-lambda-rds.yaml] --> B
-    C1[skills/infrastructure-code-generation/templates/rds-module.tftpl] --> C
+    C1[skills/code-generation/templates/rds-module.tftpl] --> C
     D1[Generated Terraform HCL] --> D
 ```
 
@@ -87,13 +87,26 @@ sequenceDiagram
 
 ## Manifest location
 
-The **canonical manifest location** is **`blueprints/manifests/`** at the repository root. The infrastructure-code-generation skill reads manifests from there when run from the repo (single source of truth).
+The **canonical manifest location** is **`blueprints/manifests/`** at the repository root. The code-generation skill reads manifests from there when run from the repo (single source of truth).
 
 ## Fundamental Principle
 
 > **The blueprint's Terraform code is always the source of truth.**
 >
 > Manifests and templates are **derived** from real code. If you change the blueprint code, you must update templates and manifests to maintain synchronization.
+
+## Skill package layout
+
+Skills live under [skills/](../skills/) and extend AI capabilities with domain knowledge. A Skill package has:
+
+| Path | Required | Purpose |
+|------|----------|---------|
+| **SKILL.md** | Yes | Name, description, and Instructions (when to use, how to do it). |
+| **scripts/** | No | Scripts used by the Skill (e.g. code-generation, validation). |
+| **references/** | No | Domain references, glossaries, or pointers (e.g. to [Blueprint Catalog](blueprints/catalog.md)). |
+| **templates/** or **assets/** | No | Output templates (e.g. `.tftpl`) or static assets. |
+
+Example: `style-guide` has `SKILL.md` and `references/catalog-pointer.md`; `code-generation` has `SKILL.md`, `scripts/`, and `templates/`. See [Understanding MCP and Skills](understanding-mcp-and-skills.md).
 
 ## References
 

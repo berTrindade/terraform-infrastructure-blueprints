@@ -6,7 +6,7 @@ Step-by-step workflows for using blueprints in different scenarios.
 
 ## Supported Scenarios
 
-This repository supports two core consultant scenarios. Understanding which scenario applies helps provide the right guidance.
+This repository supports two core consultant scenarios. Understanding which scenario applies helps provide the right guidance. Concrete project examples for each scenario are in the [examples/](../../examples/README.md) directory.
 
 ### Scenario 1: App Exists, Need Infrastructure
 
@@ -38,6 +38,15 @@ This repository supports two core consultant scenarios. Understanding which scen
 
 **Note**: Template Generator is preferred for adding capabilities as it generates code already adapted to project conventions and saves tokens. Use Blueprint Repository when studying or when template generator is not available.
 
+### How MCP and Skills support these scenarios
+
+| Scenario | MCP tools | Skills | Notes |
+|----------|-----------|--------|--------|
+| **1. App exists, need infra** | `get_workflow_guidance("new_project")` → `recommend_blueprint` or `search_blueprints` → `fetch_blueprint_file` | style-guide | “Ask discovery questions first” is covered by workflow prompts and AI Assistant Guidelines. |
+| **2. Existing Terraform, add capability** | `get_workflow_guidance("add_capability")` → `extract_pattern(capability)` → `fetch_blueprint_file` (or Template Generator) | code-generation, style-guide | Template Generator preferred when manifest exists; otherwise extract from blueprint. |
+
+Prompts (MCP Prompts API) expose the same workflow content as the workflow tool so clients can offer “Insert workflow” or slash commands. See [Understanding MCP and Skills](../understanding-mcp-and-skills.md) and [MCP Tools Reference](../mcp-tools-reference.md).
+
 **Extractable patterns by capability**:
 
 | Capability | Source Blueprint | Modules to Extract |
@@ -65,7 +74,7 @@ This repository supports two core consultant scenarios. Understanding which scen
 2. **Use Template Generator** (preferred) or extract from blueprint:
    - **Template Generator**:
      - Extract parameters from conversation history
-     - Generate code using `infrastructure-code-generation` skill
+     - Generate code using `code-generation` skill
      - Code already adapted to project conventions
      - Saves tokens (50 lines vs 200+ lines)
    - **Blueprint Repository** (fallback):

@@ -370,7 +370,7 @@ Address HIGH and CRITICAL findings before merging.
 
 ## Additional Guides
 
-- **[Template Generator Development](skills/infrastructure-code-generation/DEVELOPMENT.md)** - Development guide for the template generator
+- **[Template Generator Development](skills/code-generation/DEVELOPMENT.md)** - Development guide for the template generator
 
 ## Contact
 

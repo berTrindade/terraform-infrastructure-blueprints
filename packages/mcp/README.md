@@ -209,6 +209,15 @@ The HTTP server:
 - Validates tokens on each request
 - Supports multiple concurrent connections
 
+### Production deployment (e.g. mu / Linux)
+
+To run at **https://mcp.ustwo.com** with Docker only (no Node on the host):
+
+1. On the server: clone repo, `cd packages/mcp`, copy `env.example` to `.env` and set secrets.
+2. Run `./scripts/deploy.sh` or `docker compose pull && docker compose up -d`.
+
+See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for the full guide (same pattern as youandustwo).
+
 ## Claude Desktop Setup
 
 Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
@@ -239,7 +248,7 @@ The MCP server provides **dynamic discovery tools only**. Static content (catalo
 | `fetch_blueprint_file` | Get specific blueprint files on-demand | "Show me the RDS module from apigw-lambda-rds" |
 | `get_workflow_guidance` | Get step-by-step workflow guidance | "How do I start a new project?" |
 
-**Note**: Static content (blueprint catalog, decision trees, common patterns) is provided via Skills (`infrastructure-style-guide`) for instant access without network calls. The new consolidated skill includes priority levels to help AI assistants prioritize recommendations.
+**Note**: Static content (blueprint catalog, decision trees, common patterns) is provided via Skills (`style-guide`) for instant access without network calls. The new consolidated skill includes priority levels to help AI assistants prioritize recommendations.
 
 ## Using in Client Projects
 
@@ -249,7 +258,7 @@ For consultants working on client projects, install blueprint skills using the s
 npx skills add bertrindade/terraform-infrastructure-blueprints
 ```
 
-**Note**: The `infrastructure-style-guide` skill consolidates the previous three skills (`blueprint-catalog`, `blueprint-guidance`, `blueprint-patterns`) and adds priority levels.
+**Note**: The `style-guide` skill consolidates the previous three skills (`blueprint-catalog`, `blueprint-guidance`, `blueprint-patterns`) and adds priority levels.
 
 This installs the blueprint skills to your AI assistant, providing:
 - Instant access to blueprint patterns and best practices
@@ -319,7 +328,7 @@ The MCP server implements **Dynamic Context Discovery** patterns per ADR 0007:
 - **Progressive Disclosure**: Optional parameters for requesting full content
 - **Sequential Workflow Guidance**: Step-by-step guidance for common tasks
 
-**Per ADR 0005**: Static resources (catalog, list, blueprint files) have been moved to Skills. MCP focuses on dynamic discovery workflows. The `infrastructure-style-guide` skill consolidates catalog, patterns, and workflow guidance with priority levels to help AI assistants prioritize recommendations.
+**Per ADR 0005**: Static resources (catalog, list, blueprint files) have been moved to Skills. MCP focuses on dynamic discovery workflows. The `style-guide` skill consolidates catalog, patterns, and workflow guidance with priority levels to help AI assistants prioritize recommendations.
 
 See [ADR 0005](../../docs/adr/0005-skills-vs-mcp-decision.md) for detailed documentation.
 

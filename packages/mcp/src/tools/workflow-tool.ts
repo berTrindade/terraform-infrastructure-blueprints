@@ -1,10 +1,12 @@
 /**
- * Workflow guidance tool handler
+ * Workflow guidance tool handler.
+ * Content is sourced from prompts-service (single source of truth; also used by MCP Prompts API).
  */
 
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { logger } from "../utils/logger.js";
+import { getWorkflowContent } from "../services/prompts-service.js";
 
 /**
  * Workflow guidance tool schema
@@ -32,39 +34,7 @@ export async function handleGetWorkflowGuidance(args: { task: "new_project" | "a
   };
 
   try {
-    const workflows: Record<string, string> = {
-    new_project: `# New Project
-
-1. recommend_blueprint(database: "postgresql", pattern: "sync")
-2. Review blueprint
-3. fetch_blueprint_file() to get files
-4. Follow patterns`,
-
-    add_capability: `# Add Capability
-
-1. extract_pattern(capability: "database")
-2. Review steps
-3. fetch_blueprint_file() to get modules
-4. Copy and adapt`,
-
-    migrate_cloud: `# Cross-Cloud Migration
-
-1. find_by_project(project_name: "Mavie")
-2. find_by_project(project_name: "Mavie", target_cloud: "aws")
-3. recommend_blueprint() for target cloud
-4. extract_pattern() from target`,
-
-      general: `# Available Tools
-
-1. recommend_blueprint() - Get recommendations
-2. extract_pattern() - Extract patterns
-3. find_by_project() - Find by project
-4. fetch_blueprint_file() - Get files
-5. search_blueprints() - Search keywords
-6. get_workflow_guidance() - This tool
-
-**Quick Start**: recommend_blueprint(database: "postgresql")`,
-    };
+    const text = getWorkflowContent(args.task);
 
     wideEvent.status_code = 200;
     wideEvent.outcome = "success";
@@ -74,7 +44,7 @@ export async function handleGetWorkflowGuidance(args: { task: "new_project" | "a
     return {
       content: [{
         type: "text" as const,
-        text: workflows[args.task] || workflows.general
+        text,
       }]
     };
   } catch (error) {

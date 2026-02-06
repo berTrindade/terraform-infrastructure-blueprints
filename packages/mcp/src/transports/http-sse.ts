@@ -108,7 +108,7 @@ export async function handleSSEConnection(
       clearInterval(pingInterval);
       connections.delete(connectionId);
     }
-  }, 30000); // Every 30 seconds
+  }, 15000); // Every 15 seconds
 
   // Store ping interval for cleanup
   (connection as any).pingInterval = pingInterval;

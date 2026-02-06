@@ -36,4 +36,18 @@ describe("MCP Server Integration", () => {
     expect(server).toBeDefined();
     // Tools are registered in createServer() - if this succeeds, tools are registered
   });
+
+  it("registers workflow prompts (MCP Prompts API)", () => {
+    const server = createServer();
+    expect(server).toBeDefined();
+    // Prompts are registered in createServer(); SDK exposes them via prompts/list and prompts/get.
+    // Verify by checking internal registration (McpServer stores prompts in _registeredPrompts).
+    const registeredPrompts = (server as unknown as { _registeredPrompts?: Record<string, unknown> })._registeredPrompts;
+    expect(registeredPrompts).toBeDefined();
+    expect(Object.keys(registeredPrompts ?? {})).toHaveLength(4);
+    expect(registeredPrompts).toHaveProperty("new_project");
+    expect(registeredPrompts).toHaveProperty("add_capability");
+    expect(registeredPrompts).toHaveProperty("migrate_cloud");
+    expect(registeredPrompts).toHaveProperty("general");
+  });
 });

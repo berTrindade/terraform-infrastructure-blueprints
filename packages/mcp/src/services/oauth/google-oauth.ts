@@ -4,7 +4,7 @@
  * Handles Google OAuth authentication and validates company domain
  */
 
-import { OAuth2Client } from "google-auth-library";
+import { OAuth2Client, CodeChallengeMethod } from "google-auth-library";
 import { config } from "../../config/config.js";
 
 // OAuth client will be initialized when config is available
@@ -41,7 +41,7 @@ export function getAuthorizationUrl(
     scope: ["openid", "email", "profile"],
     state,
     code_challenge: codeChallenge,
-    code_challenge_method: codeChallengeMethod,
+    code_challenge_method: codeChallengeMethod as CodeChallengeMethod,
   });
 }
 
@@ -69,7 +69,7 @@ export async function exchangeCodeForTokens(
   const client = getOAuthClient();
   const { tokens } = await client.getToken({
     code,
-    code_verifier: codeVerifier,
+    codeVerifier,
   });
 
   if (!tokens.access_token) {
@@ -98,12 +98,12 @@ export async function exchangeCodeForTokens(
 
   return {
     accessToken: tokens.access_token,
-    refreshToken: tokens.refresh_token,
-    idToken: tokens.id_token,
+    refreshToken: tokens.refresh_token ?? undefined,
+    idToken: tokens.id_token ?? undefined,
     userInfo: {
       email,
       name: payload.name || email,
-      picture: payload.picture,
+      picture: payload.picture ?? undefined,
       domain,
     },
   };
