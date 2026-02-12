@@ -82,8 +82,9 @@ export async function handleSSEConnection(
     remote_address: req.ip,
   });
 
-  // Send initial connection message
-  res.write(`data: ${JSON.stringify({ type: "connection", connectionId })}\n\n`);
+  // SSE connection established - no initial message needed
+  // Connection ID is available via X-Connection-ID header
+  // All subsequent messages will be JSON-RPC 2.0 formatted
 
   // Handle client disconnect
   req.on("close", () => {
