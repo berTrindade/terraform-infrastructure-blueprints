@@ -3,6 +3,17 @@
 }
 
 mcp.ustwo.com {
+    # Handle OPTIONS preflight requests at Caddy level (before proxying)
+    handle_method OPTIONS {
+        header {
+            Access-Control-Allow-Origin "*"
+            Access-Control-Allow-Methods "GET, POST, OPTIONS"
+            Access-Control-Allow-Headers "Authorization, Content-Type, X-Connection-ID"
+            Access-Control-Max-Age "3600"
+        }
+        respond 204
+    }
+    
     # MCP HTTP endpoint
     handle /mcp {
         reverse_proxy mcp-server:3000 {
