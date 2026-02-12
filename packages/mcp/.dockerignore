@@ -16,4 +16,11 @@ scripts/
 *.sh
 *.toml
 *.example
+# Exclude terraform state and providers (too large for Docker image)
+**/.terraform/
+**/.terraform.lock.hcl
+**/terraform.tfstate
+**/terraform.tfstate.backup
+**/*.tfstate
+**/*.tfstate.backup
 # Note: mcp-server source files (src/, tsconfig.json) are needed for Docker build
