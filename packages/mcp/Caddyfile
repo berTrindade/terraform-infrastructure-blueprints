@@ -4,7 +4,8 @@
 
 mcp.ustwo.com {
     # Handle OPTIONS preflight requests at Caddy level (before proxying)
-    handle_method OPTIONS {
+    @options method OPTIONS
+    handle @options {
         header {
             Access-Control-Allow-Origin "*"
             Access-Control-Allow-Methods "GET, POST, OPTIONS"
