@@ -66,10 +66,25 @@ function createApp() {
     next();
   });
 
-  // OAuth metadata endpoint
+  // OAuth metadata endpoints (support both MCP-specific and standard OAuth discovery)
   app.get("/.well-known/mcp-oauth-authorization-server", handleMetadata);
+  app.get("/.well-known/oauth-authorization-server", handleMetadata);
+  app.get("/.well-known/oauth-protected-resource", handleMetadata);
+  app.get("/.well-known/oauth-protected-resource/sse", handleMetadata);
 
   // OAuth endpoints
+  // Dynamic client registration (RFC 7591) - load dynamically to handle missing file
+  app.post("/oauth/register", async (req: Request, res: Response) => {
+    try {
+      const { handleRegister } = await import("./routes/oauth/register.js");
+      handleRegister(req, res);
+    } catch (error) {
+      res.status(500).json({
+        error: "registration_not_available",
+        error_description: "Dynamic client registration is not available",
+      });
+    }
+  });
   app.get("/oauth/authorize", handleAuthorize);
   app.post("/oauth/token", handleToken);
   app.post("/oauth/token/validate", handleTokenValidate);
@@ -89,8 +104,8 @@ function createApp() {
     }
   });
 
-  // MCP endpoint - SSE connection
-  app.get("/mcp", async (req: Request, res: Response) => {
+  // MCP endpoint handler - SSE connection
+  const handleMCPSSE = async (req: Request, res: Response) => {
     try {
       // Validate authentication if OAuth is configured
       const authHeader = req.headers.authorization;
@@ -131,10 +146,14 @@ function createApp() {
         error_description: "Failed to establish MCP connection",
       });
     }
-  });
+  };
 
-  // MCP endpoint - POST messages
-  app.post("/mcp", async (req: Request, res: Response) => {
+  // MCP endpoints - SSE connection (both /mcp and /sse for compatibility)
+  app.get("/mcp", handleMCPSSE);
+  app.get("/sse", handleMCPSSE);
+
+  // MCP endpoint handler - POST messages
+  const handleMCPPost = async (req: Request, res: Response) => {
     try {
       // Validate authentication if OAuth is configured
       const authHeader = req.headers.authorization;
@@ -173,7 +192,11 @@ function createApp() {
         error_description: error instanceof Error ? error.message : "Internal error",
       });
     }
-  });
+  };
+
+  // MCP endpoints - POST messages (both /mcp and /sse for compatibility)
+  app.post("/mcp", handleMCPPost);
+  app.post("/sse", handleMCPPost);
 
   // Health check
   app.get("/health", (req: Request, res: Response) => {

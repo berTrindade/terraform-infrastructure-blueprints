@@ -1,9 +1,0 @@
-# Blueprint Manifest: eks-argocd
-# Amazon EKS Kubernetes cluster with ArgoCD for GitOps deployments
-name: eks-argocd
-description: Amazon EKS Kubernetes cluster with ArgoCD for GitOps deployments
-version: 1.0.0
-
-snippets: []
-  # Note: EKS and ArgoCD-specific templates would need to be created for full support
-  # This manifest provides basic structure for future expansion

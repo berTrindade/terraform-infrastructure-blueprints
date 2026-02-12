@@ -1,17 +1,17 @@
-# Manifests and Templates
+# Templates and Blueprints
 
-How blueprints, manifests, and templates work together in the Terraform Infrastructure Blueprints system.
+How blueprints and templates work together in the Terraform Infrastructure Blueprints system.
 
 ## The Relationship
 
 ```mermaid
 graph TD
-    A[Blueprint: Real Terraform Code] -->|based on| B[Manifest: YAML Metadata]
-    B -->|references| C[Template: Parameterized Code]
+    A[Blueprint: Real Terraform Code] -->|source of truth| B[variables.tf: Parameter Definitions]
+    B -->|reference for| C[Template: Parameterized Code]
     C -->|generates| D[Generated Code]
     
     A1[blueprints/aws/apigw-lambda-rds/modules/data/main.tf] --> A
-    B1[blueprints/manifests/apigw-lambda-rds.yaml] --> B
+    B1[blueprints/aws/apigw-lambda-rds/modules/data/variables.tf] --> B
     C1[skills/code-generation/templates/rds-module.tftpl] --> C
     D1[Generated Terraform HCL] --> D
 ```
@@ -20,17 +20,15 @@ graph TD
 
 ```mermaid
 flowchart LR
-    A[Phase 1: Write Blueprint Code] --> B[Phase 2: Create Manifest YAML]
-    B --> C[Phase 3: Create Template]
-    C --> D[Phase 4: Usage]
-    D --> E[Option A: Template Generator]
-    D --> F[Option B: Copy Blueprint]
+    A[Phase 1: Write Blueprint Code] --> B[Phase 2: Create Template]
+    B --> C[Phase 3: Usage]
+    C --> D[Option A: Template Generator]
+    C --> E[Option B: Copy Blueprint]
 ```
 
 **Phase 1**: Write Terraform code in `blueprints/aws/{blueprint-name}/`  
-**Phase 2**: Create manifest describing blueprint in YAML  
-**Phase 3**: Create parameterized template with `${placeholders}` (`.tftpl` files; Terraform-style placeholders)  
-**Phase 4**: Use Template Generator or copy blueprint directly
+**Phase 2**: Create parameterized template with `${placeholders}` (`.tftpl` files; Terraform-style placeholders)  
+**Phase 3**: Use Template Generator or copy blueprint directly
 
 Design-time code generation uses Node.js and `${var}` substitution. For **runtime** file templating inside Terraform (e.g. `user_data`, IAM policies), HashiCorp recommends `templatefile()` and `.tftpl` files.
 
@@ -41,14 +39,14 @@ sequenceDiagram
     participant U as User
     participant AI as AI Assistant
     participant TG as Template Generator
-    participant M as Manifest
+    participant V as variables.tf
     participant T as Template
     
     U->>AI: "I need to add RDS PostgreSQL"
     AI->>AI: Analyzes existing Terraform
+    AI->>V: Fetch variables.tf (optional)
+    V-->>AI: Parameter definitions
     AI->>TG: Generate code with params
-    TG->>M: Read manifest
-    M-->>TG: Validate parameters
     TG->>T: Read template
     T-->>TG: Render with placeholders
     TG-->>AI: Generated Terraform code
@@ -85,15 +83,20 @@ sequenceDiagram
    - Copy the complete blueprint
    - Don't need to rewrite, just adapt
 
-## Manifest location
+## Single Source of Truth
 
-The **canonical manifest location** is **`blueprints/manifests/`** at the repository root. The code-generation skill reads manifests from there when run from the repo (single source of truth).
+The **blueprint's `variables.tf` file** is the single source of truth for parameter definitions:
+
+- Parameter names, types, defaults, and descriptions are defined in `variables.tf`
+- LLMs reference `variables.tf` using MCP `fetch_blueprint_file()` to understand what parameters are needed
+- No duplication - one definition in `variables.tf`, not in separate manifest files
+- Templates use the same parameter names as defined in `variables.tf`
 
 ## Fundamental Principle
 
 > **The blueprint's Terraform code is always the source of truth.**
 >
-> Manifests and templates are **derived** from real code. If you change the blueprint code, you must update templates and manifests to maintain synchronization.
+> Templates are **derived** from real code. If you change the blueprint code, you must update templates to maintain synchronization.
 
 ## Skill package layout
 
@@ -111,5 +114,5 @@ Example: `style-guide` has `SKILL.md` and `references/catalog-pointer.md`; `code
 ## References
 
 - [Developer Workflow](./developer-workflow.md) - How developers use the system
-- [AI Assistant Guidelines](./ai-assistant-guidelines.md) - How AI assistants work with manifests
+- [AI Assistant Guidelines](./ai-assistant-guidelines.md) - How AI assistants work with templates
 - [Template Generator vs Repository](./blueprints/template-generator-vs-repo.md) - When to use which

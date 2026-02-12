@@ -86,13 +86,61 @@ export function createServer(): McpServer {
   // Use Skills for static content (style-guide)
   // Use MCP tools for dynamic discovery (search_blueprints, recommend_blueprint, fetch_blueprint_file)
 
-  // Register tools
-  server.registerTool("search_blueprints", searchBlueprintsSchema, handleSearchBlueprints);
-  server.registerTool("fetch_blueprint_file", fetchBlueprintFileSchema, handleFetchBlueprintFile);
-  server.registerTool("recommend_blueprint", recommendBlueprintSchema, handleRecommendBlueprint);
-  server.registerTool("extract_pattern", extractPatternSchema, handleExtractPattern);
-  server.registerTool("find_by_project", findByProjectSchema, handleFindByProject);
-  server.registerTool("get_workflow_guidance", getWorkflowGuidanceSchema, handleGetWorkflowGuidance);
+  // Register tools with annotations
+  // All tools are read-only and idempotent operations
+  server.registerTool("search_blueprints", {
+    ...searchBlueprintsSchema,
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+  }, handleSearchBlueprints);
+  
+  server.registerTool("fetch_blueprint_file", {
+    ...fetchBlueprintFileSchema,
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+  }, handleFetchBlueprintFile);
+  
+  server.registerTool("recommend_blueprint", {
+    ...recommendBlueprintSchema,
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+  }, handleRecommendBlueprint);
+  
+  server.registerTool("extract_pattern", {
+    ...extractPatternSchema,
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+  }, handleExtractPattern);
+  
+  server.registerTool("find_by_project", {
+    ...findByProjectSchema,
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+  }, handleFindByProject);
+  
+  server.registerTool("get_workflow_guidance", {
+    ...getWorkflowGuidanceSchema,
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+  }, handleGetWorkflowGuidance);
   // generate_module tool removed - use code-generation skill instead
   // server.registerTool("generate_module", generateModuleSchema, handleGenerateModule);
 

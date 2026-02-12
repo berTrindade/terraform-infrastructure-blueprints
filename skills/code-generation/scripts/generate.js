@@ -3,13 +3,16 @@
  * Main script to generate Terraform code from templates
  * 
  * Usage:
- *   echo '{"blueprint":"apigw-lambda-rds","snippet":"rds-module","params":{...}}' | node generate.js
+ *   echo '{"template":"rds-module.tftpl","params":{...}}' | node generate.js
  *   node generate.js < payload.json
+ * 
+ * The template name should match a file in templates/ directory.
+ * Parameters are substituted directly into the template using ${variable} placeholders.
+ * 
+ * For parameter definitions, refer to the source blueprint's variables.tf file.
  */
 
-import { readFileSync } from 'node:fs';
 import { stdin } from 'node:process';
-import { loadManifest, findSnippet, validateParams } from './parse-manifest.js';
 import { renderTemplate } from './render-template.js';
 
 /**
@@ -45,27 +48,16 @@ async function main() {
     const payload = await readInput();
     
     // Validate payload structure
-    if (!payload.blueprint) {
-      throw new Error('Missing required field: blueprint');
-    }
-    if (!payload.snippet) {
-      throw new Error('Missing required field: snippet');
+    if (!payload.template) {
+      throw new Error('Missing required field: template (e.g., "rds-module.tftpl")');
     }
     if (!payload.params || typeof payload.params !== 'object') {
       throw new Error('Missing or invalid field: params');
     }
     
-    // Load manifest
-    const manifest = loadManifest(payload.blueprint);
-    
-    // Find snippet
-    const snippet = findSnippet(manifest, payload.snippet);
-    
-    // Validate parameters
-    const validatedParams = validateParams(snippet, payload.params);
-    
-    // Render template
-    const rendered = renderTemplate(snippet.template, validatedParams);
+    // Render template directly with provided parameters
+    // No validation - Terraform will catch type/pattern errors at plan time
+    const rendered = renderTemplate(payload.template, payload.params);
     
     // Output generated code
     console.log(rendered);

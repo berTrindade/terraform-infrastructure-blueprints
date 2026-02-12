@@ -30,8 +30,8 @@ This repository supports two core consultant scenarios. Understanding which scen
 
 1. Ask about existing infrastructure (VPC, naming conventions, etc.)
 2. Identify relevant blueprint: `apigw-sqs-lambda-dynamodb`
-3. **Use Template Generator** (if manifest exists) or extract modules from blueprint:
-   - **Template Generator**: Generate code adapted to project conventions (saves tokens)
+3. **Use Template Generator** or extract modules from blueprint:
+   - **Template Generator**: Generate code adapted to project conventions (saves tokens, uses templates)
    - **Blueprint Repository**: Extract modules if template generator not available
 4. Adapt code to fit existing project conventions
 5. Provide standalone Terraform that integrates with their existing setup
@@ -43,7 +43,7 @@ This repository supports two core consultant scenarios. Understanding which scen
 | Scenario | MCP tools | Skills | Notes |
 |----------|-----------|--------|--------|
 | **1. App exists, need infra** | `get_workflow_guidance("new_project")` → `recommend_blueprint` or `search_blueprints` → `fetch_blueprint_file` | style-guide | “Ask discovery questions first” is covered by workflow prompts and AI Assistant Guidelines. |
-| **2. Existing Terraform, add capability** | `get_workflow_guidance("add_capability")` → `extract_pattern(capability)` → `fetch_blueprint_file` (or Template Generator) | code-generation, style-guide | Template Generator preferred when manifest exists; otherwise extract from blueprint. |
+| **2. Existing Terraform, add capability** | `get_workflow_guidance("add_capability")` → `extract_pattern(capability)` → `fetch_blueprint_file` (or Template Generator) | code-generation, style-guide | Template Generator preferred for token efficiency; otherwise extract from blueprint. |
 
 Prompts (MCP Prompts API) expose the same workflow content as the workflow tool so clients can offer “Insert workflow” or slash commands. See [Understanding MCP and Skills](../understanding-mcp-and-skills.md) and [MCP Tools Reference](../mcp-tools-reference.md).
 

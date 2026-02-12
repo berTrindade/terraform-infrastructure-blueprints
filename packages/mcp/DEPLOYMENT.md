@@ -1,6 +1,6 @@
 # MCP HTTP Server – Deployment Guide
 
-Deploy the Infrastructure Blueprints MCP server so the team can use it at **https://mcp.ustwo.com**. Same pattern as youandustwo: **Docker only on the server** (no Node.js installed on the host).
+Deploy the Infrastructure Blueprints MCP server so the team can use it at **https://mcp.ustwo.com:8443**. This is an **independent deployment** using non-standard ports (8080/8443) to avoid conflicts with other services on the same host. Same pattern as youandustwo: **Docker only on the server** (no Node.js installed on the host).
 
 ## Prerequisites
 
@@ -37,7 +37,7 @@ cp env.example .env
 # Edit .env: set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, JWT_SECRET (min 32 chars, e.g. openssl rand -base64 32)
 ```
 
-`AUTH_BASE_URL` and `MCP_BASE_URL` are already set in `docker-compose.yml` to `https://mcp.ustwo.com`. Do not commit `.env`.
+`AUTH_BASE_URL` and `MCP_BASE_URL` should be set in `.env` to `https://mcp.ustwo.com:8443` (note the port). Do not commit `.env`.
 
 ### 3. Deploy
 
@@ -49,8 +49,8 @@ Or manually: `mkdir -p logs/caddy && docker compose pull && docker compose up -d
 
 This starts:
 
-- **mcp-server** – Node app (from `ghcr.io/bertrindade/infra-mcp:latest`)
-- **caddy** – Reverse proxy and TLS for `mcp.ustwo.com` → `mcp-server:3000`
+- **mcp-server** – Node app (from `ghcr.io/bertrindade/infra-mcp:latest`) - internal only, no direct port exposure
+- **caddy** – Reverse proxy and TLS for `mcp.ustwo.com:8443` → `mcp-server:3000` (listening on ports 8080/8443)
 
 ### 4. Verify
 
@@ -63,7 +63,7 @@ docker compose logs -f mcp-server
 docker compose logs -f caddy
 ```
 
-From outside: **https://mcp.ustwo.com/health** and **https://mcp.ustwo.com/.well-known/mcp-oauth-authorization-server**.
+From outside: **https://mcp.ustwo.com:8443/health** and **https://mcp.ustwo.com:8443/.well-known/mcp-oauth-authorization-server**.
 
 ## How the image is built
 
@@ -89,9 +89,10 @@ docker compose up -d
 
 ## Security
 
-- **HTTPS**: Caddy handles TLS (e.g. Let’s Encrypt) for `mcp.ustwo.com`.
-- **OAuth**: Restrict to `@ustwo.com` via `COMPANY_DOMAIN` and Google OAuth consent.
+- **HTTPS**: Caddy handles TLS (e.g. Let’s Encrypt) for `mcp.ustwo.com:8443`.
+- **OAuth**: Restrict to `@ustwo.com` via `COMPANY_DOMAIN` and Google OAuth consent. **Important**: Update Google OAuth redirect URI to `https://mcp.ustwo.com:8443/oauth/callback`.
 - **Secrets**: Keep `GOOGLE_CLIENT_SECRET` and `JWT_SECRET` only in `.env` on the server, never in the repo.
+- **Ports**: Ensure firewall allows ports 8080 (HTTP) and 8443 (HTTPS/HTTP3).
 
 ## Troubleshooting
 
@@ -99,8 +100,9 @@ docker compose up -d
 |-------|----------------|
 | Container exits | `docker compose logs mcp-server`; ensure all required env vars are set in `.env`. |
 | 502 from Caddy | `mcp-server` not ready or not healthy; check `docker compose ps` and health endpoint. |
-| OAuth redirect fails | In Google Cloud Console, ensure `https://mcp.ustwo.com/oauth/callback` is in authorized redirect URIs. |
-| Certificate errors | Caddy needs ports 80/443 and DNS for `mcp.ustwo.com`; check `docker compose logs caddy`. |
+| OAuth redirect fails | In Google Cloud Console, ensure `https://mcp.ustwo.com:8443/oauth/callback` is in authorized redirect URIs. |
+| Certificate errors | Caddy needs ports 8080/8443 accessible and DNS for `mcp.ustwo.com`; check `docker compose logs caddy`. |
+| Port conflict | If Caddy fails to start, ensure ports 8080 and 8443 are not in use by other services. |
 
 ## Summary
 
@@ -110,4 +112,6 @@ docker compose up -d
 | Run on server | `docker compose up -d` | `docker compose up -d` |
 | Image | `ghcr.io/ustwo/youandustwo:latest` | `ghcr.io/bertrindade/infra-mcp:latest` |
 | Reverse proxy | Caddy → youandustwo:3000 | Caddy → mcp-server:3000 |
+| Ports | 80, 443 | 8080, 8443 (independent) |
+| URL | https://youand.ustwo.com | https://mcp.ustwo.com:8443 |
 | Env | `backend/.env` / compose env | `.env` in `packages/mcp/` |

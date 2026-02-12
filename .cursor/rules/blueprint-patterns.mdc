@@ -1,0 +1,28 @@
+---
+description: Blueprint-specific patterns from terraform-infrastructure-blueprints project
+globs: "**/*.tf"
+apply_when: ["blueprint", "module", "pattern"]
+priority: 70
+---
+
+# Blueprint Patterns
+
+## Before Writing Code:
+
+1. Check existing blueprints: use MCP recommend_blueprint() or search_blueprints()
+2. Review [docs/blueprints/catalog.md](docs/blueprints/catalog.md) decision tree
+3. Use extract_pattern() for adding capabilities
+4. Reference blueprint files, don't write from scratch
+
+## Module Requirements:
+
+- Official modules preferred (terraform-aws-modules/*, cloudposse/*)
+- Version pinning required
+- Outputs for resource attributes (enables implicit dependencies)
+- Variables with validation and descriptions
+
+## Gold Standard Files:
+
+- Security patterns: [docs/ai-assistant-guidelines.md](docs/ai-assistant-guidelines.md)
+- Module structure: blueprints/*/modules/compute/main.tf
+- Naming conventions: [skills/style-guide/SKILL.md](skills/style-guide/SKILL.md)

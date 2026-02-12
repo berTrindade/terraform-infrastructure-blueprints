@@ -4,7 +4,7 @@
  */
 
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
-import { join, dirname, resolve } from 'node:path';
+import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -25,21 +25,6 @@ function getSkillRoot() {
   throw new Error('Could not find skill root directory');
 }
 
-/**
- * Get manifest directory path. Prefers repo root blueprints/manifests (single source of truth).
- */
-function getManifestDir() {
-  const skillRoot = getSkillRoot();
-  const repoManifests = resolve(skillRoot, '..', '..', 'blueprints', 'manifests');
-  if (existsSync(repoManifests)) {
-    return repoManifests;
-  }
-  const skillManifests = join(skillRoot, 'blueprints', 'manifests');
-  if (existsSync(skillManifests)) {
-    return skillManifests;
-  }
-  throw new Error('Manifests directory not found. Expected repo blueprints/manifests or skill blueprints/manifests.');
-}
 
 /**
  * Check Node.js version
@@ -93,7 +78,7 @@ function checkDependencies() {
 }
 
 /**
- * Check directory structure (skill dirs + manifest dir from getManifestDir)
+ * Check directory structure
  */
 function checkDirectoryStructure() {
   const skillRoot = getSkillRoot();
@@ -102,12 +87,6 @@ function checkDirectoryStructure() {
     join(skillRoot, 'scripts'),
     join(skillRoot, '__tests__'),
   ];
-  try {
-    requiredDirs.push(getManifestDir());
-  } catch {
-    // getManifestDir throws if neither repo nor skill manifests exist
-    requiredDirs.push(join(skillRoot, 'blueprints', 'manifests'));
-  }
   const missing = requiredDirs.filter(dir => !existsSync(dir));
   if (missing.length > 0) {
     console.error(`❌ Missing directories:`);
@@ -116,25 +95,6 @@ function checkDirectoryStructure() {
   }
   console.log('✅ Directory structure valid');
   return true;
-}
-
-/**
- * Check manifest files (uses getManifestDir - repo root or skill)
- */
-function checkManifests() {
-  try {
-    const manifestDir = getManifestDir();
-    const files = readdirSync(manifestDir).filter(f => f.endsWith('.yaml'));
-    if (files.length === 0) {
-      console.error('❌ No manifest files found');
-      return false;
-    }
-    console.log(`✅ Found ${files.length} manifest files`);
-    return true;
-  } catch (error) {
-    console.error(`❌ ${error.message}`);
-    return false;
-  }
 }
 
 /**
@@ -170,7 +130,6 @@ function main() {
     checkNodeVersion,
     checkDependencies,
     checkDirectoryStructure,
-    checkManifests,
     checkTemplates,
   ];
   

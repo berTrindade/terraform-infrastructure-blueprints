@@ -120,8 +120,8 @@ docker-compose up -d
 ```
 
 This starts:
-- **MCP HTTP Server** on port 3000
-- **Caddy** reverse proxy with HTTPS on ports 80/443
+- **MCP HTTP Server** on port 3000 (internal only)
+- **Caddy** reverse proxy with HTTPS on ports 8080/8443 (independent deployment)
 
 ### Configuration
 
@@ -131,7 +131,7 @@ This starts:
 {
   "mcpServers": {
     "ustwo-infra": {
-      "url": "https://mcp.ustwo.com/mcp"
+      "url": "https://mcp.ustwo.com:8443/sse"
     }
   }
 }
@@ -143,7 +143,7 @@ This starts:
 {
   "servers": {
     "ustwo-infra": {
-      "url": "https://mcp.ustwo.com/mcp",
+      "url": "https://mcp.ustwo.com:8443/sse",
       "type": "http"
     }
   }
@@ -158,7 +158,7 @@ Add via UI or config:
 {
   "mcpServers": {
     "ustwo-infra": {
-      "url": "https://mcp.ustwo.com/mcp"
+      "url": "https://mcp.ustwo.com:8443/sse"
     }
   }
 }
@@ -172,8 +172,8 @@ For HTTP mode deployment:
 
 ```bash
 PORT=3000
-AUTH_BASE_URL=https://mcp.ustwo.com
-MCP_BASE_URL=https://mcp.ustwo.com
+AUTH_BASE_URL=https://mcp.ustwo.com:8443
+MCP_BASE_URL=https://mcp.ustwo.com:8443
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 COMPANY_DOMAIN=ustwo.com
@@ -211,7 +211,7 @@ The HTTP server:
 
 ### Production deployment (e.g. mu / Linux)
 
-To run at **https://mcp.ustwo.com** with Docker only (no Node on the host):
+To run at **https://mcp.ustwo.com:8443** with Docker only (no Node on the host):
 
 1. On the server: clone repo, `cd packages/mcp`, copy `env.example` to `.env` and set secrets.
 2. Run `./scripts/deploy.sh` or `docker compose pull && docker compose up -d`.

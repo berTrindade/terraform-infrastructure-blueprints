@@ -1,0 +1,39 @@
+---
+description: Team coding standards, PR requirements, workflow automation
+globs: "**/*"
+alwaysApply: true
+priority: 60
+---
+
+# Team Standards
+
+## Pull Request Requirements:
+
+- Every PR must include terraform plan output
+- All tests pass (terraform validate, tflint)
+- Code formatted (terraform fmt)
+- Peer review from another engineer
+- Tech lead approval for architectural changes
+
+## Commit Messages:
+
+Follow conventional commits:
+- feat: New capability or blueprint
+- fix: Bug fix or correction
+- docs: Documentation updates
+- refactor: Code restructuring
+- test: Test additions/updates
+
+## Test Generation:
+
+All new modules require:
+- terraform validate tests
+- Example configurations in examples/ directory
+- README with usage instructions
+
+## Skills Usage:
+
+- style-guide: Blueprint selection, naming, architectural decisions
+- code-generation: Adding capabilities from templates
+- mcp-discovery: Finding blueprints, fetching files
+- security: Secrets management, security groups

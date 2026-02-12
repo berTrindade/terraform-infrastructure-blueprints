@@ -83,8 +83,7 @@ graph LR
     D --> A
     
     E[Maintainer] -->|Creates| F[Blueprints]
-    F -->|Creates| G[Manifests]
-    G -->|Creates| H[Templates]
+    F -->|Creates| H[Templates]
     H --> C
 ```
 
@@ -109,7 +108,6 @@ graph LR
 
 - ✅ Create new blueprints in repository
 - ✅ Maintain existing blueprints
-- ✅ Create YAML manifests
 - ✅ Create parameterized templates
 - ✅ Access repository directly
 

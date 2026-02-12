@@ -17,6 +17,17 @@ export const searchBlueprintsSchema = {
   inputSchema: {
     query: z.string().describe("Search keywords"),
   },
+  outputSchema: z.object({
+    blueprints: z.array(z.object({
+      name: z.string(),
+      description: z.string(),
+      cloud: z.string(),
+      database: z.string().optional(),
+      pattern: z.string().optional(),
+    })),
+    total: z.number(),
+    query: z.string(),
+  }),
 };
 
 /**
@@ -53,8 +64,14 @@ export async function handleSearchBlueprints(args: { query: string }) {
       return {
         content: [{
           type: "text" as const,
-          text: `No blueprints found for "${args.query}". Try: 'serverless', 'postgresql', 'queue', 'containers', or use recommend_blueprint().`
-        }]
+          text: `No blueprints found for "${args.query}". Try: 'serverless', 'postgresql', 'queue', 'containers', or use recommend_blueprint().`,
+          mimeType: "text/markdown",
+        }],
+        structuredContent: {
+          blueprints: [],
+          total: 0,
+          query: args.query,
+        },
       };
     }
 
@@ -62,6 +79,14 @@ export async function handleSearchBlueprints(args: { query: string }) {
       const cloud = getCloudProvider(b.name) || "aws";
       return `- **${b.name}** (${cloud.toUpperCase()}) - ${b.description}`;
     }).join("\n");
+
+    const structuredBlueprints = matches.map(b => ({
+      name: b.name,
+      description: b.description,
+      cloud: getCloudProvider(b.name) || "aws",
+      database: b.database,
+      pattern: b.pattern,
+    }));
 
     wideEvent.status_code = 200;
     wideEvent.outcome = "success";
@@ -71,8 +96,14 @@ export async function handleSearchBlueprints(args: { query: string }) {
     return {
       content: [{
         type: "text" as const,
-        text: `Found ${matches.length} blueprint(s):\n\n${results}\n\nUse recommend_blueprint() for detailed recommendations.`
-      }]
+        text: `Found ${matches.length} blueprint(s):\n\n${results}\n\nUse recommend_blueprint() for detailed recommendations.`,
+        mimeType: "text/markdown",
+      }],
+      structuredContent: {
+        blueprints: structuredBlueprints,
+        total: matches.length,
+        query: args.query,
+      },
     };
   } catch (error) {
     wideEvent.status_code = 500;

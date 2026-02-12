@@ -8,6 +8,27 @@ A single guide to how this repository uses the Model Context Protocol (MCP) and 
 
 This repo combines **MCP** (connectivity: tools, prompts, on-demand resources) with **Skills** (methodology and when/how to use data). Together they give AI: blueprint discovery, step-by-step workflows, and style/conventions—so consultants and clients get the right guidance every time.
 
+## The Three-Layer Architecture
+
+The workshop notes (2026-02) clarify three distinct layers:
+
+1. **AGENTS.md / RULES** — "Who you are" (always present)
+   - Project-specific rules and conventions
+   - Consultancy model, naming conventions, cloud constraints
+   - See: [AGENTS.md](../AGENTS.md) Decision Framework section
+
+2. **Skills** — "What you can do" (on-demand workflows)
+   - Procedural workflows for specific scenarios
+   - Progressive disclosure (scan → load → execute)
+   - See: [Skills](../skills/) in the repository
+
+3. **MCP** — "What you can access" (external tools)
+   - Dynamic blueprint discovery, file fetching
+   - Connects to external knowledge/services
+   - See: [MCP Tools Reference](mcp-tools-reference.md)
+
+**Key insight:** These layers complement each other. AGENTS.md provides context, Skills provide methodology, MCP provides connectivity.
+
 ## What is MCP?
 
 MCP is a standard way for AI tools to talk to servers. **Build once, any MCP client can connect.** Our server lives in [packages/mcp/](packages/mcp/) and exposes blueprints and workflows over the protocol.
@@ -71,7 +92,7 @@ A Skill package has:
 - **references/** (optional): domain references, glossaries, or pointers (e.g. to [Blueprint Catalog](blueprints/catalog.md)).
 - **templates/** or **assets/** (optional): output templates (e.g. `.tftpl`). We use `templates/` in code-generation.
 
-See [Manifests and Templates](manifests-and-templates.md) for how blueprints, manifests, and Skill templates fit together.
+See [Templates and Blueprints](manifests-and-templates.md) for how blueprints and Skill templates fit together.
 
 ## Progressive Disclosure (3 Steps)
 
@@ -130,7 +151,7 @@ See [AI Assistant Guidelines](ai-assistant-guidelines.md) and [MCP Tools Referen
 ### Phase 2: Develop Skills
 
 - **Document key workflows:** New project, add capability, migrate cloud (in workflow tool/prompts and in [Blueprint Workflows](blueprints/workflows.md)).
-- **Skill packages:** Each has clear Instructions and optional scripts/, references/, templates/ (or assets/). See [Manifests and Templates](manifests-and-templates.md).
+- **Skill packages:** Each has clear Instructions and optional scripts/, references/, templates/ (or assets/). See [Templates and Blueprints](manifests-and-templates.md).
 
 ### Phase 3: Combine and Scale
 

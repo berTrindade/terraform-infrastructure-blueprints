@@ -1,6 +1,6 @@
 ---
 name: mcp-discovery
-description: Use when the user wants to find blueprints, fetch blueprint files, get workflow guidance, or find cross-cloud equivalents. Describes when to use each MCP tool (search_blueprints, recommend_blueprint, fetch_blueprint_file, get_workflow_guidance, find_by_project, extract_pattern).
+description: Use when the user wants to find blueprints, fetch blueprint files, get workflow guidance, or find cross-cloud equivalents. Triggers on: "what blueprint does X use", "I need the AWS version of...", "show me the RDS module", "how do I add a database", "what did project Mavie use", "I need what [project] has on [cloud]". Describes when to use each MCP tool (search_blueprints, recommend_blueprint, fetch_blueprint_file, get_workflow_guidance, find_by_project, extract_pattern).
 ---
 
 # MCP Blueprint Discovery

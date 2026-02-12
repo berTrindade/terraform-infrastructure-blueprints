@@ -1,8 +1,8 @@
-# Manifest-Based Template Generation Architecture
+# Simplified Template Generation Architecture
 
-Date: 2026-01-30
+Date: 2026-01-30 (Updated: 2026-02-08)
 Owner: Bernardo Trindade de Abreu
-Status: Approved
+Status: Superseded - Simplified Architecture
 
 ## Context
 
@@ -18,38 +18,36 @@ Scenario 2 initially required AI assistants to:
 
 This consumed significant tokens and processing time. The challenge was creating a system that generates production-ready code efficiently while maintaining consistency with blueprint patterns.
 
-Key requirements:
-- Generate code adapted to project conventions (naming, tags, VPC)
-- Validate parameters before generation
-- Follow blueprint patterns (ephemeral passwords, IAM auth, etc.)
-- Work with any blueprint (agnostic design)
-- Execute locally without LLM overhead
+**Initial Approach (2026-01-30)**: Manifest-based system with YAML files defining variables, types, validation rules, and defaults. This created duplication - manifest YAML files duplicated variable definitions already present in `variables.tf` files.
 
-## Decision
+**Problem Identified**: Modern LLMs can infer types, required fields, and valid patterns directly from Terraform code. The manifest layer added maintenance cost without proportional benefit.
 
-Implement a manifest-based template generation system:
+## Decision (Updated 2026-02-08)
 
-1. **Blueprint Manifests** (`blueprints/manifests/{blueprint}.yaml`):
-   - Define available snippets (reusable Terraform modules)
-   - Specify variables, types, validation rules, defaults
-   - Reference template files
-   - Machine-readable specification
+**Simplify to direct template rendering** - Remove manifest layer entirely:
 
-2. **Template Generator Skill** (`skills/infrastructure-code-generation`):
-   - Agnostic skill that works with any manifest
-   - Validates parameters against manifest definitions
+1. **Templates** (`skills/code-generation/templates/*.tftpl`):
+   - Parameterized Terraform templates
+   - Use `${variable}` placeholders (Terraform convention)
+   - Follow blueprint patterns (ephemeral passwords, naming, etc.)
+
+2. **Template Generator Script** (`skills/code-generation/scripts/generate.js`):
+   - Accepts template name and parameters directly
    - Renders templates with parameter substitution
+   - No validation layer - Terraform catches errors at plan time
    - Returns generated Terraform code
    - Executes locally (Node.js), sub-second response
 
-3. **Reusable Templates** (`skills/infrastructure-code-generation/templates/*.tf.template`):
-   - Parameterized Terraform templates
-   - Use `{{variable_name}}` placeholders
-   - Follow blueprint patterns (ephemeral passwords, naming, etc.)
+3. **Single Source of Truth**: Blueprint's `variables.tf` files
+   - LLMs reference these to understand parameter names, types, defaults
+   - No duplication - one definition in `variables.tf`, not two (manifest + variables.tf)
+   - Use MCP `fetch_blueprint_file()` to read parameter definitions
 
-This architecture enables Scenario 2 (generation) to be efficient and consistent while keeping the skill agnostic and scalable.
+This simplified architecture maintains token efficiency while eliminating maintenance burden.
 
 ## Alternatives Considered
+
+### Original Alternatives (2026-01-30)
 
 1. **Hardcode Blueprint-Specific Logic in Skill**
    - Pros: Simple implementation, direct control
@@ -66,29 +64,61 @@ This architecture enables Scenario 2 (generation) to be efficient and consistent
    - Cons: Still requires adaptation, doesn't solve parameterization
    - Rejected: Doesn't address the core need
 
+### Simplification Alternatives (2026-02-08)
+
+1. **Keep Manifest-Based System**
+   - Pros: Strict validation, type checking, pattern matching
+   - Cons: Duplicates `variables.tf` definitions, high maintenance burden, LLMs can infer types
+   - Rejected: Overengineering - modern LLMs don't need strict validation layer
+
+2. **Direct Template Rendering (Chosen)**
+   - Pros: Single source of truth (`variables.tf`), simpler architecture, LLM-friendly
+   - Cons: No pre-validation (Terraform catches errors at plan time)
+   - Accepted: Fast feedback loop, clear error messages, acceptable tradeoff
+
 ## Consequences
 
 ### Benefits
 
 - **Token Efficiency**: 50 lines generated vs 200+ lines fetched (~75% reduction)
 - **Speed**: Sub-second local execution vs seconds of LLM processing
-- **Consistency**: Always follows blueprint patterns from manifest
-- **Scalability**: Add new blueprint = create manifest, no skill changes
-- **Agnostic Design**: Skill works with any blueprint that has a manifest
+- **Consistency**: Always follows blueprint patterns from templates
+- **Scalability**: Add new template = create `.tftpl` file, no skill changes
+- **Agnostic Design**: Skill works with any template file
+- **Single Source of Truth**: Parameter definitions in `variables.tf` only, no duplication
+- **Simpler Architecture**: Removed ~200 lines of validation code, 19 manifest files
 
 ### Trade-offs
 
-- **Initial Setup**: Requires creating manifests for each blueprint
+- **No Pre-Validation**: Missing parameters appear as `${undefined}` in output
+- **Type Errors**: Caught by Terraform at `terraform plan` time, not before generation
+- **Pattern Violations**: Caught by AWS at `terraform apply` time, not before generation
 - **Template Maintenance**: Templates must be kept in sync with blueprint code
-- **Learning Curve**: Developers must understand manifest structure
+
+**Acceptable Tradeoffs**: Fast feedback loop (plan/apply), clear error messages, LLMs can infer types from `variables.tf`
 
 ### Impact
 
 - **AI Assistant Performance**: Faster, more efficient code generation
 - **Developer Experience**: Get production-ready code in seconds
-- **Repository Structure**: New `blueprints/manifests/` directory
-- **Maintenance**: Must keep manifests and templates updated with blueprints
+- **Repository Structure**: Removed `blueprints/manifests/` directory (19 files deleted)
+- **Maintenance**: Only templates need updates, parameter definitions live in `variables.tf`
+- **Code Reduction**: Removed `parse-manifest.js` (~180 lines), simplified `generate.js`
+
+## Migration Notes
+
+**What Changed**:
+- Removed: `blueprints/manifests/*.yaml` (19 files), `parse-manifest.js` validation layer
+- Simplified: `generate.js` now accepts `{ "template": "...", "params": {...} }` directly
+- Updated: `SKILL.md` documents direct template usage and `variables.tf` as source of truth
+
+**What Stayed**:
+- Template files (`.tftpl`) - unchanged
+- Template rendering logic (`render-template.js`) - unchanged
+- Token efficiency - still generating 50 lines vs fetching 200+
 
 ## Notes
 
-This architecture follows Felipe's vision of "skill as a technical assembly line" (Scenario 2) and "fetch as a best practices manual" (Scenario 1). The manifest-based approach makes the skill agnostic and allows blueprints to be pluggable. The key principle is that skills remain agnostic and blueprints are pluggable through YAML manifests, enabling scalability without modifying the skill code.
+This simplified architecture maintains the benefits of template-based generation while eliminating the maintenance burden of manifest duplication. Modern LLMs can infer types and patterns from Terraform code, making strict validation layers unnecessary. The fast feedback loop (Terraform plan/apply) provides clear error messages when parameters are missing or incorrect.
+
+The architecture still follows Felipe's vision of "skill as a technical assembly line" (Scenario 2) and "fetch as a best practices manual" (Scenario 1). The key principle remains: skills stay agnostic, templates are pluggable, and blueprints provide the source of truth through `variables.tf` files.

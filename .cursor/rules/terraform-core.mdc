@@ -1,0 +1,45 @@
+---
+description: Terraform basics - formatting, block ordering, state management, version pinning
+globs:
+  - "**/*.tf"
+  - "**/*.tfvars"
+priority: 90
+---
+
+# Terraform Core Rules
+
+## Formatting
+
+- Run `terraform fmt -recursive` before commit
+- Use 2-space indentation
+- No trailing whitespace
+
+## Block Ordering (resources)
+
+1. `count` or `for_each` FIRST (blank line after)
+2. Other arguments (alphabetical or logical grouping)
+3. `tags` as last real argument
+4. `depends_on` after tags (if needed)
+5. `lifecycle` at the very end (if needed)
+
+## Variables and Outputs
+
+- Every variable and output MUST have a `description`
+- Use `sensitive = true` for any value that could be secret
+- Prefer explicit `type` constraints
+
+## State and Backend
+
+- Use remote state with locking (e.g. S3 + DynamoDB)
+- Never commit .tfstate or .tfstate.backup
+- Use backend config via `-backend-config` or variables, not hardcoded secrets
+
+## Version Pinning
+
+- Pin provider versions in `required_providers`
+- Pin module versions (e.g. `version = "~> 5.0"`)
+- Use `terraform` block with `required_version` when appropriate
+
+## Reference
+
+- [skills/terraform-practices/references/code-patterns.md](skills/terraform-practices/references/code-patterns.md) - Block ordering and structure

@@ -94,6 +94,17 @@ export async function handleAuthorize(req: Request, res: Response): Promise<void
     code_challenge_method as string
   );
 
-  // Redirect to Google OAuth
+  // Check if client expects JSON (e.g., programmatic OAuth flow)
+  const acceptHeader = req.headers.accept || "";
+  if (acceptHeader.includes("application/json")) {
+    // Return JSON response with authorization URL for programmatic clients
+    res.json({
+      authorization_url: authUrl,
+      redirect_required: true,
+    });
+    return;
+  }
+
+  // Redirect to Google OAuth (for browser-based flows)
   res.redirect(authUrl);
 }

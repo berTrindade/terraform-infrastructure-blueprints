@@ -1,0 +1,43 @@
+---
+description: VPC patterns, blueprint selection, cost decisions, architecture choices
+globs:
+  - "**/*.tf"
+  - "**/environments/**/*.tf"
+priority: 75
+---
+
+# Terraform Architecture Rules
+
+## Blueprint Selection
+
+- Use MCP `recommend_blueprint()` for new projects (database, pattern, auth, containers, cloud)
+- Cross-cloud: use `find_by_project(project_name, target_cloud)` for equivalents
+- Decision tree: [docs/blueprints/catalog.md](docs/blueprints/catalog.md)
+
+## VPC and Cost
+
+- **Lambda in VPC**: Prefer VPC endpoints over NAT Gateway (cost-effective; NAT ~$32/month + data)
+- **Containers (ECS/EKS)**: NAT Gateway often required for outbound; consider single NAT or NAT instance for dev
+- Use `terraform-aws-modules/vpc/aws`; avoid raw `aws_vpc` resources
+
+## Serverless vs Containers
+
+- Serverless (Lambda + API Gateway): Lower ops, scale-to-zero, use for most APIs
+- Containers (ECS Fargate, EKS): Custom runtimes, long-running processes, existing containerized apps
+
+## Database Choice
+
+- **DynamoDB**: NoSQL, simple CRUD, lowest cost, no connection management
+- **RDS PostgreSQL**: Relational, SQL, connection pooling (RDS Proxy) for higher traffic
+- **Aurora Serverless**: Variable traffic, auto-scaling relational
+
+## Module Structure
+
+- Composition in `environments/<env>/main.tf`; implementation in `modules/<capability>/`
+- Single-purpose modules with clear inputs/outputs
+- Reference blueprint layout: `blueprints/aws/apigw-lambda-rds/`
+
+## Reference
+
+- [docs/blueprints/catalog.md](docs/blueprints/catalog.md) - Blueprint catalog and decision tree
+- [skills/style-guide/SKILL.md](skills/style-guide/SKILL.md) - CRITICAL/HIGH priority (cost, security)

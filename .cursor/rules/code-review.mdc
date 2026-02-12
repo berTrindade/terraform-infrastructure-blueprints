@@ -1,0 +1,32 @@
+---
+description: Code review standards for tech leads - what to check, common issues, approval criteria
+globs: "**/*"
+priority: 80
+---
+
+# Tech Lead Code Review Standards
+
+## Before Approving PRs Check:
+
+1. Blueprint patterns followed (ephemeral passwords, IAM auth, security groups)
+2. Official modules used (terraform-aws-modules, cloudposse)
+3. Proper naming conventions (snake_case, no resource type in name)
+4. All variables/outputs have descriptions
+5. Remote state configured with locking
+6. Provider versions pinned
+7. Tags applied to all resources
+8. No hardcoded values or secrets
+
+## Automated Checks Required:
+
+- terraform fmt
+- terraform validate
+- tflint
+- terraform plan (in CI)
+
+## Architecture Review:
+
+- Blueprint selection justified
+- Cost implications considered (NAT vs VPC endpoints)
+- Security groups follow least-privilege
+- Modules are reusable and single-purpose

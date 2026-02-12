@@ -19,6 +19,15 @@ export const extractPatternSchema = {
     include_files: z.boolean().optional().describe("Include file contents?"),
     include_code_examples: z.boolean().optional().describe("Include code examples?"),
   },
+  outputSchema: z.object({
+    capability: z.string(),
+    blueprint: z.string(),
+    description: z.string(),
+    modules: z.array(z.string()),
+    integrationSteps: z.array(z.string()),
+    files: z.array(z.string()).optional(),
+    codeExamples: z.string().optional(),
+  }),
 };
 
 /**
@@ -63,8 +72,15 @@ export async function handleExtractPattern(args: {
       return {
         content: [{
           type: "text" as const,
-          text: `Unknown capability "${args.capability}". Available: ${available}`
-        }]
+          text: `Unknown capability "${args.capability}". Available: ${available}`,
+          mimeType: "text/markdown",
+        }],
+        isError: true,
+        structuredContent: {
+          capability: args.capability,
+          error: "unknown_capability",
+          availableCapabilities: available.split(", "),
+        },
       };
     }
 
@@ -120,6 +136,12 @@ export async function handleExtractPattern(args: {
     wideEvent.duration_ms = Date.now() - startTime;
     logger.info(wideEvent);
 
+    const fileUris = [
+      `blueprints://${cloud}/${pattern.blueprint}/README.md`,
+      `blueprints://${cloud}/${pattern.blueprint}/environments/dev/main.tf`,
+      ...moduleFiles,
+    ];
+
     return {
       content: [{
         type: "text" as const,
@@ -142,8 +164,18 @@ ${codeExamples}
 ${moduleFiles.map(f => `- Module: \`${f}\``).join("\n")}
 ${fileContents}
 
-Use fetch_blueprint_file() to get specific files.`
-      }]
+Use fetch_blueprint_file() to get specific files.`,
+        mimeType: "text/markdown",
+      }],
+      structuredContent: {
+        capability: args.capability,
+        blueprint: pattern.blueprint,
+        description: pattern.description,
+        modules: pattern.modules,
+        integrationSteps: pattern.integrationSteps,
+        files: fileUris,
+        codeExamples: codeExamples || undefined,
+      },
     };
   } catch (error) {
     wideEvent.status_code = 500;

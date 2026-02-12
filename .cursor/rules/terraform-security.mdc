@@ -1,0 +1,56 @@
+---
+description: Security patterns for Terraform - ephemeral passwords, IAM DB auth, least-privilege security groups
+globs:
+  - "**/*.tf"
+  - "**/modules/**/*.tf"
+alwaysApply: true
+priority: 100
+---
+
+# Security Rules (CRITICAL)
+
+## Ephemeral Passwords (Flow A)
+
+NEVER store passwords in Terraform state. Always use:
+- ephemeral random_password with password_wo attribute
+- IAM Database Authentication when possible
+- Secrets Manager for post-creation rotation only
+
+Example from [docs/ai-assistant-guidelines.md](docs/ai-assistant-guidelines.md):
+
+```hcl
+ephemeral "random_password" "db" {
+  length  = 32
+  special = true
+}
+resource "aws_db_instance" "main" {
+  password_wo         = ephemeral.random_password.db.result
+  password_wo_version = 1
+}
+```
+
+## Security Groups - Least Privilege
+
+Always use specific source_security_group_id, never 0.0.0.0/0 unless explicitly required for public access.
+
+```hcl
+resource "aws_security_group_rule" "lambda_to_rds" {
+  type                     = "egress"
+  from_port                = 5432
+  to_port                  = 5432
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.lambda.id
+  security_group_id        = aws_security_group.rds.id
+  description              = "Allow Lambda to connect to RDS"
+}
+```
+
+## IAM Database Authentication
+
+Enable for RDS/Aurora so applications use IAM tokens instead of passwords:
+
+```hcl
+resource "aws_db_instance" "main" {
+  iam_database_authentication_enabled = true
+}
+```

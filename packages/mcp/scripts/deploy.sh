@@ -10,7 +10,8 @@ if [ ! -f .env ]; then
   exit 1
 fi
 
-mkdir -p logs/caddy
+# Note: logs/caddy mount removed from docker-compose.yml for independent deployment
 docker compose pull
 docker compose up -d
 echo "Done. Check: docker compose logs -f mcp-server"
+echo "Verify: curl -I https://mcp.ustwo.com:8443/health"

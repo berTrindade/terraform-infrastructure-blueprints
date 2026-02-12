@@ -16,6 +16,10 @@ export const getWorkflowGuidanceSchema = {
   inputSchema: {
     task: z.enum(["new_project", "add_capability", "migrate_cloud", "general"]).describe("Task: new_project, add_capability, migrate_cloud, general"),
   },
+  outputSchema: z.object({
+    task: z.enum(["new_project", "add_capability", "migrate_cloud", "general"]),
+    content: z.string(),
+  }),
 };
 
 /**
@@ -45,7 +49,12 @@ export async function handleGetWorkflowGuidance(args: { task: "new_project" | "a
       content: [{
         type: "text" as const,
         text,
-      }]
+        mimeType: "text/markdown",
+      }],
+      structuredContent: {
+        task: args.task,
+        content: text,
+      },
     };
   } catch (error) {
     wideEvent.status_code = 500;

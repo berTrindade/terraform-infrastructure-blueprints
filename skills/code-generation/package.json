@@ -5,9 +5,7 @@
   "description": "Template generator for Terraform blueprints",
   "scripts": {
     "generate": "node scripts/generate.js",
-    "setup": "node scripts/setup.js",
-    "validate:manifest": "node scripts/validate-manifest.js",
-    "validate:all": "node scripts/validate-manifest.js --all"
+    "setup": "node scripts/setup.js"
   },
   "dependencies": {
     "js-yaml": "^4.1.0"

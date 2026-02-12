@@ -20,6 +20,22 @@ export const recommendBlueprintSchema = {
     containers: z.boolean().optional().describe("Need containers (ECS/EKS)?"),
     cloud: z.string().optional().describe("Cloud: aws, azure, gcp"),
   },
+  outputSchema: z.object({
+    blueprint: z.object({
+      name: z.string(),
+      description: z.string(),
+      database: z.string(),
+      pattern: z.string(),
+      cloud: z.string(),
+    }),
+    requirements: z.object({
+      database: z.string().optional(),
+      pattern: z.string().optional(),
+      auth: z.boolean().optional(),
+      containers: z.boolean().optional(),
+      cloud: z.string().optional(),
+    }),
+  }),
 };
 
 /**
@@ -63,8 +79,14 @@ export async function handleRecommendBlueprint(args: {
       return {
         content: [{
           type: "text" as const,
-          text: `No blueprint matches your requirements. Try recommend_blueprint() with fewer filters, or use search_blueprints() to browse.`
-        }]
+          text: `No blueprint matches your requirements. Try recommend_blueprint() with fewer filters, or use search_blueprints() to browse.`,
+          mimeType: "text/markdown",
+        }],
+        structuredContent: {
+          blueprint: null,
+          requirements: args,
+          matches: [],
+        },
       };
     }
 
@@ -101,8 +123,19 @@ terraform init && terraform apply
 - README: \`blueprints://${cloudProvider}/${blueprint.name}/README.md\`
 - Main: \`blueprints://${cloudProvider}/${blueprint.name}/environments/dev/main.tf\`
 
-Use fetch_blueprint_file() to get file contents, or extract_pattern() to add capabilities.`
-      }]
+Use fetch_blueprint_file() to get file contents, or extract_pattern() to add capabilities.`,
+        mimeType: "text/markdown",
+      }],
+      structuredContent: {
+        blueprint: {
+          name: blueprint.name,
+          description: blueprint.description,
+          database: blueprint.database,
+          pattern: blueprint.pattern,
+          cloud: cloudProvider,
+        },
+        requirements: args,
+      },
     };
   } catch (error) {
     wideEvent.status_code = 500;

@@ -20,9 +20,11 @@ export function handleMetadata(req: Request, res: Response): void {
     issuer: baseUrl,
     authorization_endpoint: `${baseUrl}/oauth/authorize`,
     token_endpoint: `${baseUrl}/oauth/token`,
+    registration_endpoint: `${baseUrl}/oauth/register`, // RFC 7591 Dynamic Client Registration
     scopes_supported: ["mcp:read", "mcp:write"],
     response_types_supported: ["code"],
     code_challenge_methods_supported: ["S256"],
     grant_types_supported: ["authorization_code"],
+    token_endpoint_auth_methods_supported: ["none"], // PKCE doesn't require client secret
   });
 }

@@ -20,6 +20,13 @@ export const fetchBlueprintFileSchema = {
     blueprint: z.string().describe("Blueprint name (e.g., 'apigw-lambda-rds')"),
     path: z.string().describe("File path relative to blueprint root (e.g., 'README.md', 'modules/data/main.tf', 'environments/dev/main.tf')"),
   },
+  outputSchema: z.object({
+    blueprint: z.string(),
+    path: z.string(),
+    content: z.string(),
+    mimeType: z.string(),
+    uri: z.string(),
+  }),
 };
 
 /**
@@ -51,8 +58,16 @@ export async function handleFetchBlueprintFile(args: { blueprint: string; path: 
       return {
         content: [{
           type: "text" as const,
-          text: `Blueprint "${args.blueprint}" not found.\n\nAvailable blueprints: ${available}`
-        }]
+          text: `Blueprint "${args.blueprint}" not found.\n\nAvailable blueprints: ${available}`,
+          mimeType: "text/markdown",
+        }],
+        isError: true,
+        structuredContent: {
+          blueprint: args.blueprint,
+          path: args.path,
+          error: "blueprint_not_found",
+          availableBlueprints: BLUEPRINTS.map(b => b.name),
+        },
       };
     }
 
@@ -80,8 +95,16 @@ export async function handleFetchBlueprintFile(args: { blueprint: string; path: 
     return {
       content: [{
         type: "text" as const,
-        text: `# ${args.blueprint}/${args.path}\n\n\`\`\`${codeLang}\n${content}\n\`\`\``
-      }]
+        text: `# ${args.blueprint}/${args.path}\n\n\`\`\`${codeLang}\n${content}\n\`\`\``,
+        mimeType: "text/markdown",
+      }],
+      structuredContent: {
+        blueprint: args.blueprint,
+        path: args.path,
+        content: content,
+        mimeType: mimeType,
+        uri: uri,
+      },
     };
   } catch (error) {
     // Sanitize error message to prevent information disclosure
@@ -98,8 +121,16 @@ export async function handleFetchBlueprintFile(args: { blueprint: string; path: 
     return {
       content: [{
         type: "text" as const,
-        text: `Error fetching file: ${sanitizedMessage}\n\nMake sure the path is correct. Common paths:\n- README.md\n- environments/dev/main.tf\n- modules/data/main.tf\n- modules/vpc/main.tf`
-      }]
+        text: `Error fetching file: ${sanitizedMessage}\n\nMake sure the path is correct. Common paths:\n- README.md\n- environments/dev/main.tf\n- modules/data/main.tf\n- modules/vpc/main.tf`,
+        mimeType: "text/markdown",
+      }],
+      isError: true,
+      structuredContent: {
+        blueprint: args.blueprint,
+        path: args.path,
+        error: "file_fetch_error",
+        errorMessage: sanitizedMessage,
+      },
     };
   }
 }
