@@ -83,9 +83,14 @@ export async function handleSSEConnection(
     remote_address: req.ip,
   });
 
-  // SSE connection established - no initial message needed
-  // Connection ID is available via X-Connection-ID header
-  // All subsequent messages will be JSON-RPC 2.0 formatted
+  // Send the endpoint event as required by MCP SSE transport spec
+  // This tells the client where to POST messages
+  // Format: event: endpoint\ndata: <URL with sessionId>\n\n
+  const baseUrl = process.env.MCP_BASE_URL || process.env.AUTH_BASE_URL || "";
+  const endpointPath = `/sse?sessionId=${connectionId}`;
+  const endpointUrl = baseUrl ? `${baseUrl}${endpointPath}` : endpointPath;
+  
+  res.write(`event: endpoint\ndata: ${endpointUrl}\n\n`);
 
   // Handle client disconnect
   req.on("close", () => {
@@ -126,10 +131,18 @@ export async function handleMCPMessage(
   req: Request,
   res: Response
 ): Promise<void> {
-  const connectionId = req.headers["x-connection-id"] as string;
+  // Accept connection ID from either header or query param (MCP spec uses sessionId query param)
+  const connectionId = (req.headers["x-connection-id"] as string) || 
+                       (req.query.sessionId as string);
   const connection = connectionId ? connections.get(connectionId) : undefined;
 
   if (!connection) {
+    logger.warn({
+      operation: "mcp_message_no_connection",
+      connection_id: connectionId || "none",
+      header_id: req.headers["x-connection-id"],
+      query_id: req.query.sessionId,
+    });
     res.status(400).json({
       error: "No active connection",
       error_description: "Establish SSE connection first",
