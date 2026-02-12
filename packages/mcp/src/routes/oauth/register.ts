@@ -38,14 +38,15 @@ const registeredClients = new Map<string, {
  * - redirect_uris: Registered redirect URIs
  */
 export function handleRegister(req: Request, res: Response): void {
-  const {
-    redirect_uris,
-    token_endpoint_auth_method = "none", // PKCE doesn't require client secret
-    grant_types = ["authorization_code"],
-    response_types = ["code"],
-    client_name,
-    scope,
-  } = req.body;
+  try {
+    const {
+      redirect_uris,
+      token_endpoint_auth_method = "none", // PKCE doesn't require client secret
+      grant_types = ["authorization_code"],
+      response_types = ["code"],
+      client_name,
+      scope,
+    } = req.body;
 
   // Validate redirect URIs
   if (!redirect_uris || !Array.isArray(redirect_uris) || redirect_uris.length === 0) {
@@ -56,10 +57,16 @@ export function handleRegister(req: Request, res: Response): void {
     return;
   }
 
-  // Validate redirect URI format (must be cursor:// protocol or http://localhost)
+  // Validate redirect URI format - support all MCP clients
+  // Cursor: cursor://anysphere.cursor-mcp/oauth/callback
+  // VS Code: http://localhost:PORT/oauth/callback
+  // Claude Desktop: claude://oauth/callback (or similar)
+  // Generic: http://localhost:PORT/oauth/callback
   const validRedirectUriPatterns = [
     /^cursor:\/\/anysphere\.cursor-mcp\/oauth\/callback$/,
+    /^claude:\/\/oauth\/callback$/,
     /^http:\/\/localhost:\d+\/oauth\/callback$/,
+    /^http:\/\/127\.0\.0\.1:\d+\/oauth\/callback$/,
   ];
 
   for (const uri of redirect_uris) {
@@ -75,7 +82,7 @@ export function handleRegister(req: Request, res: Response): void {
     if (!isValid) {
       res.status(400).json({
         error: "invalid_redirect_uri",
-        error_description: `Invalid redirect_uri: ${uri}. Must be cursor://anysphere.cursor-mcp/oauth/callback or http://localhost:PORT/oauth/callback`,
+        error_description: `Invalid redirect_uri: ${uri}. Supported formats: cursor://anysphere.cursor-mcp/oauth/callback, claude://oauth/callback, or http://localhost:PORT/oauth/callback`,
       });
       return;
     }
@@ -130,6 +137,23 @@ export function handleRegister(req: Request, res: Response): void {
     ...(client_name && { client_name }),
     ...(scope && { scope }),
   });
+  } catch (error) {
+    // Ensure we always return JSON, never a Response object
+    const errorMessage = error instanceof Error ? error.message : "Registration failed";
+    const errorType = error instanceof Error ? error.name : "UnknownError";
+    
+    // Log error for debugging
+    console.error("Registration error:", {
+      type: errorType,
+      message: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    
+    res.status(500).json({
+      error: "server_error",
+      error_description: errorMessage,
+    });
+  }
 }
 
 /**

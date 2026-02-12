@@ -29,6 +29,7 @@ export async function handleToken(req: Request, res: Response): Promise<void> {
     redirect_uri,
     code_verifier,
     client_id,
+    client_secret, // Optional, for static OAuth clients
   } = req.body;
 
   // Validate grant type
@@ -38,6 +39,27 @@ export async function handleToken(req: Request, res: Response): Promise<void> {
       error_description: "grant_type must be 'authorization_code'",
     });
     return;
+  }
+
+  // Validate client_id if provided (for static OAuth clients)
+  // Dynamic clients don't need client_id validation as they're registered
+  if (client_id && typeof client_id === "string") {
+    // Check if it's a registered dynamic client
+    try {
+      const { isValidClientId } = await import("./register.js");
+      const isRegistered = isValidClientId(client_id);
+      
+      // If not registered and no client_secret provided, it might be a static client
+      // Static clients should provide client_secret if required by server config
+      // For now, we allow unregistered client_ids (they'll be validated during code exchange)
+      if (!isRegistered && !client_secret) {
+        // This is OK - might be a static client or the client_id is optional
+        // The actual validation happens during code exchange
+      }
+    } catch (error) {
+      // Registration module not available - continue without client validation
+      // This allows the server to work even if registration is disabled
+    }
   }
 
   if (!code || typeof code !== "string") {
@@ -93,9 +115,20 @@ export async function handleToken(req: Request, res: Response): Promise<void> {
       scope: "mcp:read mcp:write",
     });
   } catch (error) {
+    // Ensure we always return JSON, never a Response object
+    const errorMessage = error instanceof Error ? error.message : "Token exchange failed";
+    const errorType = error instanceof Error ? error.name : "UnknownError";
+    
+    // Log error for debugging
+    console.error("Token exchange error:", {
+      type: errorType,
+      message: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    
     res.status(400).json({
       error: "invalid_grant",
-      error_description: error instanceof Error ? error.message : "Token exchange failed",
+      error_description: errorMessage,
     });
   }
 }

@@ -77,11 +77,23 @@ function createApp() {
   app.post("/oauth/register", async (req: Request, res: Response) => {
     try {
       const { handleRegister } = await import("./routes/oauth/register.js");
+      // Ensure handleRegister is called and errors are caught
       handleRegister(req, res);
     } catch (error) {
+      // Log error for debugging
+      httpLogger.error({
+        error: {
+          type: error instanceof Error ? error.name : "UnknownError",
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        },
+        path: "/oauth/register",
+      });
+      
+      // Return proper JSON error response
       res.status(500).json({
         error: "registration_not_available",
-        error_description: "Dynamic client registration is not available",
+        error_description: error instanceof Error ? error.message : "Dynamic client registration is not available",
       });
     }
   });
@@ -90,17 +102,64 @@ function createApp() {
   app.post("/oauth/token/validate", handleTokenValidate);
 
   // OAuth callback (handled by Google redirect)
+  // This endpoint receives the callback from Google OAuth and redirects to the appropriate client
   app.get("/oauth/callback", (req: Request, res: Response) => {
-    // Google OAuth callback - redirect back to Cursor
-    const { code, state } = req.query;
-    if (code && state) {
-      // Redirect to Cursor protocol
-      res.redirect(`cursor://anysphere.cursor-mcp/oauth/callback?code=${code}&state=${state}`);
-    } else {
+    const { code, state, redirect_uri } = req.query;
+    
+    if (!code || !state) {
       res.status(400).json({
         error: "invalid_request",
         error_description: "Missing code or state parameter",
       });
+      return;
+    }
+
+    // Determine redirect URI from state or query parameter
+    // In a production system, you'd store the redirect_uri with the state during authorization
+    // For now, we'll try to extract it from state or use a default
+    let clientRedirectUri = redirect_uri as string | undefined;
+    
+    // If no redirect_uri provided, try to determine from state or use common defaults
+    if (!clientRedirectUri) {
+      // Try to extract from state (if encoded) or use Cursor as default
+      // In production, you should store redirect_uri with state during authorization
+      clientRedirectUri = "cursor://anysphere.cursor-mcp/oauth/callback";
+    }
+
+    // Validate redirect URI before redirecting
+    const validRedirectUriPatterns = [
+      /^cursor:\/\/anysphere\.cursor-mcp\/oauth\/callback$/,
+      /^claude:\/\/oauth\/callback$/,
+      /^http:\/\/localhost:\d+\/oauth\/callback$/,
+      /^http:\/\/127\.0\.0\.1:\d+\/oauth\/callback$/,
+    ];
+
+    const isValid = validRedirectUriPatterns.some(pattern => pattern.test(clientRedirectUri!));
+    
+    if (!isValid) {
+      res.status(400).json({
+        error: "invalid_request",
+        error_description: `Invalid redirect_uri: ${clientRedirectUri}`,
+      });
+      return;
+    }
+
+    // Redirect to the client's callback URL with code and state
+    // Build query string properly
+    const params = new URLSearchParams({
+      code: code as string,
+      state: state as string,
+    });
+    
+    // Handle different redirect URI formats
+    if (clientRedirectUri.includes("://")) {
+      // Custom protocol (cursor://, claude://)
+      const redirectUrl = `${clientRedirectUri}?${params.toString()}`;
+      res.redirect(redirectUrl);
+    } else {
+      // HTTP URL
+      const redirectUrl = `${clientRedirectUri}?${params.toString()}`;
+      res.redirect(redirectUrl);
     }
   });
 

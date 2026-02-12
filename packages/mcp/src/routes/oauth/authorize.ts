@@ -23,15 +23,16 @@ import { storeCodeChallenge } from "../../services/oauth/pkce.js";
  * - code_challenge_method: PKCE method (must be "S256")
  */
 export async function handleAuthorize(req: Request, res: Response): Promise<void> {
-  const {
-    response_type,
-    client_id,
-    redirect_uri,
-    scope,
-    state,
-    code_challenge,
-    code_challenge_method,
-  } = req.query;
+  try {
+    const {
+      response_type,
+      client_id,
+      redirect_uri,
+      scope,
+      state,
+      code_challenge,
+      code_challenge_method,
+    } = req.query;
 
   // Validate required parameters
   if (response_type !== "code") {
@@ -66,16 +67,28 @@ export async function handleAuthorize(req: Request, res: Response): Promise<void
     return;
   }
 
-  // Validate redirect URI (must be Cursor protocol)
-  const validRedirectUris = [
-    "cursor://anysphere.cursor-mcp/oauth/callback",
-    "http://localhost:3000/oauth/callback", // For development
+  // Validate redirect URI - support all MCP clients
+  // Accept any valid redirect URI pattern (validated during registration)
+  const validRedirectUriPatterns = [
+    /^cursor:\/\/anysphere\.cursor-mcp\/oauth\/callback$/,
+    /^claude:\/\/oauth\/callback$/,
+    /^http:\/\/localhost:\d+\/oauth\/callback$/,
+    /^http:\/\/127\.0\.0\.1:\d+\/oauth\/callback$/,
   ];
 
-  if (!redirect_uri || !validRedirectUris.includes(redirect_uri as string)) {
+  if (!redirect_uri || typeof redirect_uri !== "string") {
     res.status(400).json({
       error: "invalid_request",
-      error_description: "Invalid redirect_uri",
+      error_description: "redirect_uri is required",
+    });
+    return;
+  }
+
+  const isValidRedirectUri = validRedirectUriPatterns.some(pattern => pattern.test(redirect_uri as string));
+  if (!isValidRedirectUri) {
+    res.status(400).json({
+      error: "invalid_request",
+      error_description: `Invalid redirect_uri: ${redirect_uri}. Supported formats: cursor://anysphere.cursor-mcp/oauth/callback, claude://oauth/callback, or http://localhost:PORT/oauth/callback`,
     });
     return;
   }
@@ -94,12 +107,16 @@ export async function handleAuthorize(req: Request, res: Response): Promise<void
     code_challenge_method as string
   );
 
-  // For cursor:// protocol redirect URIs, always return JSON (programmatic OAuth flow)
-  // Browser-based flows use http://localhost redirect URIs
-  const isProgrammaticClient = (redirect_uri as string).startsWith("cursor://");
+  // Determine client type based on redirect URI
+  // Programmatic clients (Cursor, Claude Desktop) use custom protocols and expect JSON
+  // Browser-based clients (VS Code) use http://localhost and expect redirects
+  const isProgrammaticClient = 
+    (redirect_uri as string).startsWith("cursor://") ||
+    (redirect_uri as string).startsWith("claude://");
   
   if (isProgrammaticClient) {
     // Return JSON response with authorization URL for programmatic clients
+    // This allows the client to open the browser and handle the callback
     res.json({
       authorization_url: authUrl,
       redirect_required: true,
@@ -107,6 +124,23 @@ export async function handleAuthorize(req: Request, res: Response): Promise<void
     return;
   }
 
-  // Redirect to Google OAuth (for browser-based flows)
-  res.redirect(authUrl);
+    // Redirect to Google OAuth (for browser-based flows like VS Code)
+    res.redirect(authUrl);
+  } catch (error) {
+    // Ensure we always return JSON, never a Response object
+    const errorMessage = error instanceof Error ? error.message : "Authorization failed";
+    const errorType = error instanceof Error ? error.name : "UnknownError";
+    
+    // Log error for debugging
+    console.error("Authorization error:", {
+      type: errorType,
+      message: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    
+    res.status(500).json({
+      error: "server_error",
+      error_description: errorMessage,
+    });
+  }
 }
