@@ -8,8 +8,8 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - MCP_TRANSPORT=http
-      - MCP_BASE_URL=${MCP_BASE_URL:-https://mcp.ustwo.com:8443}
-      - AUTH_BASE_URL=${AUTH_BASE_URL:-https://mcp.ustwo.com:8443}
+      - MCP_BASE_URL=${MCP_BASE_URL:-https://mcp.ustwo.com}
+      - AUTH_BASE_URL=${AUTH_BASE_URL:-https://mcp.ustwo.com}
       - COMPANY_DOMAIN=${COMPANY_DOMAIN:-ustwo.com}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
