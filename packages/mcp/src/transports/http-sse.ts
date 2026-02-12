@@ -137,7 +137,7 @@ export async function handleMCPMessage(
   const connection = connectionId ? connections.get(connectionId) : undefined;
 
   if (!connection) {
-    logger.warn({
+    logger.info({
       operation: "mcp_message_no_connection",
       connection_id: connectionId || "none",
       header_id: req.headers["x-connection-id"],
