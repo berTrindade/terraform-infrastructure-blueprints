@@ -66,6 +66,7 @@ export async function handleSSEConnection(
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
   res.setHeader("X-Accel-Buffering", "no"); // Disable nginx buffering
+  res.setHeader("X-Connection-ID", connectionId); // Send connection ID to client
 
   // Store connection
   const connection: SSEConnection = {
