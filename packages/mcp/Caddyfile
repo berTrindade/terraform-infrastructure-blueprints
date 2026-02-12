@@ -18,38 +18,32 @@ mcp.ustwo.com {
     # MCP HTTP endpoint
     handle /mcp {
         reverse_proxy mcp-server:3000 {
-            timeout 300s
             header_up X-Real-IP {remote_host}
             header_up X-Forwarded-Proto {scheme}
+            transport http {
+                response_header_timeout 300s
+            }
         }
     }
     
     # OAuth endpoints
     handle /oauth/* {
-        reverse_proxy mcp-server:3000 {
-            timeout 30s
-        }
+        reverse_proxy mcp-server:3000
     }
     
     # OAuth metadata
     handle /.well-known/* {
-        reverse_proxy mcp-server:3000 {
-            timeout 10s
-        }
+        reverse_proxy mcp-server:3000
     }
     
     # Health check
     handle /health {
-        reverse_proxy mcp-server:3000 {
-            timeout 10s
-        }
+        reverse_proxy mcp-server:3000
     }
     
     # Default: proxy to MCP server
     handle {
-        reverse_proxy mcp-server:3000 {
-            timeout 30s
-        }
+        reverse_proxy mcp-server:3000
     }
     
     request_body {
