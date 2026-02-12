@@ -94,9 +94,11 @@ export async function handleAuthorize(req: Request, res: Response): Promise<void
     code_challenge_method as string
   );
 
-  // Check if client expects JSON (e.g., programmatic OAuth flow)
-  const acceptHeader = req.headers.accept || "";
-  if (acceptHeader.includes("application/json")) {
+  // For cursor:// protocol redirect URIs, always return JSON (programmatic OAuth flow)
+  // Browser-based flows use http://localhost redirect URIs
+  const isProgrammaticClient = (redirect_uri as string).startsWith("cursor://");
+  
+  if (isProgrammaticClient) {
     // Return JSON response with authorization URL for programmatic clients
     res.json({
       authorization_url: authUrl,
