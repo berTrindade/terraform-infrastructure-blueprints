@@ -210,16 +210,18 @@ function createApp() {
 
     if (process.env.GOOGLE_CLIENT_ID) {
       if (!token) {
+        res.setHeader("WWW-Authenticate", 'Bearer realm="mcp", error="invalid_request", error_description="Authentication required"');
         res.status(401).json({
-          error: "unauthorized",
+          error: "invalid_request",
           error_description: "Authentication required",
         });
         return;
       }
       const validation = validateTokenFromStore(token);
       if (!validation.valid) {
+        res.setHeader("WWW-Authenticate", `Bearer realm="mcp", error="invalid_token", error_description="${validation.error || 'Authentication required'}"`);
         res.status(401).json({
-          error: "unauthorized",
+          error: "invalid_token",
           error_description: validation.error || "Authentication required",
         });
         return;
@@ -252,16 +254,18 @@ function createApp() {
 
     if (process.env.GOOGLE_CLIENT_ID) {
       if (!token) {
+        res.setHeader("WWW-Authenticate", 'Bearer realm="mcp", error="invalid_request", error_description="Authentication required"');
         res.status(401).json({
-          error: "unauthorized",
+          error: "invalid_request",
           error_description: "Authentication required",
         });
         return;
       }
       const validation = validateTokenFromStore(token);
       if (!validation.valid) {
+        res.setHeader("WWW-Authenticate", `Bearer realm="mcp", error="invalid_token", error_description="${validation.error || 'Authentication required'}"`);
         res.status(401).json({
-          error: "unauthorized", 
+          error: "invalid_token",
           error_description: validation.error || "Authentication required",
         });
         return;
@@ -307,16 +311,18 @@ function createApp() {
 
     if (process.env.GOOGLE_CLIENT_ID) {
       if (!token) {
+        res.setHeader("WWW-Authenticate", 'Bearer realm="mcp", error="invalid_request", error_description="Authentication required"');
         res.status(401).json({
-          error: "unauthorized",
+          error: "invalid_request",
           error_description: "Authentication required",
         });
         return;
       }
       const validation = validateTokenFromStore(token);
       if (!validation.valid) {
+        res.setHeader("WWW-Authenticate", `Bearer realm="mcp", error="invalid_token", error_description="${validation.error || 'Authentication required'}"`);
         res.status(401).json({
-          error: "unauthorized",
+          error: "invalid_token",
           error_description: validation.error || "Authentication required",
         });
         return;
