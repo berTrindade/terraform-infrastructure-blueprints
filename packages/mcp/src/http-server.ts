@@ -153,9 +153,13 @@ function createApp() {
     const authHeader = req.headers.authorization;
     const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
 
+    // Protected resource metadata URL for OAuth discovery (per MCP spec)
+    const resourceMetadataUrl = `${config.baseUrl}/.well-known/oauth-protected-resource/sse`;
+
     if (process.env.GOOGLE_CLIENT_ID) {
       if (!token) {
-        res.setHeader("WWW-Authenticate", 'Bearer realm="mcp", error="invalid_request", error_description="Authentication required"');
+        // Include resource_metadata per MCP authorization spec to enable auto-browser-open
+        res.setHeader("WWW-Authenticate", `Bearer realm="mcp", resource_metadata="${resourceMetadataUrl}"`);
         res.status(401).json({
           error: "invalid_request",
           error_description: "Authentication required",
@@ -164,7 +168,7 @@ function createApp() {
       }
       const validation = validateTokenFromStore(token);
       if (!validation.valid) {
-        res.setHeader("WWW-Authenticate", `Bearer realm="mcp", error="invalid_token", error_description="${validation.error || 'Authentication required'}"`);
+        res.setHeader("WWW-Authenticate", `Bearer realm="mcp", resource_metadata="${resourceMetadataUrl}", error="invalid_token", error_description="${validation.error || 'Authentication required'}"`);
         res.status(401).json({
           error: "invalid_token",
           error_description: validation.error || "Authentication required",
@@ -197,9 +201,12 @@ function createApp() {
     const authHeader = req.headers.authorization;
     const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
 
+    // Protected resource metadata URL for OAuth discovery (per MCP spec)
+    const resourceMetadataUrl = `${config.baseUrl}/.well-known/oauth-protected-resource/messages`;
+
     if (process.env.GOOGLE_CLIENT_ID) {
       if (!token) {
-        res.setHeader("WWW-Authenticate", 'Bearer realm="mcp", error="invalid_request", error_description="Authentication required"');
+        res.setHeader("WWW-Authenticate", `Bearer realm="mcp", resource_metadata="${resourceMetadataUrl}"`);
         res.status(401).json({
           error: "invalid_request",
           error_description: "Authentication required",
@@ -208,7 +215,7 @@ function createApp() {
       }
       const validation = validateTokenFromStore(token);
       if (!validation.valid) {
-        res.setHeader("WWW-Authenticate", `Bearer realm="mcp", error="invalid_token", error_description="${validation.error || 'Authentication required'}"`);
+        res.setHeader("WWW-Authenticate", `Bearer realm="mcp", resource_metadata="${resourceMetadataUrl}", error="invalid_token", error_description="${validation.error || 'Authentication required'}"`);
         res.status(401).json({
           error: "invalid_token",
           error_description: validation.error || "Authentication required",
@@ -254,9 +261,12 @@ function createApp() {
     const authHeader = req.headers.authorization;
     const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
 
+    // Protected resource metadata URL for OAuth discovery (per MCP spec)
+    const resourceMetadataUrl = `${config.baseUrl}/.well-known/oauth-protected-resource/mcp`;
+
     if (process.env.GOOGLE_CLIENT_ID) {
       if (!token) {
-        res.setHeader("WWW-Authenticate", 'Bearer realm="mcp", error="invalid_request", error_description="Authentication required"');
+        res.setHeader("WWW-Authenticate", `Bearer realm="mcp", resource_metadata="${resourceMetadataUrl}"`);
         res.status(401).json({
           error: "invalid_request",
           error_description: "Authentication required",
@@ -265,7 +275,7 @@ function createApp() {
       }
       const validation = validateTokenFromStore(token);
       if (!validation.valid) {
-        res.setHeader("WWW-Authenticate", `Bearer realm="mcp", error="invalid_token", error_description="${validation.error || 'Authentication required'}"`);
+        res.setHeader("WWW-Authenticate", `Bearer realm="mcp", resource_metadata="${resourceMetadataUrl}", error="invalid_token", error_description="${validation.error || 'Authentication required'}"`);
         res.status(401).json({
           error: "invalid_token",
           error_description: validation.error || "Authentication required",
