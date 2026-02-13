@@ -107,25 +107,11 @@ export async function handleAuthorize(req: Request, res: Response): Promise<void
     code_challenge_method as string
   );
 
-  // Determine client type based on redirect URI
-  // Programmatic clients (Cursor, Claude Desktop) use custom protocols and expect JSON
-  // Browser-based clients (VS Code) use http://localhost and expect redirects
-  const isProgrammaticClient = 
-    (redirect_uri as string).startsWith("cursor://") ||
-    (redirect_uri as string).startsWith("claude://");
-  
-  if (isProgrammaticClient) {
-    // Return JSON response with authorization URL for programmatic clients
-    // This allows the client to open the browser and handle the callback
-    res.json({
-      authorization_url: authUrl,
-      redirect_required: true,
-    });
-    return;
-  }
-
-    // Redirect to Google OAuth (for browser-based flows like VS Code)
-    res.redirect(authUrl);
+  // Always use 302 redirect for OAuth authorization (standard OAuth behavior)
+  // Cursor and other MCP clients will intercept the redirect and open the browser
+  // Note: Previously tried returning JSON for cursor:// clients, but Cursor's MCP SDK
+  // expects standard OAuth 302 redirects
+  res.redirect(authUrl);
   } catch (error) {
     // Ensure we always return JSON, never a Response object
     const errorMessage = error instanceof Error ? error.message : "Authorization failed";
