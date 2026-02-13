@@ -101,18 +101,27 @@ export async function handleToken(req: Request, res: Response): Promise<void> {
       3600 // 1 hour expiration
     );
 
-    console.log("Token exchange successful:", {
-      userEmail: storedAuth.userInfo.email,
-      clientId: storedAuth.clientId,
-    });
+    // Generate refresh token (a simple random token for now)
+    const refreshToken = randomUUID();
 
-    // Return token response
-    res.json({
+    const tokenResponse = {
       access_token: jwtToken,
       token_type: "Bearer",
       expires_in: 3600,
+      refresh_token: refreshToken,
       scope: "mcp:read mcp:write",
+    };
+
+    console.log("Token exchange successful:", {
+      userEmail: storedAuth.userInfo.email,
+      clientId: storedAuth.clientId,
+      accessTokenLength: jwtToken.length,
+      refreshTokenLength: refreshToken.length,
+      responseJson: JSON.stringify(tokenResponse).substring(0, 100) + "...",
     });
+
+    // Return token response
+    res.json(tokenResponse);
   } catch (error) {
     // Ensure we always return JSON, never a Response object
     const errorMessage = error instanceof Error ? error.message : "Token exchange failed";
