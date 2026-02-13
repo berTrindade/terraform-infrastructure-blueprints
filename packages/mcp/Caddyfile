@@ -65,7 +65,20 @@ mcp.ustwo.com {
         reverse_proxy mcp-server:3000
     }
     
-    # Default: proxy to MCP server
+    # Skills directory (static files)
+    handle /skills/* {
+        root * /app/skills
+        file_server
+    }
+    
+    # Static files and landing page
+    handle / {
+        root * /app/public
+        try_files {path} /index.html
+        file_server
+    }
+    
+    # Default: proxy to MCP server (for any unmatched paths)
     handle {
         reverse_proxy mcp-server:3000
     }

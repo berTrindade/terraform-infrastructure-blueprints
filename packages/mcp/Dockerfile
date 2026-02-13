@@ -39,6 +39,12 @@ COPY blueprints/ ./blueprints/
 # Copy AGENTS.md if needed for catalog resource
 COPY AGENTS.md ./AGENTS.md
 
+# Copy public directory for landing page
+COPY packages/mcp/public/ ./public/
+
+# Copy skills directory for skill distribution
+COPY skills/ ./skills/
+
 # Change ownership to non-root user
 RUN chown -R mcpuser:mcpuser /app
 

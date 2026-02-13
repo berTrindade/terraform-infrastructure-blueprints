@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terraform Infrastructure Blueprints MCP</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-top: 20px;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+        }
+        
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+        
+        h3 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #764ba2;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            flex-wrap: wrap;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab:hover {
+            color: #667eea;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .config-box {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            position: relative;
+        }
+        
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.3s;
+        }
+        
+        .copy-btn:hover {
+            background: #764ba2;
+        }
+        
+        .copy-btn.copied {
+            background: #48bb78;
+        }
+        
+        .skill-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .skill-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .skill-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+        
+        .skill-name {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+        
+        .skill-description {
+            color: #666;
+            margin-bottom: 15px;
+        }
+        
+        .install-cmd {
+            background: #2d2d2d;
+            color: #48bb78;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .install-cmd code {
+            flex: 1;
+        }
+        
+        .mini-copy-btn {
+            background: #48bb78;
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+        
+        .mini-copy-btn:hover {
+            background: #38a169;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .feature-card {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            padding: 24px;
+            border-radius: 10px;
+            border: 1px solid #667eea30;
+        }
+        
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .feature-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #667eea;
+        }
+        
+        .feature-desc {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .steps {
+            counter-reset: step;
+        }
+        
+        .step {
+            counter-increment: step;
+            padding-left: 60px;
+            position: relative;
+            margin-bottom: 30px;
+        }
+        
+        .step::before {
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            background: #667eea;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+        
+        footer {
+            background: #f8f9fa;
+            padding: 30px 40px;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            header {
+                padding: 40px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏗️ Terraform Infrastructure Blueprints</h1>
+            <p class="subtitle">Model Context Protocol Server</p>
+            <span class="badge">9 Tools • 2 Resources • OAuth 2.1</span>
+        </header>
+        
+        <div class="content">
+            <!-- Quick Start -->
+            <section class="section">
+                <h2>🚀 Quick Start</h2>
+                <div class="steps">
+                    <div class="step">
+                        <h3>Choose Your Client</h3>
+                        <p>Select your AI coding assistant from the tabs below to get the correct configuration.</p>
+                    </div>
+                    <div class="step">
+                        <h3>Copy & Paste Config</h3>
+                        <p>Add the MCP server configuration to your client's settings file.</p>
+                    </div>
+                    <div class="step">
+                        <h3>Connect with OAuth</h3>
+                        <p>Click "Connect" in your client, authenticate with your @ustwo.com Google account, and start using the tools!</p>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Setup Instructions -->
+            <section class="section">
+                <h2>⚙️ Setup Instructions</h2>
+                
+                <div class="tabs">
+                    <button class="tab active" data-tab="cursor">Cursor</button>
+                    <button class="tab" data-tab="vscode">VS Code</button>
+                    <button class="tab" data-tab="claude">Claude Desktop</button>
+                    <button class="tab" data-tab="windsurf">Windsurf</button>
+                    <button class="tab" data-tab="zed">Zed</button>
+                </div>
+                
+                <div class="tab-content active" id="cursor">
+                    <h3>Option 1: Direct URL (Recommended)</h3>
+                    <p>Cursor has native OAuth support and can handle authentication automatically.</p>
+                    <div class="config-box">
+                        <button class="copy-btn" onclick="copyConfig('cursor-config')">Copy</button>
+                        <pre id="cursor-config">{
+  "mcpServers": {
+    "terraform-blueprints": {
+      "url": "https://mcp.ustwo.com"
+    }
+  }
+}</pre>
+                    </div>
+                    
+                    <h3>Option 2: NPX with OAuth Wrapper</h3>
+                    <div class="config-box">
+                        <button class="copy-btn" onclick="copyConfig('cursor-npx')">Copy</button>
+                        <pre id="cursor-npx">{
+  "mcpServers": {
+    "terraform-blueprints": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/mcp-remote",
+        "https://mcp.ustwo.com"
+      ]
+    }
+  }
+}</pre>
+                    </div>
+                    
+                    <div class="note">
+                        <strong>📍 Config Location:</strong> <code>~/Library/Application Support/Cursor/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json</code>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="vscode">
+                    <h3>Using MCP Remote OAuth Wrapper</h3>
+                    <div class="config-box">
+                        <button class="copy-btn" onclick="copyConfig('vscode-config')">Copy</button>
+                        <pre id="vscode-config">{
+  "mcpServers": {
+    "terraform-blueprints": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/mcp-remote",
+        "https://mcp.ustwo.com"
+      ]
+    }
+  }
+}</pre>
+                    </div>
+                    
+                    <div class="note">
+                        <strong>📍 Config Location:</strong> <code>~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json</code>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="claude">
+                    <h3>Claude Desktop Configuration</h3>
+                    <div class="config-box">
+                        <button class="copy-btn" onclick="copyConfig('claude-config')">Copy</button>
+                        <pre id="claude-config">{
+  "mcpServers": {
+    "terraform-blueprints": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/mcp-remote",
+        "https://mcp.ustwo.com"
+      ]
+    }
+  }
+}</pre>
+                    </div>
+                    
+                    <div class="note">
+                        <strong>📍 Config Location:</strong> <code>~/Library/Application Support/Claude/claude_desktop_config.json</code>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="windsurf">
+                    <h3>Windsurf Configuration</h3>
+                    <div class="config-box">
+                        <button class="copy-btn" onclick="copyConfig('windsurf-config')">Copy</button>
+                        <pre id="windsurf-config">{
+  "mcpServers": {
+    "terraform-blueprints": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/mcp-remote",
+        "https://mcp.ustwo.com"
+      ]
+    }
+  }
+}</pre>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="zed">
+                    <h3>Zed Configuration</h3>
+                    <div class="config-box">
+                        <button class="copy-btn" onclick="copyConfig('zed-config')">Copy</button>
+                        <pre id="zed-config">{
+  "context_servers": {
+    "terraform-blueprints": {
+      "command": {
+        "path": "npx",
+        "args": [
+          "-y",
+          "@modelcontextprotocol/mcp-remote",
+          "https://mcp.ustwo.com"
+        ]
+      }
+    }
+  }
+}</pre>
+                    </div>
+                    
+                    <div class="note">
+                        <strong>📍 Config Location:</strong> <code>~/Library/Application Support/Zed/settings.json</code>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Features -->
+            <section class="section">
+                <h2>✨ Available Tools</h2>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🔍</div>
+                        <div class="feature-title">search_blueprints</div>
+                        <div class="feature-desc">Search for blueprints by cloud provider, capability, or service name</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📄</div>
+                        <div class="feature-title">fetch_blueprint_file</div>
+                        <div class="feature-desc">Get complete blueprint file contents (main.tf, variables.tf, etc.)</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">💡</div>
+                        <div class="feature-title">recommend_blueprint</div>
+                        <div class="feature-desc">AI-powered blueprint recommendations based on requirements</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🎯</div>
+                        <div class="feature-title">extract_pattern</div>
+                        <div class="feature-desc">Extract reusable patterns from existing Terraform code</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🗂️</div>
+                        <div class="feature-title">find_by_project</div>
+                        <div class="feature-desc">Find blueprints for specific project types</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📚</div>
+                        <div class="feature-title">get_workflow_guidance</div>
+                        <div class="feature-desc">Get step-by-step guidance for common workflows</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">➕</div>
+                        <div class="feature-title">new_project</div>
+                        <div class="feature-desc">Generate new project structure with blueprints</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔧</div>
+                        <div class="feature-title">add_capability</div>
+                        <div class="feature-desc">Add capabilities to existing infrastructure</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">☁️</div>
+                        <div class="feature-title">migrate_cloud</div>
+                        <div class="feature-desc">Migrate infrastructure between cloud providers</div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Skills -->
+            <section class="section">
+                <h2>🎓 Recommended Skills</h2>
+                <p>Install these skills for enhanced blueprint development workflows:</p>
+                
+                <div class="skill-card">
+                    <div class="skill-header">
+                        <div class="skill-name">style-guide</div>
+                    </div>
+                    <div class="skill-description">
+                        Blueprint selection, naming/tagging conventions, writing/reviewing Terraform, architectural decisions. Includes HCL formatting rules and decision trees.
+                    </div>
+                    <div class="install-cmd">
+                        <code>npx @modelcontextprotocol/skills install https://mcp.ustwo.com/skills/style-guide</code>
+                        <button class="mini-copy-btn" onclick="copyText(this, 'npx @modelcontextprotocol/skills install https://mcp.ustwo.com/skills/style-guide')">Copy</button>
+                    </div>
+                </div>
+                
+                <div class="skill-card">
+                    <div class="skill-header">
+                        <div class="skill-name">code-generation</div>
+                    </div>
+                    <div class="skill-description">
+                        Generate Terraform from parameterized templates when adding capabilities to existing projects.
+                    </div>
+                    <div class="install-cmd">
+                        <code>npx @modelcontextprotocol/skills install https://mcp.ustwo.com/skills/code-generation</code>
+                        <button class="mini-copy-btn" onclick="copyText(this, 'npx @modelcontextprotocol/skills install https://mcp.ustwo.com/skills/code-generation')">Copy</button>
+                    </div>
+                </div>
+                
+                <div class="skill-card">
+                    <div class="skill-header">
+                        <div class="skill-name">mcp-discovery</div>
+                    </div>
+                    <div class="skill-description">
+                        Find blueprints, fetch files, get workflow guidance. Learn when to use each MCP tool.
+                    </div>
+                    <div class="install-cmd">
+                        <code>npx @modelcontextprotocol/skills install https://mcp.ustwo.com/skills/mcp-discovery</code>
+                        <button class="mini-copy-btn" onclick="copyText(this, 'npx @modelcontextprotocol/skills install https://mcp.ustwo.com/skills/mcp-discovery')">Copy</button>
+                    </div>
+                </div>
+                
+                <div class="skill-card">
+                    <div class="skill-header">
+                        <div class="skill-name">security</div>
+                    </div>
+                    <div class="skill-description">
+                        Secrets management (RDS/Aurora passwords, IAM DB auth) and security groups (Lambda, RDS, API Gateway, ECS).
+                    </div>
+                    <div class="install-cmd">
+                        <code>npx @modelcontextprotocol/skills install https://mcp.ustwo.com/skills/security</code>
+                        <button class="mini-copy-btn" onclick="copyText(this, 'npx @modelcontextprotocol/skills install https://mcp.ustwo.com/skills/security')">Copy</button>
+                    </div>
+                </div>
+                
+                <div class="skill-card">
+                    <div class="skill-header">
+                        <div class="skill-name">terraform-practices</div>
+                    </div>
+                    <div class="skill-description">
+                        Testing (native/Terratest), CI/CD (validate→test→plan→apply), code structure best practices.
+                    </div>
+                    <div class="install-cmd">
+                        <code>npx @modelcontextprotocol/skills install https://mcp.ustwo.com/skills/terraform-practices</code>
+                        <button class="mini-copy-btn" onclick="copyText(this, 'npx @modelcontextprotocol/skills install https://mcp.ustwo.com/skills/terraform-practices')">Copy</button>
+                    </div>
+                </div>
+                
+                <div class="skill-card">
+                    <div class="skill-header">
+                        <div class="skill-name">terraform-testing</div>
+                    </div>
+                    <div class="skill-description">
+                        Write Terraform test files (.tftest.hcl), create test scenarios, validate infrastructure with assertions.
+                    </div>
+                    <div class="install-cmd">
+                        <code>npx @modelcontextprotocol/skills install https://mcp.ustwo.com/skills/terraform-testing</code>
+                        <button class="mini-copy-btn" onclick="copyText(this, 'npx @modelcontextprotocol/skills install https://mcp.ustwo.com/skills/terraform-testing')">Copy</button>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Resources -->
+            <section class="section">
+                <h2>📚 Resources</h2>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">📖</div>
+                        <div class="feature-title">Blueprint Catalog</div>
+                        <div class="feature-desc">Complete reference of all available blueprints with decision trees</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🎯</div>
+                        <div class="feature-title">AGENTS.md</div>
+                        <div class="feature-desc">System architecture, consultancy model, and skill usage guide</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        
+        <footer>
+            <p>
+                <strong>Terraform Infrastructure Blueprints MCP Server</strong><br>
+                Built by ustwo • <a href="https://github.com/bertrindade/terraform-infrastructure-blueprints" target="_blank">GitHub</a> • 
+                <a href="https://mcp.ustwo.com/.well-known/oauth-authorization-server" target="_blank">OAuth Metadata</a>
+            </p>
+            <p style="margin-top: 15px; font-size: 0.9rem;">
+                Requires @ustwo.com Google account for authentication
+            </p>
+        </footer>
+    </div>
+    
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetTab = tab.dataset.tab;
+                
+                // Update active tab
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Update active content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(targetTab).classList.add('active');
+            });
+        });
+        
+        // Copy config to clipboard
+        function copyConfig(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = element.parentElement.querySelector('.copy-btn');
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+        
+        // Copy arbitrary text
+        function copyText(button, text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.style.background = '#38a169';
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = '';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
