@@ -99,7 +99,7 @@ export function handleRegister(req: Request, res: Response): void {
   }
 
   // Validate grant types
-  const validGrantTypes = ["authorization_code"];
+  const validGrantTypes = ["authorization_code", "refresh_token"];
   const invalidGrantTypes = grant_types.filter((gt: string) => !validGrantTypes.includes(gt));
   if (invalidGrantTypes.length > 0) {
     res.status(400).json({
