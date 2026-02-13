@@ -132,17 +132,57 @@ function createApp() {
   // Used by Cursor and other clients that support the older SSE transport
   //==========================================================================
 
-  // POST to /sse is not supported - clients should use GET for SSE or POST to /mcp
-  app.post("/sse", (req: Request, res: Response) => {
-    httpLogger.info({ message: "Received POST request to /sse (not supported)" });
-    res.status(405).json({
-      jsonrpc: "2.0",
-      error: {
-        code: -32000,
-        message: "Method Not Allowed: Use GET for SSE transport or POST to /mcp for Streamable HTTP",
-      },
-      id: null,
-    });
+  // POST to /sse - used by newer MCP clients to send messages after SSE connection established  
+  app.post("/sse", async (req: Request, res: Response) => {
+    const sessionId = req.query.sessionId as string;
+    httpLogger.info({ message: "Received POST to /sse", sessionId });
+
+    // Validate authentication if OAuth is configured
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
+
+    if (process.env.GOOGLE_CLIENT_ID) {
+      if (!token) {
+        res.setHeader("WWW-Authenticate", `Bearer realm="OAuth", error="invalid_token", error_description="Missing or invalid access token"`);
+        res.status(401).json({
+          error: "invalid_token",
+          error_description: "Missing or invalid access token",
+        });
+        return;
+      }
+      const validation = validateTokenFromStore(token);
+      if (!validation.valid) {
+        res.setHeader("WWW-Authenticate", `Bearer realm="OAuth", error="invalid_token", error_description="${validation.error || 'Invalid or expired access token'}"`);
+        res.status(401).json({
+          error: "invalid_token",
+          error_description: validation.error || "Invalid or expired access token",
+        });
+        return;
+      }
+    }
+
+    const existingTransport = transports[sessionId];
+    if (existingTransport instanceof SSEServerTransport) {
+      await existingTransport.handlePostMessage(req, res, req.body);
+    } else if (existingTransport) {
+      res.status(400).json({
+        jsonrpc: "2.0",
+        error: {
+          code: -32000,
+          message: "Bad Request: Session uses a different transport protocol",
+        },
+        id: null,
+      });
+    } else {
+      res.status(404).json({
+        jsonrpc: "2.0",
+        error: {
+          code: -32000,
+          message: "Session Not Found: No transport with this sessionId",
+        },
+        id: null,
+      });
+    }
   });
 
   // SSE endpoint - establishes Server-Sent Events connection
