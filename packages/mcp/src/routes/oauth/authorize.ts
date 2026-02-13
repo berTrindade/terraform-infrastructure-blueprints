@@ -9,6 +9,7 @@
 import { Request, Response } from "express";
 import { getAuthorizationUrl } from "../../services/oauth/google-oauth.js";
 import { storeCodeChallenge } from "../../services/oauth/pkce.js";
+import { storePendingAuthorization } from "../../services/oauth/authorization-code-store.js";
 
 /**
  * Handle OAuth authorization request
@@ -100,11 +101,21 @@ export async function handleAuthorize(req: Request, res: Response): Promise<void
     code_challenge_method as string
   );
 
-  // Generate Google OAuth authorization URL
-  const authUrl = getAuthorizationUrl(
+  // Store pending authorization request for callback retrieval
+  // This allows us to verify the flow when Google redirects back
+  storePendingAuthorization(
     state as string,
+    client_id as string || "unknown",
+    redirect_uri as string,
     code_challenge as string,
     code_challenge_method as string
+  );
+
+  // Generate Google OAuth authorization URL
+  // Note: We don't pass PKCE to Google - we use client_secret for Google
+  // PKCE is only used between MCP client (Cursor) and our server
+  const authUrl = getAuthorizationUrl(
+    state as string
   );
 
   // Always use 302 redirect for OAuth authorization (standard OAuth behavior)

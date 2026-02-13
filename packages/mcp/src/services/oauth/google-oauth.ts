@@ -4,8 +4,8 @@
  * Handles Google OAuth authentication and validates company domain
  */
 
-import { OAuth2Client, CodeChallengeMethod } from "google-auth-library";
-import { config } from "../../config/config.js";
+import { OAuth2Client } from "google-auth-library";
+import { config } from "../../config/config.js";;
 
 // OAuth client will be initialized when config is available
 let oauth2Client: OAuth2Client | null = null;
@@ -26,22 +26,18 @@ function getOAuthClient(): OAuth2Client {
  * Get Google OAuth authorization URL
  * 
  * @param state - OAuth state parameter for CSRF protection
- * @param codeChallenge - PKCE code challenge
- * @param codeChallengeMethod - PKCE challenge method (S256)
  * @returns Authorization URL
  */
 export function getAuthorizationUrl(
-  state: string,
-  codeChallenge: string,
-  codeChallengeMethod: string
+  state: string
 ): string {
   const client = getOAuthClient();
   return client.generateAuthUrl({
     access_type: "offline",
     scope: ["openid", "email", "profile"],
     state,
-    code_challenge: codeChallenge,
-    code_challenge_method: codeChallengeMethod as CodeChallengeMethod,
+    // Don't use PKCE with Google - we use client_secret instead
+    // PKCE is only used between MCP client and our server
   });
 }
 
@@ -49,12 +45,10 @@ export function getAuthorizationUrl(
  * Exchange authorization code for tokens
  * 
  * @param code - Authorization code from Google
- * @param codeVerifier - PKCE code verifier
  * @returns Token response with access token and user info
  */
 export async function exchangeCodeForTokens(
-  code: string,
-  codeVerifier: string
+  code: string
 ): Promise<{
   accessToken: string;
   refreshToken?: string;
@@ -69,7 +63,7 @@ export async function exchangeCodeForTokens(
   const client = getOAuthClient();
   const { tokens } = await client.getToken({
     code,
-    codeVerifier,
+    // No codeVerifier needed - we use client_secret instead of PKCE for Google
   });
 
   if (!tokens.access_token) {
