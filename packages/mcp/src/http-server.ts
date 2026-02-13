@@ -158,20 +158,20 @@ function createApp() {
 
     if (process.env.GOOGLE_CLIENT_ID) {
       if (!token) {
-        // Include resource_metadata per MCP authorization spec to enable auto-browser-open
-        res.setHeader("WWW-Authenticate", `Bearer realm="mcp", resource_metadata="${resourceMetadataUrl}"`);
+        // Use invalid_token (like Linear) to trigger Cursor's auto-browser-open
+        res.setHeader("WWW-Authenticate", `Bearer realm="OAuth", error="invalid_token", error_description="Missing or invalid access token"`);
         res.status(401).json({
-          error: "invalid_request",
-          error_description: "Authentication required",
+          error: "invalid_token",
+          error_description: "Missing or invalid access token",
         });
         return;
       }
       const validation = validateTokenFromStore(token);
       if (!validation.valid) {
-        res.setHeader("WWW-Authenticate", `Bearer realm="mcp", resource_metadata="${resourceMetadataUrl}", error="invalid_token", error_description="${validation.error || 'Authentication required'}"`);
+        res.setHeader("WWW-Authenticate", `Bearer realm="OAuth", error="invalid_token", error_description="${validation.error || 'Invalid or expired access token'}"`);
         res.status(401).json({
           error: "invalid_token",
-          error_description: validation.error || "Authentication required",
+          error_description: validation.error || "Invalid or expired access token",
         });
         return;
       }
@@ -206,19 +206,19 @@ function createApp() {
 
     if (process.env.GOOGLE_CLIENT_ID) {
       if (!token) {
-        res.setHeader("WWW-Authenticate", `Bearer realm="mcp", resource_metadata="${resourceMetadataUrl}"`);
+        res.setHeader("WWW-Authenticate", `Bearer realm="OAuth", error="invalid_token", error_description="Missing or invalid access token"`);
         res.status(401).json({
-          error: "invalid_request",
-          error_description: "Authentication required",
+          error: "invalid_token",
+          error_description: "Missing or invalid access token",
         });
         return;
       }
       const validation = validateTokenFromStore(token);
       if (!validation.valid) {
-        res.setHeader("WWW-Authenticate", `Bearer realm="mcp", resource_metadata="${resourceMetadataUrl}", error="invalid_token", error_description="${validation.error || 'Authentication required'}"`);
+        res.setHeader("WWW-Authenticate", `Bearer realm="OAuth", error="invalid_token", error_description="${validation.error || 'Invalid or expired access token'}"`);
         res.status(401).json({
           error: "invalid_token",
-          error_description: validation.error || "Authentication required",
+          error_description: validation.error || "Invalid or expired access token",
         });
         return;
       }
@@ -266,19 +266,19 @@ function createApp() {
 
     if (process.env.GOOGLE_CLIENT_ID) {
       if (!token) {
-        res.setHeader("WWW-Authenticate", `Bearer realm="mcp", resource_metadata="${resourceMetadataUrl}"`);
+        res.setHeader("WWW-Authenticate", `Bearer realm="OAuth", error="invalid_token", error_description="Missing or invalid access token"`);
         res.status(401).json({
-          error: "invalid_request",
-          error_description: "Authentication required",
+          error: "invalid_token",
+          error_description: "Missing or invalid access token",
         });
         return;
       }
       const validation = validateTokenFromStore(token);
       if (!validation.valid) {
-        res.setHeader("WWW-Authenticate", `Bearer realm="mcp", resource_metadata="${resourceMetadataUrl}", error="invalid_token", error_description="${validation.error || 'Authentication required'}"`);
+        res.setHeader("WWW-Authenticate", `Bearer realm="OAuth", error="invalid_token", error_description="${validation.error || 'Invalid or expired access token'}"`);
         res.status(401).json({
           error: "invalid_token",
-          error_description: validation.error || "Authentication required",
+          error_description: validation.error || "Invalid or expired access token",
         });
         return;
       }
