@@ -8,14 +8,14 @@ mcp.ustwo.com {
     handle @options {
         header {
             Access-Control-Allow-Origin "*"
-            Access-Control-Allow-Methods "GET, POST, OPTIONS"
-            Access-Control-Allow-Headers "Authorization, Content-Type, X-Connection-ID"
+            Access-Control-Allow-Methods "GET, POST, DELETE, OPTIONS"
+            Access-Control-Allow-Headers "Authorization, Content-Type, X-Connection-ID, mcp-session-id"
             Access-Control-Max-Age "3600"
         }
         respond 204
     }
     
-    # MCP HTTP endpoint
+    # MCP HTTP endpoint (Streamable HTTP transport)
     handle /mcp {
         reverse_proxy mcp-server:3000 {
             header_up X-Real-IP {remote_host}
@@ -23,6 +23,26 @@ mcp.ustwo.com {
             transport http {
                 response_header_timeout 300s
             }
+        }
+    }
+    
+    # SSE endpoint (deprecated SSE transport - for Cursor compatibility)
+    handle /sse {
+        reverse_proxy mcp-server:3000 {
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            flush_interval -1
+            transport http {
+                response_header_timeout 300s
+            }
+        }
+    }
+    
+    # Messages endpoint (for SSE transport POST requests)
+    handle /messages* {
+        reverse_proxy mcp-server:3000 {
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-Proto {scheme}
         }
     }
     
@@ -64,8 +84,8 @@ mcp.ustwo.com {
         X-XSS-Protection "1; mode=block"
         Referrer-Policy "strict-origin-when-cross-origin"
         Access-Control-Allow-Origin "*"
-        Access-Control-Allow-Methods "GET, POST, OPTIONS"
-        Access-Control-Allow-Headers "Authorization, Content-Type, X-Connection-ID"
+        Access-Control-Allow-Methods "GET, POST, DELETE, OPTIONS"
+        Access-Control-Allow-Headers "Authorization, Content-Type, X-Connection-ID, mcp-session-id"
     }
     
     log {

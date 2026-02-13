@@ -4,6 +4,7 @@
  * HTTP MCP Server for ustwo Infrastructure Blueprints
  *
  * Provides HTTP-based access to MCP server with integrated OAuth 2.0.
+ * Uses official MCP SDK transports for compatibility with all MCP clients.
  * Accessible at https://mcp.ustwo.com/mcp
  */
 
@@ -20,8 +21,25 @@ import { handleAuthorize } from "./routes/oauth/authorize.js";
 import { handleToken, handleTokenValidate } from "./routes/oauth/token.js";
 import { handleMetadata } from "./routes/oauth/metadata.js";
 
-// MCP transport
-import { handleSSEConnection, handleMCPMessage } from "./transports/http-sse.js";
+// Official MCP SDK transports
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+
+/**
+ * Check if a request is an MCP initialize request
+ * Initialize requests have jsonrpc: "2.0" and method: "initialize"
+ */
+function isInitializeRequest(body: unknown): boolean {
+  if (typeof body !== "object" || body === null) return false;
+  const request = body as Record<string, unknown>;
+  return request.jsonrpc === "2.0" && request.method === "initialize";
+}
+
+/**
+ * Transport storage by session ID
+ * Supports both SSE and Streamable HTTP transports
+ */
+const transports: Record<string, SSEServerTransport | StreamableHTTPServerTransport> = {};
 
 /**
  * Get server configuration
@@ -55,8 +73,9 @@ function createApp() {
   // CORS configuration for MCP clients
   app.use((req: Request, res: Response, next: NextFunction) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Connection-ID");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Connection-ID, mcp-session-id");
+    res.setHeader("Access-Control-Expose-Headers", "mcp-session-id");
     
     if (req.method === "OPTIONS") {
       res.sendStatus(200);
@@ -163,35 +182,201 @@ function createApp() {
     }
   });
 
-  // MCP endpoint handler - SSE connection
-  const handleMCPSSE = async (req: Request, res: Response) => {
-    try {
-      // Validate authentication if OAuth is configured
-      const authHeader = req.headers.authorization;
-      const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
+  //==========================================================================
+  // DEPRECATED HTTP+SSE TRANSPORT (PROTOCOL VERSION 2024-11-05)
+  // Used by Cursor and other clients that support the older SSE transport
+  //==========================================================================
 
-      if (process.env.GOOGLE_CLIENT_ID) {
-        // OAuth is configured - validate token
-        if (!token) {
-          res.status(401).json({
-            error: "unauthorized",
-            error_description: "Authentication required",
+  // SSE endpoint - establishes Server-Sent Events connection
+  app.get("/sse", async (req: Request, res: Response) => {
+    httpLogger.info({ message: "Received GET request to /sse (SSE transport)" });
+    
+    // Validate authentication if OAuth is configured
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
+
+    if (process.env.GOOGLE_CLIENT_ID) {
+      if (!token) {
+        res.status(401).json({
+          error: "unauthorized",
+          error_description: "Authentication required",
+        });
+        return;
+      }
+      const validation = validateTokenFromStore(token);
+      if (!validation.valid) {
+        res.status(401).json({
+          error: "unauthorized",
+          error_description: validation.error || "Authentication required",
+        });
+        return;
+      }
+    }
+
+    // Create SSE transport with /messages as the POST endpoint
+    const transport = new SSEServerTransport("/messages", res);
+    transports[transport.sessionId] = transport;
+
+    // Cleanup on disconnect
+    res.on("close", () => {
+      httpLogger.info({ message: "SSE connection closed", sessionId: transport.sessionId });
+      delete transports[transport.sessionId];
+    });
+
+    // Connect MCP server to transport
+    const server = createServer();
+    await server.connect(transport);
+  });
+
+  // Messages endpoint - receives POST messages for SSE transport
+  app.post("/messages", async (req: Request, res: Response) => {
+    const sessionId = req.query.sessionId as string;
+    httpLogger.info({ message: "Received POST to /messages", sessionId });
+
+    // Validate authentication if OAuth is configured
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
+
+    if (process.env.GOOGLE_CLIENT_ID) {
+      if (!token) {
+        res.status(401).json({
+          error: "unauthorized",
+          error_description: "Authentication required",
+        });
+        return;
+      }
+      const validation = validateTokenFromStore(token);
+      if (!validation.valid) {
+        res.status(401).json({
+          error: "unauthorized", 
+          error_description: validation.error || "Authentication required",
+        });
+        return;
+      }
+    }
+
+    const existingTransport = transports[sessionId];
+    if (existingTransport instanceof SSEServerTransport) {
+      await existingTransport.handlePostMessage(req, res, req.body);
+    } else if (existingTransport) {
+      // Transport exists but is not SSE type
+      res.status(400).json({
+        jsonrpc: "2.0",
+        error: {
+          code: -32000,
+          message: "Bad Request: Session uses a different transport protocol",
+        },
+        id: null,
+      });
+    } else {
+      res.status(400).json({
+        jsonrpc: "2.0",
+        error: {
+          code: -32000,
+          message: "Bad Request: No transport found for sessionId",
+        },
+        id: null,
+      });
+    }
+  });
+
+  //==========================================================================
+  // STREAMABLE HTTP TRANSPORT (PROTOCOL VERSION 2025-11-25)
+  // Modern transport supporting HTTP streaming
+  //==========================================================================
+
+  app.all("/mcp", async (req: Request, res: Response) => {
+    httpLogger.info({ message: `Received ${req.method} request to /mcp` });
+
+    // Validate authentication if OAuth is configured
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
+
+    if (process.env.GOOGLE_CLIENT_ID) {
+      if (!token) {
+        res.status(401).json({
+          error: "unauthorized",
+          error_description: "Authentication required",
+        });
+        return;
+      }
+      const validation = validateTokenFromStore(token);
+      if (!validation.valid) {
+        res.status(401).json({
+          error: "unauthorized",
+          error_description: validation.error || "Authentication required",
+        });
+        return;
+      }
+    }
+
+    try {
+      // Check for existing session ID
+      const sessionId = req.headers["mcp-session-id"] as string | undefined;
+      let transport: StreamableHTTPServerTransport;
+
+      if (sessionId && transports[sessionId]) {
+        const existingTransport = transports[sessionId];
+        if (existingTransport instanceof StreamableHTTPServerTransport) {
+          transport = existingTransport;
+        } else {
+          res.status(400).json({
+            jsonrpc: "2.0",
+            error: {
+              code: -32000,
+              message: "Bad Request: Session exists but uses a different transport protocol",
+            },
+            id: null,
           });
           return;
         }
-        const validation = validateTokenFromStore(token);
-        if (!validation.valid) {
-          res.status(401).json({
-            error: "unauthorized",
-            error_description: validation.error || "Authentication required",
-          });
-          return;
-        }
+      } else if (!sessionId && req.method === "POST" && isInitializeRequest(req.body)) {
+        // Create new Streamable HTTP transport for initialization
+        transport = new StreamableHTTPServerTransport({
+          sessionIdGenerator: () => randomUUID(),
+          onsessioninitialized: (newSessionId) => {
+            httpLogger.info({ message: "StreamableHTTP session initialized", sessionId: newSessionId });
+            transports[newSessionId] = transport;
+          },
+        });
+
+        // Cleanup on close
+        transport.onclose = () => {
+          const sid = Object.keys(transports).find(key => transports[key] === transport);
+          if (sid) {
+            delete transports[sid];
+          }
+        };
+
+        // Connect MCP server to transport
+        const server = createServer();
+        await server.connect(transport);
+      } else if (!sessionId) {
+        // No session ID and not an initialize request
+        res.status(400).json({
+          jsonrpc: "2.0",
+          error: {
+            code: -32000,
+            message: "Bad Request: No session ID provided and not an initialization request",
+          },
+          id: null,
+        });
+        return;
+      } else {
+        // Session ID provided but not found
+        res.status(400).json({
+          jsonrpc: "2.0",
+          error: {
+            code: -32000,
+            message: "Bad Request: Session not found",
+          },
+          id: null,
+        });
+        return;
       }
 
-      // Create MCP server instance for this connection
-      const server = createServer();
-      await handleSSEConnection(req, res, server);
+      // Handle the request through the transport
+      await transport.handleRequest(req, res, req.body);
     } catch (error) {
       httpLogger.error({
         error: {
@@ -200,62 +385,18 @@ function createApp() {
         },
         path: req.path,
       });
-      res.status(500).json({
-        error: "internal_server_error",
-        error_description: "Failed to establish MCP connection",
-      });
-    }
-  };
-
-  // MCP endpoints - SSE connection (both /mcp and /sse for compatibility)
-  app.get("/mcp", handleMCPSSE);
-  app.get("/sse", handleMCPSSE);
-
-  // MCP endpoint handler - POST messages
-  const handleMCPPost = async (req: Request, res: Response) => {
-    try {
-      // Validate authentication if OAuth is configured
-      const authHeader = req.headers.authorization;
-      const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
-
-      if (process.env.GOOGLE_CLIENT_ID) {
-        // OAuth is configured - validate token
-        if (!token) {
-          res.status(401).json({
-            error: "unauthorized",
-            error_description: "Authentication required",
-          });
-          return;
-        }
-        const validation = validateTokenFromStore(token);
-        if (!validation.valid) {
-          res.status(401).json({
-            error: "unauthorized",
-            error_description: validation.error || "Authentication required",
-          });
-          return;
-        }
+      if (!res.headersSent) {
+        res.status(500).json({
+          jsonrpc: "2.0",
+          error: {
+            code: -32603,
+            message: "Internal server error",
+          },
+          id: null,
+        });
       }
-
-      await handleMCPMessage(req, res);
-    } catch (error) {
-      httpLogger.error({
-        error: {
-          type: error instanceof Error ? error.name : "UnknownError",
-          message: error instanceof Error ? error.message : String(error),
-        },
-        path: req.path,
-      });
-      res.status(500).json({
-        error: "internal_server_error",
-        error_description: error instanceof Error ? error.message : "Internal error",
-      });
     }
-  };
-
-  // MCP endpoints - POST messages (both /mcp and /sse for compatibility)
-  app.post("/mcp", handleMCPPost);
-  app.post("/sse", handleMCPPost);
+  });
 
   // Health check
   app.get("/health", (req: Request, res: Response) => {
@@ -263,6 +404,7 @@ function createApp() {
       status: "ok",
       timestamp: new Date().toISOString(),
       server: "mcp-http-server",
+      transports: Object.keys(transports).length,
     });
   });
 
