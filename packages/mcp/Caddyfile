@@ -51,8 +51,12 @@ mcp.ustwo.com {
         reverse_proxy mcp-server:3000
     }
     
-    # OAuth metadata
-    handle /.well-known/* {
+    # OAuth metadata (excluding acme-challenge which Caddy handles automatically)
+    @well_known_not_acme {
+        path /.well-known/*
+        not path /.well-known/acme-challenge/*
+    }
+    handle @well_known_not_acme {
         reverse_proxy mcp-server:3000
     }
     
