@@ -39,6 +39,9 @@ const registeredClients = new Map<string, {
  */
 export function handleRegister(req: Request, res: Response): void {
   try {
+    // Log incoming request body for debugging
+    console.log("OAuth register request body:", JSON.stringify(req.body, null, 2));
+    
     const {
       redirect_uris,
       token_endpoint_auth_method = "none", // PKCE doesn't require client secret
@@ -50,6 +53,7 @@ export function handleRegister(req: Request, res: Response): void {
 
   // Validate redirect URIs
   if (!redirect_uris || !Array.isArray(redirect_uris) || redirect_uris.length === 0) {
+    console.log("OAuth register failed: missing redirect_uris", { redirect_uris });
     res.status(400).json({
       error: "invalid_redirect_uri",
       error_description: "redirect_uris is required and must be a non-empty array",
@@ -58,19 +62,24 @@ export function handleRegister(req: Request, res: Response): void {
   }
 
   // Validate redirect URI format - support all MCP clients
-  // Cursor: cursor://anysphere.cursor-mcp/oauth/callback
-  // VS Code: http://localhost:PORT/oauth/callback
-  // Claude Desktop: claude://oauth/callback (or similar)
-  // Generic: http://localhost:PORT/oauth/callback
+  // More flexible patterns to support various client implementations
   const validRedirectUriPatterns = [
-    /^cursor:\/\/anysphere\.cursor-mcp\/oauth\/callback$/,
-    /^claude:\/\/oauth\/callback$/,
-    /^http:\/\/localhost:\d+\/oauth\/callback$/,
-    /^http:\/\/127\.0\.0\.1:\d+\/oauth\/callback$/,
+    // Cursor - various formats
+    /^cursor:\/\/.*\/oauth\/callback/,
+    /^vscode:\/\/.*\/oauth\/callback/,
+    // Claude Desktop
+    /^claude:\/\/.*\/callback/,
+    // Localhost - any port
+    /^http:\/\/localhost(:\d+)?\/.*callback/,
+    /^http:\/\/127\.0\.0\.1(:\d+)?\/.*callback/,
+    // HTTPS localhost
+    /^https:\/\/localhost(:\d+)?\/.*callback/,
+    /^https:\/\/127\.0\.0\.1(:\d+)?\/.*callback/,
   ];
 
   for (const uri of redirect_uris) {
     if (typeof uri !== "string") {
+      console.log("OAuth register failed: redirect_uri not a string", { uri });
       res.status(400).json({
         error: "invalid_redirect_uri",
         error_description: "All redirect_uris must be strings",
@@ -80,9 +89,10 @@ export function handleRegister(req: Request, res: Response): void {
 
     const isValid = validRedirectUriPatterns.some(pattern => pattern.test(uri));
     if (!isValid) {
+      console.log("OAuth register failed: invalid redirect_uri", { uri, patterns: validRedirectUriPatterns.map(p => p.toString()) });
       res.status(400).json({
         error: "invalid_redirect_uri",
-        error_description: `Invalid redirect_uri: ${uri}. Supported formats: cursor://anysphere.cursor-mcp/oauth/callback, claude://oauth/callback, or http://localhost:PORT/oauth/callback`,
+        error_description: `Invalid redirect_uri: ${uri}. Supported: cursor://, claude://, vscode://, http(s)://localhost[:port]/...callback`,
       });
       return;
     }

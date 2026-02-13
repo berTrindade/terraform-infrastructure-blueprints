@@ -187,6 +187,19 @@ function createApp() {
   // Used by Cursor and other clients that support the older SSE transport
   //==========================================================================
 
+  // POST to /sse is not supported - clients should use GET for SSE or POST to /mcp
+  app.post("/sse", (req: Request, res: Response) => {
+    httpLogger.info({ message: "Received POST request to /sse (not supported)" });
+    res.status(405).json({
+      jsonrpc: "2.0",
+      error: {
+        code: -32000,
+        message: "Method Not Allowed: Use GET for SSE transport or POST to /mcp for Streamable HTTP",
+      },
+      id: null,
+    });
+  });
+
   // SSE endpoint - establishes Server-Sent Events connection
   app.get("/sse", async (req: Request, res: Response) => {
     httpLogger.info({ message: "Received GET request to /sse (SSE transport)" });
