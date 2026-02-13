@@ -69,6 +69,8 @@ function createApp() {
 
   // Middleware
   app.use(express.json({ limit: "10mb" }));
+  // OAuth token requests are sent as application/x-www-form-urlencoded per OAuth 2.0 spec
+  app.use(express.urlencoded({ extended: true }));
   app.use((pinoHttp as unknown as (opts: { logger: pino.Logger }) => express.RequestHandler)({ logger: httpLogger }));
 
   // CORS configuration for MCP clients
