@@ -1,6 +1,6 @@
 {
   "name": "@bertrindade/infra-mcp",
-  "version": "1.6.9",
+  "version": "1.6.10",
   "description": "MCP server for ustwo Terraform infrastructure blueprints",
   "type": "module",
   "main": "dist/index.js",
