@@ -29,35 +29,44 @@ Once configured, your AI assistant can recommend blueprints, extract patterns, a
 - "Should I use Lambda or ECS for this API?"
 - "I need to add Bedrock RAG to my project"
 
-## Quick Start
+## Setup Instructions
 
-### Prerequisites
+### General
 
-- Docker installed and running
-- GitHub account that's a member of the ustwo org
-- `gh` CLI installed ([install guide](https://cli.github.com/))
+Our MCP server is available via STDIO (local) or HTTP/SSE (remote with OAuth 2.1). Both transports use OAuth 2.1 with dynamic client registration for authentication when connecting to the remote server at `https://mcp.ustwo.com`.
 
-### Authentication
+Choose the setup method based on your AI client:
 
-The MCP server supports OAuth 2.0 authentication with automatic detection by Cursor. When OAuth is configured, Cursor will automatically show a "Connect" button and handle the OAuth flow with PKCE.
+### Cursor
 
-**OAuth is optional** - if `AUTH_SERVER_URL` is not set, the server runs without authentication.
+**Option 1: Remote Server (Recommended for OAuth-enabled deployment)**
 
-### Step 1: Add `read:packages` scope to GitHub CLI (one-time)
+Add to `~/.cursor/mcp.json`:
 
-```bash
-gh auth refresh -h github.com -s read:packages
+```json
+{
+  "mcpServers": {
+    "ustwo-infra": {
+      "url": "https://mcp.ustwo.com/sse"
+    }
+  }
+}
 ```
 
-### Step 2: Login to GitHub Container Registry (one-time)
+**Option 2: Local via mcp-remote (For development/testing)**
 
-```bash
-echo $(gh auth token) | docker login ghcr.io -u $(gh api user -q .login) --password-stdin
+```json
+{
+  "mcpServers": {
+    "ustwo-infra": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.ustwo.com/sse"]
+    }
+  }
+}
 ```
 
-### Step 3: Configure Cursor
-
-Create or edit `~/.cursor/mcp.json`:
+**Option 3: Local Docker (No authentication)**
 
 ```json
 {
@@ -70,34 +79,101 @@ Create or edit `~/.cursor/mcp.json`:
 }
 ```
 
-**Automatic Updates:** With `--pull always`, developers automatically get the latest version on every MCP server connection. No manual updates or restarts needed!
+### Visual Studio Code
 
-### Step 4: Restart Cursor
-
-Quit Cursor completely (Cmd+Q) and reopen it.
-
-### Step 5: Authenticate (if OAuth is enabled)
-
-If the MCP server is configured with OAuth (`AUTH_SERVER_URL` environment variable), Cursor will automatically:
-
-1. **Detect authentication requirement** - Shows "Needs authentication" with a "Connect" button
-2. **Handle OAuth flow** - When you click "Connect", Cursor opens your browser to the OAuth URL
-3. **Authenticate with Google** - You'll be prompted to sign in with your Google account
-4. **Verify company domain** - The auth service validates your email domain matches the required company domain
-5. **Store token automatically** - Cursor stores the token and uses it for all MCP requests
-
-**OAuth Flow:**
-```
-1. Cursor generates PKCE code_verifier and code_challenge
-2. Cursor redirects to: https://auth.yourdomain.com/oauth/authorize?...
-3. User authenticates with Google
-4. Auth service validates company domain
-5. Redirects back to cursor://anysphere.cursor-mcp/oauth/callback?code=...
-6. Cursor exchanges code for token
-7. Token stored automatically - MCP server now works
+```json
+{
+  "mcpServers": {
+    "ustwo-infra": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.ustwo.com/sse"]
+    }
+  }
+}
 ```
 
-No manual token management needed - Cursor handles everything automatically!
+1. `CTRL/CMD` + `Shift` + `P` and search for **MCP: Add Server**
+2. Select **Command (stdio)**
+3. Enter: `npx mcp-remote https://mcp.ustwo.com/sse`
+4. Enter the name **ustwo-infra** and hit enter
+5. Activate using **MCP: List Servers** → **ustwo-infra** → **Start Server**
+
+### Windsurf
+
+1. `CTRL/CMD` + `,` to open Windsurf settings
+2. Scroll to **Cascade** → **MCP servers**
+3. Select **Add Server** → **Add custom server**
+4. Add the following:
+
+```json
+{
+  "mcpServers": {
+    "ustwo-infra": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.ustwo.com/sse"]
+    }
+  }
+}
+```
+
+### Claude Desktop
+
+Follow the [Claude Desktop MCP docs](https://modelcontextprotocol.io/quickstart/user#2-add-the-filesystem-mcp-server) to create the config file:
+
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+Add to the config:
+
+```json
+{
+  "mcpServers": {
+    "ustwo-infra": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.ustwo.com/sse"]
+    }
+  }
+}
+```
+
+### Zed
+
+1. `CMD` + `,` to open Zed settings
+2. Add the following:
+
+```json
+{
+  "context_servers": {
+    "ustwo-infra": {
+      "source": "custom",
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.ustwo.com/sse"],
+      "env": {}
+    }
+  }
+}
+```
+
+### Others
+
+Hundreds of other tools now support MCP servers. Configure them with:
+
+- **Command**: `npx`
+- **Arguments**: `-y mcp-remote https://mcp.ustwo.com/sse`
+- **Environment**: None
+
+## Authentication
+
+When connecting to `https://mcp.ustwo.com`, the MCP server uses **OAuth 2.1 with Google Sign-In**:
+
+1. Click "Connect" in your AI client
+2. Browser opens to Google authentication
+3. Sign in with your ustwo Google account (@ustwo.com)
+4. Approve the connection
+5. Redirected back to your AI client
+6. Token stored automatically - you're connected!
+
+**Using `mcp-remote`**: The `mcp-remote` proxy handles OAuth automatically, opening your browser for authentication when needed.
 
 ## HTTP Mode (Like Jam)
 
