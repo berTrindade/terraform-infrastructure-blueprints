@@ -9,7 +9,7 @@
  * In production, use a database or Redis for distributed systems.
  */
 
-import { randomBytes } from "node:crypto";
+import { randomBytes, createHash } from "node:crypto";
 
 /**
  * Stored authorization data
@@ -233,7 +233,6 @@ function verifyCodeVerifier(
   }
   
   // Compute SHA256 hash of code verifier
-  const { createHash } = require("node:crypto");
   const hash = createHash("sha256")
     .update(codeVerifier)
     .digest("base64url");
